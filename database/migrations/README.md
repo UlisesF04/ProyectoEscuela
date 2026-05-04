@@ -1,0 +1,1 @@
+Migraciones de base de datos si se requieren cambios de estructura a futuro.

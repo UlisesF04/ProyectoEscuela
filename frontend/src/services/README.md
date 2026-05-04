@@ -1,0 +1,1 @@
+Servicios y métodos de integración para consumir APIs externas, por ejemplo, para el backend REST.
