@@ -1,27 +1,65 @@
 import React from 'react';
+import {
+  Box,
+  Button,
+  Flex,
+  Field,
+  Heading,
+  Input
+} from '@chakra-ui/react';
 
 export default function Login() {
   return (
-    <div style={{ minHeight: '100vh', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <form style={{
-        display: 'flex',
-        flexDirection: 'column',
-        padding: 32,
-        borderRadius: 8,
-        boxShadow: '0 2px 8px rgba(0,0,64,0.09)',
-        background: '#fff',
-        minWidth: 320,
-        gap: 16
-      }}>
-        <h2 style={{ color: '#1976d2', marginBottom: 24, textAlign: 'center' }}>Iniciar sesión</h2>
-        <label style={{ color: '#222', fontWeight: 500 }}>Usuario</label>
-        <input type="text" placeholder="Usuario" style={{ padding: 8, border: '1px solid #1976d2', borderRadius: 4 }} />
-        <label style={{ color: '#222', fontWeight: 500 }}>Contraseña</label>
-        <input type="password" placeholder="Contraseña" style={{ padding: 8, border: '1px solid #1976d2', borderRadius: 4 }} />
-        <button style={{ marginTop: 24, background: '#1976d2', color: '#fff', border: 'none', padding: '10px 0', borderRadius: 4, cursor: 'pointer', fontWeight: 600, fontSize: 16 }}>
+    <Flex
+      minH="100vh"
+      w="100vw"
+      align="center"
+      justify="center"
+      bg="#f4f8f9"
+    >
+      <Box
+        as="form"
+        bg="#2d3e50"
+        p={8}
+        rounded="xl"
+        boxShadow="0 4px 16px rgba(0,0,80,0.10)"
+        w={{ base: '90vw', sm: '380px' }}
+        display="flex"
+        flexDirection="column"
+        gap={4}
+      >
+        <Heading size="lg" color="#f4f8f9" textAlign="center" mb={2}>
+          Iniciar sesión
+        </Heading>
+
+        <Field.Root>
+          <Field.Label fontWeight={500} color="#f4f8f9">Usuario</Field.Label>
+          <Input
+            type="text"
+            placeholder="Usuario"
+            focusBorderColor="#1976d2"
+            borderColor="#90bfe8"
+            bg="white"
+            _placeholder={{ color: '#999' }}
+          />
+        </Field.Root>
+
+        <Field.Root>
+          <Field.Label fontWeight={500} color="#f4f8f9">Contraseña</Field.Label>
+          <Input
+            type="password"
+            placeholder="Contraseña"
+            focusBorderColor="#1976d2"
+            borderColor="#90bfe8"
+            bg="white"
+            _placeholder={{ color: '#999' }}
+          />
+        </Field.Root>
+
+        <Button mt={4} colorScheme="blue" type="submit" fontWeight={600} fontSize="md" bg="#1976d2" _hover={{ bg: '#1565c0' }}>
           Ingresar
-        </button>
-      </form>
-    </div>
+        </Button>
+      </Box>
+    </Flex>
   );
 }
