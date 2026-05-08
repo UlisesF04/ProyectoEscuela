@@ -10,11 +10,11 @@ Este proyecto es una solución integral donde los empleados de una escuela carga
 
 ## 🛠 Tecnologías empleadas
 
-- **Frontend:** React.js, Chakra UI o Material-UI, React Router, Context API.
-- **Backend:** Node.js, Express.js, Mongoose (MongoDB), JWT para autenticación.
-- **Base de datos:** MongoDB (MongoDB Atlas recomendado para despliegue cloud).
+- **Frontend:** React.js, Chakra UI, React Router, Context API, Vite.
+- **Backend:** Node.js, Express.js, Sequelize ORM, PostgreSQL, JWT para autenticación.
+- **Base de datos:** PostgreSQL (Railway o Render recomendados para despliegue cloud).
 - **Agente automatizado:** Python, Pandas, Schedule o CRON, Twilio para WhatsApp.
-- **Infraestructura:** Vercel (frontend), Render o Heroku (backend), GitHub.
+- **Infraestructura:** Vercel (frontend), Railway o Render (backend), GitHub.
 
 ---
 
@@ -24,21 +24,34 @@ Este proyecto es una solución integral donde los empleados de una escuela carga
 /ProyectoEscuela
 │
 ├── frontend/
-│   └── src/
-│       ├── components/
-│       ├── pages/
-│       ├── services/           # Integración con APIs externas
-│       ├── hooks/              # Lógica reutilizable
-│       └── App.jsx
+│   ├── src/
+│   │   ├── components/
+│   │   ├── pages/
+│   │   │   └── Login.jsx
+│   │   ├── services/           # Integración con APIs externas
+│   │   ├── hooks/              # Lógica reutilizable
+│   │   ├── App.jsx
+│   │   ├── main.jsx
+│   │   └── index.css
+│   ├── public/
+│   ├── index.html
+│   ├── vite.config.js
+│   ├── package.json
+│   └── .gitignore
 │
 ├── backend/
+│   ├── config/
+│   │   └── database.js         # Conexión a PostgreSQL con Sequelize
 │   ├── modules/
 │   │   ├── auth/
 │   │   ├── absences/
 │   │   └── students/
 │   ├── utils/
 │   ├── services/
-│   └── app.js
+│   ├── app.js
+│   ├── package.json
+│   ├── .env.example
+│   └── .gitignore
 │
 ├── agent/
 │   ├── tasks/
@@ -51,7 +64,7 @@ Este proyecto es una solución integral donde los empleados de una escuela carga
 │   ├── migrations/
 │   └── seed.js                 # (Opcional) Datos iniciales
 │
-├── .env                        # Configuraciones de entorno
+├── .gitignore
 └── README.md
 ```
 
@@ -67,7 +80,7 @@ Este proyecto es una solución integral donde los empleados de una escuela carga
 ### Semana 2: Backend
 - API RESTful con Node.js/Express.js
 - Modelos y rutas para empleados, estudiantes, inasistencias
-- Autenticación con JWT, conexión a MongoDB
+- Autenticación con JWT, conexión a PostgreSQL con Sequelize
 - Modularización completa
 
 ### Semana 3: Frontend
@@ -96,9 +109,55 @@ Este proyecto es una solución integral donde los empleados de una escuela carga
 
 ## 🚀 Consideraciones
 - El sistema es completamente modular, para permitir el fácil agregado de nuevas funciones o servicios
-- MongoDB como base central para Node y Python
+- PostgreSQL como base de datos central para Node y Python
 - Mantenibilidad y escalabilidad son prioridad
 - Seguridad: JWT, HTTPS, validación estricta
 - Control de versiones en GitHub
+
+---
+
+## 🗄️ Configuración de Base de Datos
+
+### PostgreSQL (Local)
+
+1. **Instalar PostgreSQL:**
+   - Windows: Descargar desde https://www.postgresql.org/download/windows/
+   - Seguir el instalador
+
+2. **Crear base de datos:**
+   ```bash
+   psql -U postgres
+   CREATE DATABASE proyecto_escuela;
+   ```
+
+3. **Configurar variables de entorno en `backend/.env`:**
+   ```env
+   DB_HOST=localhost
+   DB_PORT=5432
+   DB_NAME=proyecto_escuela
+   DB_USER=postgres
+   DB_PASSWORD=tu_contraseña
+   PORT=5000
+   JWT_SECRET=tu_clave_secreta
+   ```
+
+4. **Instalar dependencias del backend:**
+   ```bash
+   cd backend
+   npm install
+   ```
+
+5. **Iniciar servidor:**
+   ```bash
+   npm run dev
+   ```
+
+### PostgreSQL en la Nube (Railway/Render)
+
+Para despliegue en producción, usa Railway o Render:
+- **Railway:** https://railway.app
+- **Render:** https://render.com
+
+Ambas plataformas ofrecen PostgreSQL gratuito y fácil integración.
 
 Cualquier duda o sugerencia para adaptar el plan o stack, ¡abrir un issue!

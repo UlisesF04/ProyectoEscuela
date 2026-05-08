@@ -1,1 +1,0 @@
-// Semillas iniciales para cargar datos en MongoDB si es necesario.
