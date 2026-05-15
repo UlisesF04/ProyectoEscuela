@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import sequelize from './config/database.js';
+import models from './models/index.js';
+import authRoutes from './modules/auth/auth.routes.js';
 
 dotenv.config();
 
@@ -14,6 +16,7 @@ app.use(cors());
 const connectDB = async () => {
   try {
     await sequelize.authenticate();
+    console.log('Database connected successfully');
   } catch (error) {
     console.error(`Error: ${error.message}`);
     process.exit(1);
@@ -21,6 +24,8 @@ const connectDB = async () => {
 };
 
 await connectDB();
+
+await sequelize.sync();
 
 app.get('/', (req, res) => {
   res.json({
@@ -40,6 +45,13 @@ app.get('/message', (req, res) => {
   res.json({
     message: 'Connected successfully',
   });
+});
+
+app.use('/api/auth', authRoutes);
+
+app.get('/api/models', (req, res) => {
+  const modelList = Object.keys(models).filter(k => k !== 'sequelize');
+  res.json({ models: modelList, count: modelList.length });
 });
 
 app.use((err, req, res, next) => {

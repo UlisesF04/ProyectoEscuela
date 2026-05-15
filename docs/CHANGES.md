@@ -10,7 +10,7 @@
 ## Estado General del Proyecto
 
 ```
-FASE 0 — Fundaciones            [⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜]   0%
+FASE 0 — Fundaciones            [✅⬜⬜⬜⬜⬜⬜⬜⬜⬜]  10%
 FASE 1 — Backend API            [⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜]   0%
 FASE 2 — Frontend Completo      [⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜]   0%
 FASE 3 — Agente + WhatsApp      [⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜]   0%
@@ -35,7 +35,7 @@ FASE 4 — Cierre                 [⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜]   0%
 | OpenSpec `config.yaml` | ⚠️ Parcial | Configuración base sin spec de agente |
 | `docs/` | ✅ Listo | Integrador.txt, Descripcion.txt, Historias de usuario.txt, CHANGES.md |
 | `requirements.txt` | ⬜ No existe | Pendiente de crear |
-| Migraciones DB / Seed | ⬜ No existe | Pendiente de crear |
+| Migraciones DB / Seed | ✅ Listo | 13 modelos + migración única + 8 seeders |
 | Root `.gitignore` | ⬜ No existe | Pendiente de crear (venv/, etc.) |
 
 ---
@@ -150,7 +150,7 @@ MODIFICAR:
 
 **Depende de:** Nada (es la base del proyecto)
 
-**Estado:** PROPUESTO
+**Estado:** COMPLETADO
 
 ---
 
@@ -176,7 +176,7 @@ MODIFICAR:
 
 **Depende de:** CHANGE-001 (necesita tabla `usuarios`)
 
-**Estado:** PROPUESTO
+**Estado:** COMPLETADO — 2026-05-15
 
 ---
 
@@ -197,6 +197,7 @@ CREAR:
   frontend/src/context/AuthContext.jsx
   frontend/src/components/ProtectedRoute.jsx
   frontend/src/components/Layout.jsx
+  frontend/src/pages/Dashboard.jsx
 MODIFICAR:
   frontend/src/main.jsx — envolver con AuthProvider
   frontend/src/App.jsx — agregar Router y rutas protegidas
@@ -205,7 +206,7 @@ MODIFICAR:
 
 **Depende de:** CHANGE-002 (backend auth listo)
 
-**Estado:** PROPUESTO
+**Estado:** COMPLETADO — 2026-05-15
 
 ---
 

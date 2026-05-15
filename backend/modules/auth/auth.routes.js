@@ -1,0 +1,10 @@
+import { Router } from 'express';
+import { login, logout } from './auth.controller.js';
+import { authenticate } from './auth.middleware.js';
+
+const router = Router();
+
+router.post('/login', login);
+router.post('/logout', authenticate, logout);
+
+export default router;
