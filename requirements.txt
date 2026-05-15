@@ -1,0 +1,42 @@
+# =============================================================================
+# ProyectoEscuela — Dependencias Python (Agente Automatizado)
+# =============================================================================
+# Ubicación: raíz del proyecto (compartido con venv raíz)
+# Instalación: pip install -r requirements.txt
+# =============================================================================
+
+# --- Conexión a Base de Datos ---
+psycopg2-binary>=2.9.0
+# Driver nativo PostgreSQL para Python.
+# Utilizado por agent/tasks/db_reader.py para consultar la base de datos
+# compartida con el backend Node.js.
+
+# --- Procesamiento de Datos ---
+pandas>=2.0.0
+# Análisis y manipulación de datos tabulares.
+# Procesa registros de inasistencias, calificaciones y tareas desde
+# PostgreSQL para evaluar condiciones de alerta (RN-01 a RN-07).
+
+# --- Notificaciones WhatsApp (provider TBD) ---
+# Dependencia PENDIENTE — instalar cuando se defina el provider:
+#   - Twilio:   pip install twilio>=8.0.0
+#   - Meta API: pip install requests>=2.31.0
+# Utilizado por agent/tasks/notifier.py para enviar notificaciones
+# automáticas a padres/tutores y docentes.
+
+# --- Scheduling ---
+schedule>=1.2.0
+# Librería de programación de tareas periódicas en Python.
+# Controla la ejecución del agente cada 1 hora en ventana hábil
+# (lunes a viernes 07:00-20:00 hs, RN-10).
+
+# --- Entorno ---
+python-dotenv>=1.0.0
+# Carga de variables de entorno desde archivo .env.
+# Gestiona credenciales de DB, WhatsApp API, y JWT sin hardcodear.
+
+# --- Testing ---
+pytest>=7.0.0
+# Framework de testing para Python.
+# Tests del agente: consultas DB mock, envío notificaciones simulado,
+# validación de reglas de negocio.

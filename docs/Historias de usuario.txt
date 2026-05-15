@@ -1,0 +1,227 @@
+================================================================================
+HISTORIAS DE USUARIO
+ProyectoEscuela - Sistema de Gestión Académica y Comunicación Escolar
+================================================================================
+
+Formato: Como [actor], quiero [acción], para [beneficio].
+Criterios de Aceptación (CA) y Regla de Negocio relacionada (RN).
+/
+--------------------------------------------------------------------------------
+MÓDULO 1: AUTENTICACIÓN Y ACCESO
+--------------------------------------------------------------------------------
+
+HU-001: Inicio de sesión
+  Como usuario del sistema (empleado, docente o administrador),
+  quiero poder iniciar sesión con mi email y contraseña,
+  para acceder a las funcionalidades correspondientes a mi rol de forma segura.
+
+  CA:
+    - El sistema valida email y contraseña contra la base de datos.
+    - Si las credenciales son correctas, se genera un token JWT.
+    - Si las credenciales son incorrectas, se muestra un mensaje de error genérico.
+    - El token JWT expira en 8 horas.
+    - El acceso a rutas protegidas sin token devuelve error 401.
+  RN: RN-08
+
+HU-002: Cierre de sesión
+  Como usuario autenticado,
+  quiero poder cerrar mi sesión,
+  para proteger mi cuenta en equipos compartidos.
+
+  CA:
+    - Al hacer logout, el token se invalida o elimina del cliente.
+    - El usuario es redirigido a la pantalla de login.
+  RN: RN-08
+
+HU-003: Recuperación de contraseña
+  Como usuario del sistema,
+  quiero poder recuperar mi contraseña vía email,
+  para no perder el acceso a mi cuenta si la olvido.
+
+  CA:
+    - El sistema envía un email con un link de recuperación de vigencia 1 hora.
+    - El link expirado muestra un mensaje de error claro.
+
+--------------------------------------------------------------------------------
+MÓDULO 2: GESTIÓN DE INASISTENCIAS (EMPLEADO / ADMIN)
+--------------------------------------------------------------------------------
+
+HU-004: Registro de inasistencias diarias
+  Como empleado administrativo,
+  quiero registrar las inasistencias de los alumnos de un curso en el día actual,
+  para mantener un registro preciso y actualizado de la asistencia escolar.
+
+  CA:
+    - Puedo seleccionar un curso y ver el listado de alumnos.
+    - Puedo marcar uno o varios alumnos como ausentes.
+    - Solo puedo cargar inasistencias del día actual o del día hábil anterior.
+    - Una vez guardado, el sistema confirma el registro con mensaje de éxito.
+    - No se permite cargar inasistencias de más de 2 días hábiles atrás.
+  RN: RN-03
+
+HU-005: Visualización del historial de inasistencias por alumno
+  Como empleado o docente,
+  quiero consultar el historial de inasistencias de un alumno específico,
+  para hacer un seguimiento de su regularidad.
+
+  CA:
+    - Puedo buscar un alumno por nombre o DNI.
+    - Se muestra el total de inasistencias en el año y el porcentaje sobre clases dictadas.
+    - Se indica visualmente si el alumno está en riesgo de perder la regularidad (>20%).
+  RN: RN-02
+
+HU-006: Edición de inasistencias registradas
+  Como empleado administrativo,
+  quiero poder corregir una inasistencia cargada por error,
+  para mantener la integridad de los datos.
+
+  CA:
+    - Solo puedo editar registros del día actual o del día hábil anterior.
+    - Toda edición queda registrada con el usuario que la realizó y la fecha/hora.
+  RN: RN-03
+
+--------------------------------------------------------------------------------
+MÓDULO 3: GESTIÓN DE CALIFICACIONES Y TAREAS (DOCENTE)
+--------------------------------------------------------------------------------
+
+HU-007: Carga de calificaciones
+  Como docente,
+  quiero cargar las calificaciones de mis alumnos por materia y período,
+  para que queden registradas y disponibles para consulta y alertas automáticas.
+
+  CA:
+    - Solo puedo cargar calificaciones en las materias que tengo asignadas.
+    - Las notas deben ser numéricas, entre 1 y 10.
+    - Al guardar una nota <= 4, el sistema la marca para generar alerta (RN-04).
+    - Se muestra confirmación al guardar correctamente.
+  RN: RN-04, RN-05
+
+HU-008: Visualización del promedio general de alumnos
+  Como docente,
+  quiero ver el promedio general de cada alumno en mi materia,
+  para identificar rápidamente quiénes necesitan apoyo.
+
+  CA:
+    - La vista muestra la lista de alumnos con su promedio calculado.
+    - Los alumnos con promedio < 6 se resaltan visualmente.
+  RN: RN-05
+
+HU-009: Registro de tareas asignadas y estado de entrega
+  Como docente,
+  quiero registrar tareas asignadas e indicar si cada alumno la entregó o no,
+  para hacer seguimiento de los compromisos académicos.
+
+  CA:
+    - Puedo crear una tarea con nombre, fecha de asignación y fecha de entrega.
+    - Puedo marcar el estado de entrega de cada alumno (entregado / no entregado).
+    - Cuando un alumno acumula 2 tareas no entregadas consecutivas, se genera alerta.
+  RN: RN-06
+
+--------------------------------------------------------------------------------
+MÓDULO 4: GESTIÓN DOCENTE - ADMINISTRATIVA
+--------------------------------------------------------------------------------
+
+HU-010: Consulta de licencias y permisos disponibles
+  Como docente,
+  quiero consultar cuántos días de licencia me quedan disponibles,
+  para planificar mis ausencias sin sorpresas.
+
+  CA:
+    - Veo un resumen de días de licencia disponibles y ya utilizados.
+    - Si me quedan 3 o menos días, el sistema me muestra una advertencia visual.
+  RN: RN-07
+
+HU-011: Seguimiento de inasistencias de alumnos propios
+  Como docente,
+  quiero ver un panel con las inasistencias acumuladas de los alumnos de mis cursos,
+  para hacer un seguimiento individualizado rápido.
+
+  CA:
+    - El panel muestra alumnos con su contador de inasistencias y % del año.
+    - Puedo filtrar por curso o por alumnos en situación crítica.
+  RN: RN-02
+
+--------------------------------------------------------------------------------
+MÓDULO 5: NOTIFICACIONES AUTOMÁTICAS (AGENTE / BOT)
+--------------------------------------------------------------------------------
+
+HU-012: Notificación automática por inasistencias reiteradas
+  Como padre/tutor,
+  quiero recibir una notificación por WhatsApp cuando mi hijo acumule 3 inasistencias
+  en el mes,
+  para enterarme oportunamente y poder actuar.
+
+  CA:
+    - El mensaje incluye nombre del alumno, cantidad de inasistencias y fecha.
+    - La notificación se envía una única vez por día ante la misma condición (RN-11).
+    - Se envía al número de WhatsApp registrado del tutor.
+  RN: RN-01, RN-11
+
+HU-013: Notificación por riesgo de pérdida de regularidad
+  Como padre/tutor,
+  quiero recibir una alerta cuando mi hijo esté en riesgo de perder la regularidad,
+  para tomar medidas antes de que sea tarde.
+
+  CA:
+    - La alerta indica el porcentaje de inasistencias acumuladas y el límite permitido.
+    - Se envía al superar el 20% de inasistencias sobre el total de clases dictadas.
+  RN: RN-02, RN-11
+
+HU-014: Notificación por calificación baja
+  Como padre/tutor,
+  quiero ser notificado cuando mi hijo obtenga una nota <= 4 en cualquier materia,
+  para poder apoyarlo a tiempo.
+
+  CA:
+    - El mensaje incluye nombre del alumno, materia y nota obtenida.
+    - No se envía más de una notificación por evento por día.
+  RN: RN-04, RN-11
+
+HU-015: Notificación por tareas no entregadas
+  Como padre/tutor,
+  quiero recibir una alerta cuando mi hijo no entregue 2 tareas consecutivas
+  en la misma materia,
+  para hacer el seguimiento de sus compromisos escolares.
+
+  CA:
+    - El mensaje indica la materia y el nombre de las tareas pendientes.
+  RN: RN-06, RN-11
+
+HU-016: Notificación de vencimiento de licencias docentes
+  Como docente,
+  quiero recibir una alerta cuando me queden 3 o menos días de licencia,
+  para planificar con anticipación.
+
+  CA:
+    - El mensaje indica los días restantes disponibles.
+    - Se envía al número de WhatsApp o email registrado del docente.
+  RN: RN-07, RN-11
+
+HU-017: Registro y trazabilidad de notificaciones enviadas
+  Como administrador del sistema,
+  quiero que todas las notificaciones enviadas queden registradas en la base de datos,
+  para auditar el funcionamiento del bot y evitar duplicados.
+
+  CA:
+    - Se registra: destinatario, tipo de alerta, fecha/hora de envío, estado (éxito/fallo).
+    - El agente consulta este registro antes de enviar para aplicar RN-11.
+  RN: RN-11
+
+--------------------------------------------------------------------------------
+MÓDULO 6: CONSULTA PARA PADRES / TUTORES (WEB)
+--------------------------------------------------------------------------------
+
+HU-018: Consulta del estado académico del hijo
+  Como padre/tutor,
+  quiero poder ingresar al sistema y ver el estado académico actualizado de mi hijo,
+  para tener visibilidad sin depender únicamente de las notificaciones.
+
+  CA:
+    - Solo puedo ver los datos de mis hijos registrados en el sistema.
+    - Veo: inasistencias, calificaciones por materia, tareas pendientes.
+    - La información se actualiza en tiempo real (máximo con 1 hora de diferencia).
+  RN: RN-09
+
+================================================================================
+FIN DEL DOCUMENTO - Historias de usuario.txt
+================================================================================
