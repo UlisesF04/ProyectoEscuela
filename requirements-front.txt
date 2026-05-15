@@ -1,0 +1,47 @@
+# =============================================================================
+# ProyectoEscuela — Dependencias Node.js (Frontend + Backend)
+# =============================================================================
+# Este archivo documenta las dependencias de Node.js necesarias para
+# backend y frontend. No es un package.json — los installers reales
+# estan en backend/package.json y frontend/package.json.
+#
+# Instalacion completa:
+#   cd backend  && npm install
+#   cd frontend && npm install
+# =============================================================================
+
+# --- BACKEND (Node.js + Express + Sequelize + PostgreSQL) ---
+express         ^4.18.2   # Framework web minimalista para Node.js
+sequelize       ^6.35.0   # ORM para PostgreSQL con migraciones y seeders
+pg              ^8.11.0   # Driver nativo de PostgreSQL para Node.js
+pg-hstore       ^2.3.4    # Soporte para tipo hstore de PostgreSQL
+bcryptjs        ^2.4.3    # Hash y comparacion de contraseñas
+jsonwebtoken    ^9.0.2    # Generacion y verificacion de tokens JWT
+cors            ^2.8.5    # Middleware CORS para peticiones cross-origin
+dotenv          ^16.3.1   # Carga de variables de entorno desde .env
+nodemon         ^3.0.1    # [Dev] Reinicio automatico del servidor al cambiar codigo
+
+# --- FRONTEND (React 19 + Vite 8 + Chakra UI v3) ---
+react           ^19.2.5   # Framework de UI del lado cliente
+react-dom       ^19.2.5   # Renderizador DOM para React
+react-router-dom ^7.15.0  # Routing SPA del lado del cliente
+@chakra-ui/react ^3.35.0  # Biblioteca de componentes UI accesibles
+@emotion/react  ^11.14.0  # CSS-in-JS (requerido por Chakra UI)
+@emotion/styled ^11.14.1  # Styled components para Emotion
+framer-motion   ^12.38.0  # Animaciones y transiciones (usado en Login)
+axios           ^1.7.0    # Cliente HTTP con interceptors para JWT
+vite            ^8.0.10   # Build tool y dev server con HMR
+eslint          ^10.2.1   # [Dev] Linter de codigo
+
+# --- INSTALACION ---
+# Backend:
+#   cd backend
+#   npm install
+#   npm start          # Inicia en puerto 5000
+#   npm run dev        # Inicia con nodemon (hot reload)
+#
+# Frontend:
+#   cd frontend
+#   npm install
+#   npm run dev        # Inicia en puerto 5173
+#   npm run build      # Genera build de produccion en frontend/dist/

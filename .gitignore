@@ -40,6 +40,9 @@ Thumbs.db
 *.sln
 *.sw?
 
+# --- OpenSpec archived changes ---
+openspec/changes/archive/
+
 # --- Python cache ---
 __pycache__/
 *.py[cod]
