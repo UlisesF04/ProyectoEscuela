@@ -1,142 +1,211 @@
 ================================================================================
-INTEGRADOR - REGLAS DE NEGOCIO E HISTORIA DEL PROYECTO
-ProyectoEscuela - Sistema de Gestión Académica y Comunicación Escolar
+INTEGRADOR — REGLAS DE NEGOCIO E HISTORIA DEL PROYECTO
+ProyectoEscuela — Sistema de Gestión Académica y Comunicación Escolar
 ================================================================================
 
 --------------------------------------------------------------------------------
 1. HISTORIA DEL PROYECTO
 --------------------------------------------------------------------------------
 
-El proyecto nace como respuesta a una problemática real y frecuente en instituciones
-de nivel secundario: la brecha de comunicación entre la escuela y las familias de los
-estudiantes.
+    El proyecto nace como respuesta a una problemática real y frecuente en
+    instituciones de nivel secundario: la brecha de comunicación entre la
+    escuela y las familias de los estudiantes.
 
-Si bien muchas escuelas ya cuentan con sistemas de registro (notas, asistencias,
-incidencias), estos presentan limitaciones críticas:
+    Si bien muchas escuelas ya cuentan con sistemas de registro (notas,
+    asistencias, incidencias), estos presentan limitaciones críticas:
 
-  - Son plataformas poco intuitivas con baja tasa de adopción.
-  - El modelo de comunicación es PASIVO: los padres deben buscar la información
-    activamente, lo que rara vez ocurre en el día a día.
-  - Los problemas (inasistencias críticas, bajo rendimiento, tareas pendientes)
-    se detectan tarde, impidiendo intervención temprana.
-  - Los docentes no tienen herramientas claras para el seguimiento individualizado
-    de alumnos ni para gestionar sus propios datos administrativos (licencias).
+    [ ] Son plataformas poco intuitivas con baja tasa de adopción.
+    [ ] El modelo de comunicación es PASIVO: los padres deben buscar la
+        información activamente, lo que rara vez ocurre en el día a día.
+    [ ] Los problemas (inasistencias críticas, bajo rendimiento, tareas
+        pendientes) se detectan tarde, impidiendo intervención temprana.
+    [ ] Los docentes no tienen herramientas claras para el seguimiento
+        individualizado de alumnos ni para gestionar sus propios datos
+        administrativos (licencias).
+    [ ] No existe un canal de comunicación directa entre familias y el
+        personal no académico (secretaría, preceptores).
+    [ ] El proceso de presentación de certificados es manual y sin
+        trazabilidad digital.
 
-El equipo conformado por Moreno Ezequiel, Rovelli Adriano, Fernández Ulises y
-Trejo Juan Manuel propone transformar este modelo PASIVO en uno ACTIVO mediante
-una solución dual: una plataforma web centralizada + un sistema de notificaciones
-automáticas por WhatsApp.
+    El equipo conformado por Moreno Ezequiel, Rovelli Adriano, Fernández
+    Ulises y Trejo Juan Manuel propone transformar este modelo PASIVO en uno
+    ACTIVO mediante una solución integral: plataforma web centralizada,
+    sistema de notificaciones automáticas por WhatsApp, tablero de analítica
+    académica y canal de comunicación interna.
 
 --------------------------------------------------------------------------------
 2. OBJETIVO GENERAL
 --------------------------------------------------------------------------------
 
-Optimizar la gestión de información académica y disciplinaria, y mitigar la
-desinformación de los padres respecto al desempeño, asistencia y compromisos
-de sus hijos, mejorando la comunicación entre la institución, docentes y familias.
+    Optimizar la gestión de información académica y disciplinaria, mitigar la
+    desinformación de los padres respecto al desempeño, asistencia y
+    compromisos de sus hijos, y mejorar la comunicación entre la institución,
+    los docentes, el personal no académico y las familias. El sistema debe
+    además proveer herramientas de analítica que permitan visualizar la
+    evolución del estudiante de forma clara y accionable, y gestionar la
+    presentación de documentos oficiales de forma digital.
 
 --------------------------------------------------------------------------------
 3. ACTORES DEL SISTEMA
 --------------------------------------------------------------------------------
 
-  A. EMPLEADO / PERSONAL ADMINISTRATIVO
-     - Registra inasistencias diarias de los estudiantes.
-     - Gestiona datos del sistema (altas, bajas, modificaciones de alumnos).
-     - Accede a reportes y listados generales.
+    A.  EMPLEADO / PERSONAL ADMINISTRATIVO (SECRETARÍA)
+        [ ] Registra inasistencias diarias de los estudiantes.
+        [ ] Gestiona datos del sistema (altas, bajas, modificaciones).
+        [ ] Accede a reportes y listados generales.
+        [ ] Recibe y gestiona mensajes internos de familias.
+        [ ] Procesa y valida certificados presentados por alumnos.
+        [ ] Accede al tablero de analítica global.
 
-  B. DOCENTE
-     - Carga calificaciones y tareas de sus cursos.
-     - Visualiza inasistencias acumuladas por alumno.
-     - Consulta su propio estado administrativo (licencias, permisos).
+    B.  DOCENTE
+        [ ] Carga calificaciones y tareas de sus cursos.
+        [ ] Visualiza inasistencias acumuladas por alumno.
+        [ ] Consulta su propio estado administrativo (licencias, permisos).
+        [ ] Accede al tablero de analítica de sus alumnos.
+        [ ] Recibe y responde mensajes internos de familias.
 
-  C. PADRE / TUTOR
-     - Recibe notificaciones automáticas por WhatsApp.
-     - Puede consultar el estado académico de su hijo vía web.
+    C.  PRECEPTOR
+        [ ] Registra y visualiza inasistencias de su división.
+        [ ] Recibe y responde mensajes internos de familias.
+        [ ] Gestiona justificaciones de inasistencia.
+        [ ] Procesa y valida certificados presentados.
+        [ ] Accede al tablero de analítica de su división.
 
-  D. AGENTE AUTOMATIZADO (Bot Python)
-     - Lee los datos de la base de datos periódicamente.
-     - Evalúa condiciones de alerta según las reglas de negocio.
-     - Dispara notificaciones vía WhatsApp (provider TBD — Twilio o Meta API).
+    D.  PADRE / TUTOR
+        [ ] Recibe notificaciones automáticas por WhatsApp.
+        [ ] Consulta el estado académico de su hijo vía web.
+        [ ] Visualiza el tablero de analítica de su hijo.
+        [ ] Envía mensajes internos a docentes, preceptores y secretaría.
+        [ ] Presenta certificados digitales de justificación.
+
+    E.  AGENTE AUTOMATIZADO (Bot Python + OpenSpec)
+        [ ] Lee los datos de la base de datos periódicamente.
+        [ ] Evalúa condiciones de alerta según las reglas de negocio.
+        [ ] Dispara notificaciones vía WhatsApp API.
 
 --------------------------------------------------------------------------------
 4. REGLAS DE NEGOCIO
 --------------------------------------------------------------------------------
 
-  RN-01: INASISTENCIAS - NOTIFICACIÓN BÁSICA
+    RN-01: INASISTENCIAS — NOTIFICACIÓN BÁSICA
     Cuando un alumno acumula 3 (tres) inasistencias en el mes corriente,
     el sistema debe notificar automáticamente al padre/tutor vía WhatsApp.
 
-  RN-02: INASISTENCIAS - RIESGO DE REGULARIDAD
+    RN-02: INASISTENCIAS — RIESGO DE REGULARIDAD
     Cuando un alumno supera el 20% de inasistencias sobre el total de clases
-    dictadas en el año, el sistema debe generar una alerta crítica al padre/tutor
-    indicando riesgo de pérdida de regularidad.
+    dictadas en el año, el sistema debe generar una alerta crítica al
+    padre/tutor indicando riesgo de pérdida de regularidad.
 
-  RN-03: INASISTENCIAS - REGISTRO DIARIO
-    Las inasistencias deben registrarse el mismo día o como máximo al día siguiente
-    hábil. No se permiten cargas retroactivas de más de 2 (dos) días hábiles.
+    RN-03: INASISTENCIAS — REGISTRO DIARIO
+    Las inasistencias deben registrarse el mismo día o como máximo al día
+    siguiente hábil. No se permiten cargas retroactivas de más de 2 (dos)
+    días hábiles.
 
-  RN-04: CALIFICACIONES - ALERTA POR BAJO RENDIMIENTO
-    Cuando un alumno obtiene una calificación igual o inferior a 4 (cuatro) en
-    cualquier materia, el sistema debe notificar al padre/tutor automáticamente.
+    RN-04: CALIFICACIONES — ALERTA POR BAJO RENDIMIENTO
+    Cuando un alumno obtiene una calificación igual o inferior a 4 (cuatro)
+    en cualquier materia, el sistema debe notificar al padre/tutor
+    automáticamente.
 
-  RN-05: CALIFICACIONES - PROMEDIO CRÍTICO
-    Cuando el promedio general de un alumno cae por debajo de 6 (seis), se genera
-    una alerta adicional consolidada hacia el padre/tutor.
+    RN-05: CALIFICACIONES — PROMEDIO CRÍTICO
+    Cuando el promedio general de un alumno cae por debajo de 6 (seis),
+    se genera una alerta adicional consolidada hacia el padre/tutor.
 
-  RN-06: TAREAS - SEGUIMIENTO
-    Cuando un alumno no entrega 2 (dos) tareas consecutivas en la misma materia,
-    el sistema genera una alerta al padre/tutor.
+    RN-06: TAREAS — SEGUIMIENTO
+    Cuando un alumno no entrega 2 (dos) tareas consecutivas en la misma
+    materia, el sistema genera una alerta al padre/tutor.
 
-  RN-07: DOCENTES - LICENCIAS
-    El sistema notifica al docente cuando sus días de licencia disponibles son
-    iguales o inferiores a 3 (tres) días.
+    RN-07: DOCENTES — LICENCIAS
+    El sistema notifica al docente cuando sus días de licencia disponibles
+    son iguales o inferiores a 3 (tres) días.
 
-  RN-08: AUTENTICACIÓN Y ROLES
-    Todos los usuarios deben autenticarse con JWT. Los permisos están segmentados
-    por rol: Administrador, Docente, Padre/Tutor. Un usuario solo puede acceder
-    a los datos correspondientes a su rol.
+    RN-08: AUTENTICACIÓN Y ROLES
+    Todos los usuarios deben autenticarse con JWT. Los permisos están
+    segmentados por rol: Administrador, Docente, Preceptor, Tutor. Un
+    usuario solo puede acceder a los datos correspondientes a su rol.
 
-  RN-09: CONFIDENCIALIDAD DE DATOS
-    Los datos de los alumnos son confidenciales. Un padre/tutor solo puede ver
-    la información de sus propios hijos registrados en el sistema.
+    RN-09: CONFIDENCIALIDAD DE DATOS
+    Los datos de los alumnos son confidenciales. Un padre/tutor solo puede
+    ver la información de sus propios hijos registrados en el sistema.
 
-  RN-10: AUTOMATIZACIÓN DEL AGENTE
-    El agente Python se ejecuta automáticamente en horario escolar
-    (lunes a viernes, de 07:00 a 20:00 hs). Fuera de ese horario, las
-    notificaciones se encolan y se envían al inicio del siguiente día hábil.
+    RN-10: AUTOMATIZACIÓN DEL AGENTE
+    El agente Python se ejecuta automáticamente en horario escolar (lunes a
+    viernes, de 07:00 a 20:00 hs). Fuera de ese horario, las notificaciones
+    se encolan y se envían al inicio del siguiente día hábil.
 
-  RN-11: UNICIDAD DE NOTIFICACIÓN
-    Una misma alerta no debe enviarse más de una vez por día al mismo destinatario
-    para el mismo evento. El sistema debe registrar cada notificación enviada.
+    RN-11: UNICIDAD DE NOTIFICACIÓN
+    Una misma alerta no debe enviarse más de una vez por día al mismo
+    destinatario para el mismo evento. El sistema debe registrar cada
+    notificación enviada.
+
+    RN-12: ANALÍTICA — VISUALIZACIÓN DE EVOLUCIÓN
+    El tablero de analítica debe mostrar la evolución del estudiante en
+    asistencias y calificaciones. Las inasistencias deben discriminar entre
+    justificadas y no justificadas. Las notas deben poder filtrarse por
+    materia y por trimestre. Se incluyen alertas visuales cuando los valores
+    superan los umbrales definidos en RN-01, RN-02, RN-04 y RN-05.
+
+    RN-13: INASISTENCIAS — JUSTIFICACIÓN
+    Una inasistencia puede marcarse como justificada adjuntando o
+    referenciando un certificado. Las justificadas cuentan para el total
+    pero se distinguen visualmente en todos los reportes y analíticas.
+
+    RN-14: COMUNICACIÓN INTERNA
+    Los mensajes entre familias y el personal de la institución (docentes,
+    preceptores, secretaría) deben quedar registrados con fecha, emisor,
+    receptor y estado de lectura. No se permiten conversaciones entre
+    familias distintas. Los destinatarios posibles son: docente de la
+    materia, preceptor del curso y secretaría.
+
+    RN-15: CERTIFICADOS — PRESENTACIÓN DIGITAL
+    Un padre/tutor puede cargar un certificado (imagen o PDF) desde el
+    sistema. El certificado queda asociado al alumno y al período
+    correspondiente. El personal autorizado (preceptor, admin) puede
+    aceptarlo o rechazarlo, dejando registro del resultado y la fecha de
+    resolución.
+
+    RN-16: ANALÍTICA — ACCESO POR ROL
+    El tablero de analítica es accesible para: padres/tutores (solo sus
+    hijos), docentes (sus alumnos), preceptores (su división) y admins
+    (todos los alumnos). Cada vista está limitada estrictamente al alcance
+    de cada rol.
 
 --------------------------------------------------------------------------------
 5. FLUJO PRINCIPAL DEL SISTEMA
 --------------------------------------------------------------------------------
 
-  1. El empleado ingresa al sistema con sus credenciales (JWT).
-  2. Registra las inasistencias del día para cada curso.
-  3. Los docentes cargan calificaciones y tareas desde sus perfiles.
-  4. El agente Python (scheduler) se ejecuta periódicamente (cada 1 hora).
-  5. El agente lee la base de datos PostgreSQL y evalúa las reglas RN-01 a RN-07.
-   6. Ante una condición de alerta, el agente dispara la notificación vía WhatsApp API.
-  7. La notificación queda registrada en la base de datos (para RN-11).
-  8. Los padres pueden también consultar el estado de sus hijos vía web en cualquier momento.
+    [ ] 1.  El empleado o preceptor ingresa al sistema con sus credenciales.
+    [ ] 2.  Registra las inasistencias del día para cada curso.
+    [ ] 3.  Los docentes cargan calificaciones y tareas desde sus perfiles.
+    [ ] 4.  El agente Python (scheduler) se ejecuta periódicamente (cada 1h).
+    [ ] 5.  El agente evalúa las reglas RN-01 a RN-07 contra la base de datos.
+    [ ] 6.  Ante una condición de alerta, dispara la notificación vía WhatsApp.
+    [ ] 7.  La notificación queda registrada en la base de datos (RN-11).
+    [ ] 8.  Los padres consultan el estado de sus hijos y el tablero analítico.
+    [ ] 9.  Los padres envían mensajes al personal desde el portal.
+    [ ] 10. El personal recibe, lee y responde mensajes desde su panel.
+    [ ] 11. Los padres cargan certificados de justificación digitalmente.
+    [ ] 12. El preceptor o admin valida o rechaza el certificado presentado.
 
 --------------------------------------------------------------------------------
 6. RESTRICCIONES Y CONSIDERACIONES
 --------------------------------------------------------------------------------
 
-  - El sistema es completamente modular para facilitar la incorporación de nuevas
-    funcionalidades sin afectar los módulos existentes.
-  - La seguridad es prioridad: JWT, HTTPS obligatorio en producción, validación
-    estricta de inputs en frontend y backend.
-  - PostgreSQL actúa como única fuente de verdad para tanto el backend Node.js
-    como el agente Python.
-  - El despliegue en producción debe realizarse en infraestructura cloud
-    (Vercel para frontend, Railway/Render para backend y base de datos).
-  - El agente Python no modifica datos en la base de datos, solo los lee y genera
-    notificaciones. La escritura de registros de notificaciones es la única excepción.
+    [ ] El sistema es completamente modular para facilitar la incorporación
+        de nuevas funcionalidades sin afectar los módulos existentes.
+    [ ] La seguridad es prioridad: JWT, HTTPS obligatorio en producción,
+        validación estricta de inputs en frontend y backend.
+    [ ] PostgreSQL actúa como única fuente de verdad para el backend Node.js
+        y el agente Python.
+    [ ] El despliegue en producción debe realizarse en infraestructura cloud
+        (Vercel para frontend, Railway/Render para backend y base de datos).
+    [ ] El agente Python no modifica datos en la base de datos, salvo el
+        registro de notificaciones enviadas en notificaciones_log.
+    [ ] Los archivos de certificados se almacenan en un servicio de
+        almacenamiento externo (Cloudinary o similar); la base de datos
+        guarda solo la referencia URL.
+    [ ] El tablero de analítica se construye con datos calculados en el
+        backend; el frontend solo renderiza los resultados recibidos.
 
 ================================================================================
-FIN DEL DOCUMENTO - Integrador.txt
+FIN DEL DOCUMENTO — Integrador.txt
 ================================================================================

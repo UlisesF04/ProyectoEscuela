@@ -1,169 +1,159 @@
 ================================================================================
 DESCRIPCIÓN TÉCNICA DEL PROYECTO
-ProyectoEscuela - Tecnologías Definidas y en Uso
+ProyectoEscuela — Tecnologías Definidas y en Uso
 ================================================================================
 
 --------------------------------------------------------------------------------
 1. VISIÓN GENERAL DE LA ARQUITECTURA
 --------------------------------------------------------------------------------
 
-El sistema está dividido en cuatro capas principales:
+    El sistema está dividido en seis capas principales:
 
-  ┌─────────────────────────────────────────────────────────┐
-  │  FRONTEND (React)  ←→  BACKEND (Node/Express)           │
-  │                              │                           │
-  │                         PostgreSQL                       │
-  │                              │                           │
-  │                    AGENTE PYTHON (Bot)                   │
-  │                              │                           │
-  │                    WhatsApp API (provider TBD)          │
-  └─────────────────────────────────────────────────────────┘
+    [x] FRONTEND (React + Vite + Chakra UI)  ←→  BACKEND (Node/Express)
+    [x]              │                                    │
+    [x]         PostgreSQL (única fuente de verdad)       │
+    [x]              │                                    │
+    [x]    AGENTE PYTHON (Bot + OpenSpec)                 │
+    [x]              │                                    │
+    [x]    WhatsApp API (provider TBD)                    │
+    [x]                                                    │
+    [x]    Servicio externo de archivos (Cloudinary) ←────┘
 
-Cada capa es independiente y se comunica mediante interfaces definidas
-(API REST para frontend↔backend; conexión directa a PostgreSQL para el agente).
+    Cada capa es independiente y se comunica mediante interfaces definidas
+    (API REST para frontend↔backend; conexión directa a PostgreSQL para el
+    agente; almacenamiento externo para certificados).
 
 --------------------------------------------------------------------------------
 2. TECNOLOGÍAS DEFINIDAS EN EL PROYECTO
 --------------------------------------------------------------------------------
 
-  ── FRONTEND ──────────────────────────────────────────────
+    ── FRONTEND ──────────────────────────────────────────────────────────────
 
-  React.js (v18+)
-    Framework principal para la construcción de la interfaz de usuario.
-    Utiliza componentes funcionales y hooks. Separación clara en:
-    components/, pages/, hooks/, services/.
+    React.js (v19)
+        [ ] Framework principal. Componentes funcionales + hooks.
+        [ ] Estructura: components/, pages/, hooks/, services/, context/, utils/.
 
-  Vite
-    Herramienta de build y servidor de desarrollo. Reemplaza Create React App
-    por su mayor velocidad de compilación y hot module replacement (HMR).
+    Vite (v8)
+        [ ] Build tool y servidor de desarrollo. HMR rápido.
 
-  Chakra UI
-    Librería de componentes UI accesibles y personalizables.
-    Proporciona el sistema de diseño visual del proyecto.
+    Chakra UI (v3)
+        [ ] Librería de componentes accesibles. Sistema de diseño definido en
+            `theme.js` (colores: azul institucional, verde éxito, gris neutro).
 
-  React Router (v6)
-    Manejo de navegación del lado del cliente (SPA routing).
-    Gestión de rutas protegidas según rol de usuario.
+    React Router (v7)
+        [ ] Enrutamiento del lado del cliente. Rutas protegidas según rol.
 
-  Context API
-    Gestión del estado global de la aplicación (autenticación, usuario activo).
-    Alternativa liviana a Redux para este alcance de proyecto.
+    Recharts / Chart.js
+        [ ] Biblioteca de gráficos para el tablero de analítica.
+        [ ] Gráficos de líneas (evolución de notas), barras apiladas
+            (asistencias justificadas vs no justificadas).
 
-  ── BACKEND ───────────────────────────────────────────────
+    Context API + AuthContext
+        [ ] Estado global de autenticación y perfil.
 
-  Node.js (v18+ LTS)
-    Runtime de JavaScript del lado del servidor.
+    Axios
+        [ ] Cliente HTTP con interceptor para adjuntar JWT.
 
-  Express.js
-    Framework web minimalista para Node.js.
-    Gestiona rutas, middlewares, y la API RESTful.
-    Estructura modular por dominio: auth/, absences/, students/.
+    ── BACKEND ────────────────────────────────────────────────────────────────
 
-  Sequelize ORM
-    ORM para Node.js compatible con PostgreSQL.
-    Gestiona modelos, migraciones, y consultas a la base de datos.
-    Evita SQL manual y simplifica el manejo de relaciones.
+    Node.js (v20 LTS)
+        [ ] Runtime del servidor.
 
-  JSON Web Token (JWT)
-    Mecanismo de autenticación stateless.
-    Los tokens se generan al login y se validan en cada request protegido.
-    Gestión de roles embebida en el payload del token.
+    Express.js
+        [ ] Framework web. Rutas modulares por dominio:
+            auth, absences, grades, tasks, teachers, tutors, analytics, communication, certificates.
 
-  ── BASE DE DATOS ──────────────────────────────────────────
+    Sequelize ORM
+        [ ] Modelos, migraciones y relaciones.
+        [ ] Nuevos modelos: Certificado, MensajeInterno, Inasistencia (extendido).
 
-  PostgreSQL (v15+)
-    Base de datos relacional principal. Única fuente de verdad.
-    Compartida por el backend Node.js y el agente Python.
-    Esquema: empleados, docentes, estudiantes, cursos, inasistencias,
-             calificaciones, tareas, notificaciones_log, licencias_docentes.
+    JSON Web Token (JWT)
+        [ ] Autenticación stateless con roles embebidos (admin, docente, preceptor, tutor).
 
-  Railway / Render (cloud)
-    Plataformas recomendadas para el despliegue de PostgreSQL en producción.
-    Ambas ofrecen instancias gratuitas con acceso remoto vía connection string.
+    Multer / Cloudinary (o similar)
+        [ ] Subida de archivos (certificados) al almacenamiento externo.
+        [ ] En la base de datos se guarda la URL devuelta.
 
-  ── AGENTE AUTOMATIZADO ────────────────────────────────────
+    ── BASE DE DATOS ──────────────────────────────────────────────────────────
 
-  Python (v3.10+)
-    Lenguaje del agente de automatización.
-    Modular: tasks/db_reader.py, tasks/notifier.py, scheduler/, main.py.
+    PostgreSQL (v16)
+        [ ] Base de datos relacional principal.
+        [ ] Nuevas tablas:
+            - certificados (id, alumno_id, archivo_url, estado, comentario, timestamps)
+            - mensajes_internos (id, emisor_id, receptor_id, texto, leido, respondido)
+        [ ] Extensión de tabla inasistencias: justificada (boolean), certificado_id (FK)
 
-  Pandas
-    Librería de análisis de datos. Usada para leer y procesar los registros
-    de inasistencias y calificaciones desde PostgreSQL.
+    ── AGENTE AUTOMATIZADO (PYTHON + OPENSPEC) ─────────────────────────────────
 
-  Schedule / APScheduler (o CRON)
-    Gestión de tareas recurrentes. El agente se ejecuta periódicamente
-    para evaluar condiciones de alerta.
-    - Schedule: opción en Python puro, simple de configurar.
-    - CRON: alternativa nativa del sistema operativo para mayor confiabilidad.
+    Python (v3.12)
+        [ ] Lenguaje del agente.
 
-  WhatsApp API (provider TBD)
-    API de mensajería WhatsApp para notificaciones automáticas.
-    Provider por definir: Twilio (SDK twilio) o Meta WhatsApp Business API
-    (HTTP directo vía requests). Las credenciales varían según provider
-    y se almacenan en variables de entorno.
+    psycopg2-binary
+        [ ] Conector directo a PostgreSQL.
 
-  psycopg2 / SQLAlchemy
-    Conexión del agente Python a PostgreSQL.
-    psycopg2 como driver nativo; SQLAlchemy como ORM opcional.
+    python-dotenv
+        [ ] Manejo de variables de entorno.
 
-  ── INFRAESTRUCTURA Y DEVOPS ───────────────────────────────
+    schedule
+        [ ] Ejecución periódica (cada 1 hora en ventana hábil).
 
-  Vercel
-    Plataforma de despliegue para el frontend React.
-    Integración nativa con GitHub para CI/CD automático.
+    OpenSpec (wrapper manual)
+        [ ] El agente lee un spec YAML con tools declaradas y las mapea a funciones Python.
 
-  Railway o Render
-    Despliegue del backend Node.js y la instancia PostgreSQL.
-    Variables de entorno gestionadas desde el dashboard de la plataforma.
+    WhatsApp API (provider TBD: Twilio o Meta Business)
+        [ ] Envío de notificaciones. Credenciales en .env.
 
-  GitHub
-    Control de versiones. Repositorio central del proyecto.
-    Estrategia de ramas: main (producción), develop (integración), feature/* (desarrollo).
+    ── INFRAESTRUCTURA Y DEVOPS ────────────────────────────────────────────────
 
-  Variables de entorno (.env)
-    Gestión de secretos: credenciales de base de datos, JWT_SECRET, WhatsApp API keys.
-    Nunca se committean al repositorio. Se usa .env.example como plantilla.
+    Vercel
+        [ ] Despliegue frontend.
+
+    Railway / Render
+        [ ] Despliegue backend + PostgreSQL + worker Python.
+
+    Cloudinary
+        [ ] Almacenamiento de certificados (o bucket S3).
+
+    GitHub
+        [ ] Control de versiones. Branch strategy: main, develop, feature/*.
+
+    Variables de entorno (.env)
+        [ ] Secretos: DB, JWT, WhatsApp API, Cloudinary.
 
 --------------------------------------------------------------------------------
 3. TECNOLOGÍAS EN USO CON OPENSPEC / AGENTES IA
 --------------------------------------------------------------------------------
 
-  OpenSpec Framework
-    Framework para la definición, orquestación y ejecución de agentes de
-    inteligencia artificial. Se integra en la capa del agente Python para:
-      - Definir las capacidades (tools/actions) del agente de notificación.
-      - Especificar el flujo de decisión del agente de forma declarativa.
-      - Permitir la extensibilidad del agente sin modificar el core.
+    OpenSpec Framework (planificado)
+        [ ] El agente Python se comporta como un agente IA con tools definidas
+            en `openspec/specs/agent-notifier/spec.yaml`.
+        [ ] Tools: consultar_inasistencias, consultar_calificaciones_criticas,
+            consultar_tareas_pendientes, consultar_licencias, enviar_notificacion.
+        [ ] El scheduler invoca el spec y las tools ejecutan lógica real.
 
-    Integración prevista:
-      - El agente Python se convierte en un agente IA con herramientas definidas
-        via OpenSpec (ej: tool "enviar_notificacion_whatsapp", tool "consultar_inasistencias").
-      - Las reglas de negocio (RN-01 a RN-11) se modelan como condiciones
-        evaluables por el agente dentro del spec.
-      - El scheduler llama al agente OpenSpec en cada ciclo de ejecución.
-
-  Estado actual de integración OpenSpec:
-    [PLANIFICADO] - Definición del spec del agente notificador.
-    [PLANIFICADO] - Mapeo de herramientas (tools) a funciones Python existentes.
-    [PLANIFICADO] - Testing del agente contra base de datos de desarrollo.
+    Estado actual:
+        [~] Definición del spec en progreso.
+        [ ] Mapeo tools → funciones Python.
+        [ ] Tests del agente con mock de DB y notificador.
 
 --------------------------------------------------------------------------------
 4. STACK RESUMIDO
 --------------------------------------------------------------------------------
 
-  Capa             Tecnología principal          Estado
-  ──────────────── ───────────────────────────── ─────────────
-  Frontend         React + Vite + Chakra UI      Planificado
-  Backend          Node.js + Express + Sequelize Planificado
-  Base de datos    PostgreSQL                    Planificado
-  Agente/Bot       Python + Pandas + WhatsApp API Planificado
-  Agentes IA       OpenSpec Framework            Planificado
-  Auth             JWT                           Planificado
-  Deploy Frontend  Vercel                        Planificado
-  Deploy Backend   Railway / Render              Planificado
-  Control versión  GitHub                        Activo
+    Capa                     Tecnología principal                  Estado
+    ──────────────────────── ──────────────────────────────────── ───────────
+    Frontend                 React + Vite + Chakra UI              Planificado
+    Backend                  Node.js + Express + Sequelize         Planificado
+    Base de datos            PostgreSQL                            Planificado
+    Almacenamiento archivos  Cloudinary (externo)                  Planificado
+    Agente/Bot               Python + psycopg2 + schedule          Planificado
+    Agentes IA               OpenSpec (wrapper manual)             Planificado
+    Notificaciones WhatsApp  API (Twilio / Meta)                   Planificado
+    Auth                     JWT                                   Parcial
+    Deploy Frontend          Vercel                                Planificado
+    Deploy Backend           Railway / Render                      Planificado
+    Control versión          GitHub                                Activo
 
 ================================================================================
-FIN DEL DOCUMENTO - Descripcion.txt
+FIN DEL DOCUMENTO — Descripcion.txt
 ================================================================================

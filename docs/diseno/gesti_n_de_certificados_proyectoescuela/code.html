@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+
+<html lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Gestión de Certificados - ProyectoEscuela</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&amp;family=Plus+Jakarta+Sans:wght@400;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-surface-variant": "#594139",
+                    "on-primary-container": "#5f1900",
+                    "outline-variant": "#e1bfb5",
+                    "on-secondary-fixed": "#281900",
+                    "surface-tint": "#ab3500",
+                    "on-secondary-container": "#6e4c00",
+                    "error-container": "#ffdad6",
+                    "on-primary-fixed": "#390c00",
+                    "inverse-surface": "#3b2d25",
+                    "tertiary-container": "#ef7377",
+                    "surface-container-lowest": "#ffffff",
+                    "on-background": "#251911",
+                    "inverse-primary": "#ffb59d",
+                    "surface-container-highest": "#f6ded1",
+                    "on-surface": "#251911",
+                    "surface-container-high": "#fbe4d7",
+                    "surface": "#fff8f5",
+                    "primary-fixed": "#ffdbd0",
+                    "inverse-on-surface": "#ffede4",
+                    "outline": "#8d7168",
+                    "tertiary-fixed": "#ffdad9",
+                    "on-secondary-fixed-variant": "#5f4100",
+                    "error": "#ba1a1a",
+                    "surface-bright": "#fff8f5",
+                    "primary": "#ab3500",
+                    "tertiary": "#a43a40",
+                    "secondary-fixed-dim": "#ffba33",
+                    "tertiary-fixed-dim": "#ffb3b3",
+                    "surface-variant": "#f6ded1",
+                    "surface-container": "#ffeadf",
+                    "on-error": "#ffffff",
+                    "secondary-fixed": "#ffdeab",
+                    "background": "#fff8f5",
+                    "primary-container": "#ff6b35",
+                    "secondary": "#7e5700",
+                    "on-error-container": "#93000a",
+                    "on-secondary": "#ffffff",
+                    "on-primary": "#ffffff",
+                    "surface-container-low": "#fff1ea",
+                    "on-tertiary-container": "#660a18",
+                    "surface-dim": "#edd5c9",
+                    "on-primary-fixed-variant": "#832600",
+                    "on-tertiary-fixed-variant": "#84222b",
+                    "on-tertiary-fixed": "#410009",
+                    "primary-fixed-dim": "#ffb59d",
+                    "on-tertiary": "#ffffff",
+                    "secondary-container": "#ffba33",
+                    "success": "#10b981",
+                    "success-container": "#d1fae5",
+                    "on-success-container": "#065f46"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "unit": "8px",
+                    "gutter": "24px",
+                    "margin-mobile": "16px",
+                    "margin-desktop": "64px",
+                    "container-max": "1280px"
+            },
+            "fontFamily": {
+                    "headline-lg": [
+                            "Montserrat"
+                    ],
+                    "headline-xl-mobile": [
+                            "Montserrat"
+                    ],
+                    "body-lg": [
+                            "Plus Jakarta Sans"
+                    ],
+                    "headline-md": [
+                            "Montserrat"
+                    ],
+                    "headline-xl": [
+                            "Montserrat"
+                    ],
+                    "body-md": [
+                            "Plus Jakarta Sans"
+                    ],
+                    "label-md": [
+                            "Plus Jakarta Sans"
+                    ]
+            },
+            "fontSize": {
+                    "headline-lg": [
+                            "1.8rem",
+                            {
+                                    "lineHeight": "1.3",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "headline-xl-mobile": [
+                            "2rem",
+                            {
+                                    "lineHeight": "1.2",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "body-lg": [
+                            "1.125rem",
+                            {
+                                    "lineHeight": "1.6",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "headline-md": [
+                            "1.5rem",
+                            {
+                                    "lineHeight": "1.4",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "headline-xl": [
+                            "2.5rem",
+                            {
+                                    "lineHeight": "1.2",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "body-md": [
+                            "1rem",
+                            {
+                                    "lineHeight": "1.5",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "label-md": [
+                            "0.875rem",
+                            {
+                                    "lineHeight": "1.2",
+                                    "letterSpacing": "0.02em",
+                                    "fontWeight": "600"
+                            }
+                    ]
+            }
+    },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: theme('colors.background');
+            color: theme('colors.on-background');
+        }
+    </style>
+</head>
+<body class="flex bg-background min-h-screen font-body-md text-body-md">
+<!-- SideNavBar -->
+<nav class="hidden md:flex flex-col w-64 h-screen bg-surface-container-low rounded-r-xl shadow-[0_8px_20px_rgba(74,59,50,0.05)] fixed left-0 top-0 p-4 gap-2 z-40">
+<div class="flex items-center gap-3 mb-8 px-4">
+<img alt="School logo" class="w-10 h-10 rounded-full object-cover" data-alt="A clean, minimalist logo for a modern educational institution. Bright, warm lighting highlights the friendly, approachable design, set against a pristine white background. The aesthetic reflects a supportive community tool, using subtle sunset-inspired colors to evoke optimism." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCu6XfPxG4XDlX6RcRjL4vVFpiFJabWt4aQMpcyH0YqilweyN4MCILdph2i7vPAo9fX2pSlGa-FjLyqzYvFvehti78bm0MszfQ1Nr29TmIEm-nb3nfgVh4yZfjIG9VkqlQiHv2GfxX3qCxQZPWLf0LzVIuo1aW1_h-q_kK9r-39gK8LeAP4dRdsgPGh5QoZJ8P7hIdJQK91W0Cs-OrGhafRmwr3-gJn1v0sjJnCX4Q5jh1Q1ts1H7V4RfqjOMZ8IB3bb0jC4mW8ERs"/>
+<div>
+<h1 class="font-headline-md text-headline-md font-bold text-on-surface">ProyectoEscuela</h1>
+<p class="font-label-md text-label-md text-on-surface-variant">Admin Portal</p>
+</div>
+</div>
+<button class="mb-6 bg-gradient-to-r from-primary-container to-secondary-container text-on-primary font-label-md text-label-md py-3 px-4 rounded-full shadow-sm hover:shadow-md transition-all duration-200 w-full flex items-center justify-center gap-2">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">add</span>
+            New Report
+        </button>
+<div class="flex-1 flex flex-col gap-2">
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-3 hover:bg-surface-variant hover:text-on-surface rounded-full transition-all" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-label-md text-label-md">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 bg-secondary-container text-on-secondary-container rounded-full px-4 py-3 font-bold border-r-4 border-primary" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">school</span>
+<span class="font-label-md text-label-md">Students</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-3 hover:bg-surface-variant hover:text-on-surface rounded-full transition-all" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-md text-label-md">Teachers</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-3 hover:bg-surface-variant hover:text-on-surface rounded-full transition-all" href="#">
+<span class="material-symbols-outlined">event_available</span>
+<span class="font-label-md text-label-md">Attendance</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-3 hover:bg-surface-variant hover:text-on-surface rounded-full transition-all" href="#">
+<span class="material-symbols-outlined">grade</span>
+<span class="font-label-md text-label-md">Grades</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-3 hover:bg-surface-variant hover:text-on-surface rounded-full transition-all" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-md text-label-md">Settings</span>
+</a>
+</div>
+<div class="mt-auto flex flex-col gap-2">
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-3 hover:bg-surface-variant hover:text-on-surface rounded-full transition-all" href="#">
+<span class="material-symbols-outlined">help</span>
+<span class="font-label-md text-label-md">Help</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-3 hover:bg-surface-variant hover:text-on-surface rounded-full transition-all" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span class="font-label-md text-label-md">Logout</span>
+</a>
+</div>
+</nav>
+<!-- TopNavBar (Mobile) -->
+<header class="md:hidden flex justify-between items-center w-full px-margin-mobile h-16 sticky top-0 z-50 bg-surface border-b border-outline-variant shadow-sm">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-2xl">menu</span>
+<span class="font-headline-lg-mobile text-headline-lg-mobile font-extrabold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent tracking-tight">ProyectoEscuela</span>
+</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-on-surface-variant">notifications</span>
+<img alt="User avatar" class="w-8 h-8 rounded-full object-cover" data-alt="A close up portrait of a professional woman with a warm, welcoming smile. Soft natural lighting highlights her features. The setting is bright and modern, conveying a sense of approachability and trust within an educational context. The warm, sunset-inspired colors subtly complement the scene." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAq3rLmdJG7tf97doDlZ3aFOCiBeB4O4PY7grimY9aSIawjfosTOiin5PXmOlhmYfQ1leVRNWkP26EVaNqbsugKI8pVa8w2Wt4crjuT0fSHbWeRD3XuDTm8yZH8XxMBIVLja_E5DJLLD28C8QQSVVCuNCGmiSp-CPlQmeb_lL2FIh5Jn7i88uRlUaXwoFWTcAT1L-Q5DNrlrg6-HX2l5tIyL1VXv3j5nWZqNB2jI4W4sppYHA4_1H-sKmf-OmNvMRebNjrQeFl5Ztg"/>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-1 md:ml-64 p-margin-mobile md:p-gutter lg:p-margin-desktop w-full max-w-container-max mx-auto flex flex-col gap-8">
+<header class="mb-4">
+<h2 class="font-headline-xl text-headline-xl text-on-surface mb-2">Gestión de Certificados</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant">Sube y administra los certificados médicos y justificativos.</p>
+</header>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
+<!-- Upload Section -->
+<section class="lg:col-span-5 flex flex-col gap-6">
+<div class="bg-surface-container-lowest rounded-xl p-6 shadow-[0_8px_20px_rgba(74,59,50,0.05)] border border-surface-variant">
+<h3 class="font-headline-md text-headline-md text-on-surface mb-6">Nuevo Certificado</h3>
+<form class="flex flex-col gap-5">
+<!-- Child Selector -->
+<div class="flex flex-col gap-2">
+<label class="font-label-md text-label-md text-on-surface">Seleccionar Alumno</label>
+<div class="relative">
+<select class="appearance-none w-full bg-surface-container-low border border-outline rounded-full py-3 px-12 text-on-surface font-body-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all">
+<option>Sofía Martínez (3° A)</option>
+<option>Mateo Martínez (1° B)</option>
+</select>
+<img alt="Child avatar" class="absolute left-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full object-cover" data-alt="A portrait of a young student, smiling brightly. The image is bathed in soft, warm lighting, evoking a sense of care and community. The background is a blurred, bright classroom setting. This aligns with the modern, approachable, and warm aesthetic of the school administration interface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC6gBZSYjKgm-Iss46ezEvJB458ospeUkFc2W0lG1P0onemQcINavK7SNm68OtT133SYcsTgG7oLuR98fbkuPkUHq4-zU5dmYTMu2-d0CM5MQhqY7nbPkGK2iv5CqP7Et8efS7W1g7imN6gV0cQKDv2n0WrrvFwFwdxVC3sN_YpmyI78GbXGBWOnGpwqhZVrJ2d8uOZhi92BlhvpxE3wYmrflgcSSco6UinJSPz6diDNNwLOCbo-1majkd9D-AzEm6pLdto8Qfl9c0"/>
+<span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none">expand_more</span>
+</div>
+</div>
+<!-- Date Selector -->
+<div class="flex flex-col gap-2">
+<label class="font-label-md text-label-md text-on-surface">Fecha de Ausencia</label>
+<div class="relative">
+<input class="w-full bg-surface-container-low border border-outline rounded-full py-3 px-4 pl-12 text-on-surface font-body-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all" type="date" value="2023-10-24"/>
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none">calendar_today</span>
+</div>
+</div>
+<!-- Dropzone -->
+<div class="mt-2 border-2 border-dashed border-primary-container bg-surface-container-low rounded-xl p-8 flex flex-col items-center justify-center gap-3 cursor-pointer hover:bg-surface-variant transition-colors group">
+<div class="w-12 h-12 rounded-full bg-surface flex items-center justify-center group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-primary text-3xl">upload_file</span>
+</div>
+<div class="text-center">
+<p class="font-label-md text-label-md text-on-surface mb-1">Arrastra el archivo aquí o <span class="text-primary cursor-pointer hover:underline">explorar</span></p>
+<p class="text-sm text-on-surface-variant">Formatos soportados: PDF, JPG, PNG (Max. 5MB)</p>
+</div>
+</div>
+<!-- Submit Button -->
+<button class="mt-4 bg-success text-on-primary font-label-md text-label-md py-3 px-6 rounded-full shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center gap-2" type="button">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                            Subir Certificado
+                        </button>
+</form>
+</div>
+</section>
+<!-- History Section -->
+<section class="lg:col-span-7 flex flex-col gap-6">
+<div class="flex justify-between items-center mb-2">
+<h3 class="font-headline-md text-headline-md text-on-surface">Historial Reciente</h3>
+<button class="text-primary hover:text-on-primary-container font-label-md text-label-md transition-colors">Ver todos</button>
+</div>
+<div class="grid grid-cols-1 gap-4">
+<!-- Card: Pending -->
+<div class="bg-surface-container-lowest rounded-xl p-5 shadow-[0_8px_20px_rgba(74,59,50,0.05)] border border-surface-variant flex items-start gap-4 hover:shadow-md transition-shadow group cursor-pointer">
+<div class="w-10 h-10 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center shrink-0 mt-1">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">medical_information</span>
+</div>
+<div class="flex-1 flex flex-col gap-1">
+<div class="flex justify-between items-start">
+<h4 class="font-label-md text-label-md text-on-surface">Certificado Médico - Sofía M.</h4>
+<span class="px-2 py-1 bg-secondary-fixed-dim/20 text-secondary border border-secondary-fixed-dim/30 rounded text-xs font-semibold uppercase tracking-wider">Pendiente</span>
+</div>
+<p class="font-body-md text-sm text-on-surface-variant">24 Oct 2023 • Ausencia por enfermedad</p>
+<div class="flex items-center gap-2 mt-2">
+<span class="material-symbols-outlined text-[16px] text-outline">description</span>
+<span class="text-sm text-outline">certificado_octubre.pdf</span>
+</div>
+</div>
+</div>
+<!-- Card: Approved -->
+<div class="bg-surface-container-lowest rounded-xl p-5 shadow-[0_8px_20px_rgba(74,59,50,0.05)] border border-surface-variant flex items-start gap-4 hover:shadow-md transition-shadow group cursor-pointer">
+<div class="w-10 h-10 rounded-full bg-surface-container-high text-on-surface-variant flex items-center justify-center shrink-0 mt-1">
+<span class="material-symbols-outlined">assignment</span>
+</div>
+<div class="flex-1 flex flex-col gap-1">
+<div class="flex justify-between items-start">
+<h4 class="font-label-md text-label-md text-on-surface">Justificativo Familiar - Mateo M.</h4>
+<span class="px-2 py-1 bg-success-container text-on-success-container border border-success/30 rounded text-xs font-semibold uppercase tracking-wider">Aprobado</span>
+</div>
+<p class="font-body-md text-sm text-on-surface-variant">15 Sep 2023 • Trámite personal</p>
+<div class="flex items-center gap-2 mt-2">
+<span class="material-symbols-outlined text-[16px] text-outline">description</span>
+<span class="text-sm text-outline">nota_padres_sep.jpg</span>
+</div>
+</div>
+</div>
+<!-- Card: Rejected -->
+<div class="bg-surface-container-lowest rounded-xl p-5 shadow-[0_8px_20px_rgba(74,59,50,0.05)] border border-surface-variant flex items-start gap-4 hover:shadow-md transition-shadow group cursor-pointer opacity-80">
+<div class="w-10 h-10 rounded-full bg-surface-container-high text-on-surface-variant flex items-center justify-center shrink-0 mt-1">
+<span class="material-symbols-outlined">description</span>
+</div>
+<div class="flex-1 flex flex-col gap-1">
+<div class="flex justify-between items-start">
+<h4 class="font-label-md text-label-md text-on-surface">Certificado Deportivo - Sofía M.</h4>
+<span class="px-2 py-1 bg-error-container text-on-error-container border border-error/30 rounded text-xs font-semibold uppercase tracking-wider">Rechazado</span>
+</div>
+<p class="font-body-md text-sm text-on-surface-variant">02 Sep 2023 • Torneo intercolegial</p>
+<p class="text-sm text-error mt-1 flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">info</span>
+                                Faltan firmas de la institución deportiva.
+                            </p>
+</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+</body></html>

@@ -28,6 +28,10 @@ Inasistencia.init({
     type: DataTypes.BOOLEAN,
     defaultValue: false,
   },
+  certificado_id: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+  },
 }, {
   sequelize,
   modelName: 'Inasistencia',

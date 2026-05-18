@@ -4,6 +4,11 @@ import dotenv from 'dotenv';
 import sequelize from './config/database.js';
 import models from './models/index.js';
 import authRoutes from './modules/auth/auth.routes.js';
+import absenceRoutes from './modules/absences/absence.routes.js';
+import gradeRoutes from './modules/grades/grade.routes.js';
+import taskRoutes from './modules/tasks/task.routes.js';
+import teacherRoutes from './modules/teachers/teacher.routes.js';
+import tutorRoutes from './modules/tutors/tutor.routes.js';
 
 dotenv.config();
 
@@ -48,6 +53,11 @@ app.get('/message', (req, res) => {
 });
 
 app.use('/api/auth', authRoutes);
+app.use('/api/absences', absenceRoutes);
+app.use('/api/grades', gradeRoutes);
+app.use('/api/tasks', taskRoutes);
+app.use('/api/teachers', teacherRoutes);
+app.use('/api/tutors', tutorRoutes);
 
 app.get('/api/models', (req, res) => {
   const modelList = Object.keys(models).filter(k => k !== 'sequelize');

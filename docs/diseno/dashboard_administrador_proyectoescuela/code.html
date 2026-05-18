@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+
+<html lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Dashboard Administrador - ProyectoEscuela</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-surface-variant": "#594139",
+                        "on-primary-container": "#5f1900",
+                        "outline-variant": "#e1bfb5",
+                        "on-secondary-fixed": "#281900",
+                        "surface-tint": "#ab3500",
+                        "on-secondary-container": "#6e4c00",
+                        "error-container": "#ffdad6",
+                        "on-primary-fixed": "#390c00",
+                        "inverse-surface": "#3b2d25",
+                        "tertiary-container": "#ef7377",
+                        "surface-container-lowest": "#ffffff",
+                        "on-background": "#251911",
+                        "inverse-primary": "#ffb59d",
+                        "surface-container-highest": "#f6ded1",
+                        "on-surface": "#251911",
+                        "surface-container-high": "#fbe4d7",
+                        "surface": "#fff8f5",
+                        "primary-fixed": "#ffdbd0",
+                        "inverse-on-surface": "#ffede4",
+                        "outline": "#8d7168",
+                        "tertiary-fixed": "#ffdad9",
+                        "on-secondary-fixed-variant": "#5f4100",
+                        "error": "#ba1a1a",
+                        "surface-bright": "#fff8f5",
+                        "primary": "#ab3500",
+                        "tertiary": "#a43a40",
+                        "secondary-fixed-dim": "#ffba33",
+                        "tertiary-fixed-dim": "#ffb3b3",
+                        "surface-variant": "#f6ded1",
+                        "surface-container": "#ffeadf",
+                        "on-error": "#ffffff",
+                        "secondary-fixed": "#ffdeab",
+                        "background": "#fff8f5",
+                        "primary-container": "#ff6b35",
+                        "secondary": "#7e5700",
+                        "on-error-container": "#93000a",
+                        "on-secondary": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "surface-container-low": "#fff1ea",
+                        "on-tertiary-container": "#660a18",
+                        "surface-dim": "#edd5c9",
+                        "on-primary-fixed-variant": "#832600",
+                        "on-tertiary-fixed-variant": "#84222b",
+                        "on-tertiary-fixed": "#410009",
+                        "primary-fixed-dim": "#ffb59d",
+                        "on-tertiary": "#ffffff",
+                        "secondary-container": "#ffba33"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "unit": "8px",
+                        "gutter": "24px",
+                        "margin-mobile": "16px",
+                        "margin-desktop": "64px",
+                        "container-max": "1280px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Montserrat"],
+                        "headline-xl-mobile": ["Montserrat"],
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "headline-md": ["Montserrat"],
+                        "headline-xl": ["Montserrat"],
+                        "body-md": ["Plus Jakarta Sans"],
+                        "label-md": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["1.8rem", { "lineHeight": "1.3", "fontWeight": "700" }],
+                        "headline-xl-mobile": ["2rem", { "lineHeight": "1.2", "fontWeight": "700" }],
+                        "body-lg": ["1.125rem", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "headline-md": ["1.5rem", { "lineHeight": "1.4", "fontWeight": "600" }],
+                        "headline-xl": ["2.5rem", { "lineHeight": "1.2", "fontWeight": "700" }],
+                        "body-md": ["1rem", { "lineHeight": "1.5", "fontWeight": "400" }],
+                        "label-md": ["0.875rem", { "lineHeight": "1.2", "letterSpacing": "0.02em", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { background-color: #fff8f5; }
+        .ambient-shadow { box-shadow: 0 8px 20px rgba(74, 59, 50, 0.05); }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md text-body-md flex min-h-screen">
+<!-- SideNavBar -->
+<nav class="hidden md:flex fixed left-0 top-0 h-screen flex flex-col p-4 gap-2 z-40 bg-surface-container-low dark:bg-surface-container-lowest shadow-[0_8px_20px_rgba(74,59,50,0.05)] h-screen w-64 rounded-r-xl">
+<div class="mb-8 px-4 mt-4">
+<h1 class="font-headline-md text-headline-md font-bold text-on-surface">ProyectoEscuela</h1>
+<p class="font-label-md text-label-md text-on-surface-variant">Admin Portal</p>
+</div>
+<div class="flex flex-col gap-2 flex-grow">
+<!-- Active Tab -->
+<a class="flex items-center gap-3 bg-secondary-container text-on-secondary-container rounded-full px-4 py-3 font-bold border-r-4 border-primary translate-x-1 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+<span class="font-label-md text-label-md">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-3 hover:bg-surface-variant rounded-full transition-all hover:text-on-surface" href="#">
+<span class="material-symbols-outlined">school</span>
+<span class="font-label-md text-label-md">Students</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-3 hover:bg-surface-variant rounded-full transition-all hover:text-on-surface" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-md text-label-md">Teachers</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-3 hover:bg-surface-variant rounded-full transition-all hover:text-on-surface" href="#">
+<span class="material-symbols-outlined">event_available</span>
+<span class="font-label-md text-label-md">Attendance</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-3 hover:bg-surface-variant rounded-full transition-all hover:text-on-surface" href="#">
+<span class="material-symbols-outlined">grade</span>
+<span class="font-label-md text-label-md">Grades</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-3 hover:bg-surface-variant rounded-full transition-all hover:text-on-surface" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-md text-label-md">Settings</span>
+</a>
+</div>
+<button class="mt-4 mb-6 bg-gradient-to-r from-primary-container to-secondary-container text-on-primary py-3 px-4 rounded-full font-label-md text-label-md flex items-center justify-center gap-2 hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined">add</span>
+            New Report
+        </button>
+<div class="mt-auto border-t border-outline-variant pt-4 flex flex-col gap-2">
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-3 hover:bg-surface-variant rounded-full transition-all hover:text-on-surface" href="#">
+<span class="material-symbols-outlined">help</span>
+<span class="font-label-md text-label-md">Help</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-3 hover:bg-surface-variant rounded-full transition-all hover:text-on-surface" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span class="font-label-md text-label-md">Logout</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Area -->
+<div class="flex-1 md:ml-64 flex flex-col min-h-screen overflow-x-hidden">
+<!-- TopNavBar -->
+<header class="flex justify-between items-center w-full px-margin-desktop h-16 sticky top-0 z-50 bg-surface dark:bg-inverse-surface border-b border-outline-variant shadow-sm">
+<div class="flex items-center gap-4">
+<!-- Mobile Menu Trigger -->
+<button class="md:hidden text-on-surface-variant hover:text-primary transition-colors duration-200">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<div class="md:hidden font-headline-lg text-headline-lg bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent font-bold">ProyectoEscuela</div>
+<!-- Search (Left aligned as per JSON) -->
+<div class="hidden md:flex items-center bg-surface-container-low rounded-full px-4 py-2 border border-outline-variant focus-within:border-primary focus-within:ring-1 focus-within:ring-primary transition-all">
+<span class="material-symbols-outlined text-on-surface-variant mr-2">search</span>
+<input class="bg-transparent border-none outline-none text-body-md font-body-md w-64 text-on-surface placeholder:text-on-surface-variant" placeholder="Buscar alumnos, profesores..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<button class="text-on-surface-variant hover:text-primary transition-colors duration-200 scale-95 active:scale-90 relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-0 right-0 w-2 h-2 bg-primary rounded-full"></span>
+</button>
+<div class="w-10 h-10 rounded-full bg-surface-variant overflow-hidden border border-outline-variant">
+<img alt="User avatar" class="w-full h-full object-cover" data-alt="A close up portrait of a professional school administrator smiling warmly. High quality corporate headshot lighting. Modern educational aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBU5B8m4Ll2qE4HCc1tp6D7zdTwVHAragX7_Ii-mYi8be7sKpMEpNGiZ5zWAagQqnMRXauYUFQys8sp0TDmmZwzOqEeC5ysSRbbZaWb9cLdnjHMnLGgMwf7y8rS2fvDTgWxTTP6iWUsUAOkUHh_2rB_X9F4gQKd-zXX5Bb6QssX1gk3NY-qhllA9B82p1HRO5oWeF6lUfSBuguMgyV6DlbjCteDQR1wXAtwvDuKRRnuDD0OQbh6cVDH-2CXXC59R9wxHP-AY0RDtY0"/>
+</div>
+</div>
+</header>
+<!-- Dashboard Canvas -->
+<main class="flex-1 p-margin-mobile md:p-gutter max-w-container-max mx-auto w-full">
+<!-- Page Header -->
+<div class="mb-gutter flex justify-between items-end">
+<div>
+<h2 class="font-headline-xl-mobile md:font-headline-xl text-headline-xl-mobile md:text-headline-xl text-on-surface">Resumen General</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant mt-2">Bienvenido al panel de administración. Aquí está el estado actual.</p>
+</div>
+</div>
+<!-- Summary Cards (Bento Grid Style) -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter mb-gutter">
+<!-- Card 1: Total Alumnos (Emerald/Teal inspired by requested 'Emerald green gradient' but adapted to palette if needed, though palette is warm. Let's use a fresh tertiary tone or keep it vibrant within bounds, or just use CSS gradient as requested) -->
+<div class="bg-surface-container-lowest rounded-xl p-6 ambient-shadow hover:shadow-[0_12px_24px_rgba(74,59,50,0.08)] transition-all flex flex-col justify-between border border-outline-variant/30 overflow-hidden relative group">
+<div class="absolute -right-6 -top-6 w-24 h-24 bg-gradient-to-br from-green-400 to-emerald-600 rounded-full opacity-10 group-hover:scale-150 transition-transform duration-500"></div>
+<div class="flex justify-between items-start mb-4 relative z-10">
+<p class="font-label-md text-label-md text-on-surface-variant">Total Alumnos</p>
+<div class="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center text-green-600">
+<span class="material-symbols-outlined">group</span>
+</div>
+</div>
+<div class="relative z-10">
+<h3 class="font-headline-lg text-headline-lg text-on-surface">1,248</h3>
+<p class="text-sm text-green-600 mt-1 flex items-center gap-1 font-medium"><span class="material-symbols-outlined text-[16px]">arrow_upward</span> +5.2% este mes</p>
+</div>
+</div>
+<!-- Card 2: Asistencia -->
+<div class="bg-surface-container-lowest rounded-xl p-6 ambient-shadow hover:shadow-[0_12px_24px_rgba(74,59,50,0.08)] transition-all flex flex-col justify-between border border-outline-variant/30 overflow-hidden relative group">
+<div class="absolute -right-6 -top-6 w-24 h-24 bg-gradient-to-br from-primary-container to-primary rounded-full opacity-10 group-hover:scale-150 transition-transform duration-500"></div>
+<div class="flex justify-between items-start mb-4 relative z-10">
+<p class="font-label-md text-label-md text-on-surface-variant">Asistencia General</p>
+<div class="w-10 h-10 rounded-full bg-primary-container/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">check_circle</span>
+</div>
+</div>
+<div class="relative z-10">
+<h3 class="font-headline-lg text-headline-lg text-on-surface">94%</h3>
+<p class="text-sm text-on-surface-variant mt-1 font-medium">Promedio diario</p>
+</div>
+</div>
+<!-- Card 3: Promedio -->
+<div class="bg-surface-container-lowest rounded-xl p-6 ambient-shadow hover:shadow-[0_12px_24px_rgba(74,59,50,0.08)] transition-all flex flex-col justify-between border border-outline-variant/30 overflow-hidden relative group">
+<div class="absolute -right-6 -top-6 w-24 h-24 bg-gradient-to-br from-secondary-container to-secondary rounded-full opacity-10 group-hover:scale-150 transition-transform duration-500"></div>
+<div class="flex justify-between items-start mb-4 relative z-10">
+<p class="font-label-md text-label-md text-on-surface-variant">Promedio General</p>
+<div class="w-10 h-10 rounded-full bg-secondary-container/20 flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined">star</span>
+</div>
+</div>
+<div class="relative z-10">
+<h3 class="font-headline-lg text-headline-lg text-on-surface">8.4</h3>
+<p class="text-sm text-secondary mt-1 flex items-center gap-1 font-medium"><span class="material-symbols-outlined text-[16px]">arrow_upward</span> +0.2 pts</p>
+</div>
+</div>
+<!-- Card 4: Alertas -->
+<div class="bg-surface-container-lowest rounded-xl p-6 ambient-shadow hover:shadow-[0_12px_24px_rgba(74,59,50,0.08)] transition-all flex flex-col justify-between border border-outline-variant/30 overflow-hidden relative group">
+<div class="absolute -right-6 -top-6 w-24 h-24 bg-gradient-to-br from-tertiary-container to-tertiary rounded-full opacity-10 group-hover:scale-150 transition-transform duration-500"></div>
+<div class="flex justify-between items-start mb-4 relative z-10">
+<p class="font-label-md text-label-md text-on-surface-variant">Alertas Activas</p>
+<div class="w-10 h-10 rounded-full bg-tertiary-container/20 flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined">warning</span>
+</div>
+</div>
+<div class="relative z-10">
+<h3 class="font-headline-lg text-headline-lg text-tertiary">12</h3>
+<p class="text-sm text-on-surface-variant mt-1 font-medium">Requieren atención</p>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

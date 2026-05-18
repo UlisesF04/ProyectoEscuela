@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+
+<html lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Login - ProyectoEscuela</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-surface-variant": "#594139",
+                        "on-primary-container": "#5f1900",
+                        "outline-variant": "#e1bfb5",
+                        "on-secondary-fixed": "#281900",
+                        "surface-tint": "#ab3500",
+                        "on-secondary-container": "#6e4c00",
+                        "error-container": "#ffdad6",
+                        "on-primary-fixed": "#390c00",
+                        "inverse-surface": "#3b2d25",
+                        "tertiary-container": "#ef7377",
+                        "surface-container-lowest": "#ffffff",
+                        "on-background": "#251911",
+                        "inverse-primary": "#ffb59d",
+                        "surface-container-highest": "#f6ded1",
+                        "on-surface": "#251911",
+                        "surface-container-high": "#fbe4d7",
+                        "surface": "#fff8f5",
+                        "primary-fixed": "#ffdbd0",
+                        "inverse-on-surface": "#ffede4",
+                        "outline": "#8d7168",
+                        "tertiary-fixed": "#ffdad9",
+                        "on-secondary-fixed-variant": "#5f4100",
+                        "error": "#ba1a1a",
+                        "surface-bright": "#fff8f5",
+                        "primary": "#ab3500",
+                        "tertiary": "#a43a40",
+                        "secondary-fixed-dim": "#ffba33",
+                        "tertiary-fixed-dim": "#ffb3b3",
+                        "surface-variant": "#f6ded1",
+                        "surface-container": "#ffeadf",
+                        "on-error": "#ffffff",
+                        "secondary-fixed": "#ffdeab",
+                        "background": "#fff8f5",
+                        "primary-container": "#ff6b35",
+                        "secondary": "#7e5700",
+                        "on-error-container": "#93000a",
+                        "on-secondary": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "surface-container-low": "#fff1ea",
+                        "on-tertiary-container": "#660a18",
+                        "surface-dim": "#edd5c9",
+                        "on-primary-fixed-variant": "#832600",
+                        "on-tertiary-fixed-variant": "#84222b",
+                        "on-tertiary-fixed": "#410009",
+                        "primary-fixed-dim": "#ffb59d",
+                        "on-tertiary": "#ffffff",
+                        "secondary-container": "#ffba33"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px",
+                        "card": "2rem",
+                        "input": "1rem"
+                    },
+                    "spacing": {
+                        "unit": "8px",
+                        "gutter": "24px",
+                        "margin-mobile": "16px",
+                        "margin-desktop": "64px",
+                        "container-max": "1280px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Montserrat"],
+                        "headline-xl-mobile": ["Montserrat"],
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "headline-md": ["Montserrat"],
+                        "headline-xl": ["Montserrat"],
+                        "body-md": ["Plus Jakarta Sans"],
+                        "label-md": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["1.8rem", { "lineHeight": "1.3", "fontWeight": "700" }],
+                        "headline-xl-mobile": ["2rem", { "lineHeight": "1.2", "fontWeight": "700" }],
+                        "body-lg": ["1.125rem", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "headline-md": ["1.5rem", { "lineHeight": "1.4", "fontWeight": "600" }],
+                        "headline-xl": ["2.5rem", { "lineHeight": "1.2", "fontWeight": "700" }],
+                        "body-md": ["1rem", { "lineHeight": "1.5", "fontWeight": "400" }],
+                        "label-md": ["0.875rem", { "lineHeight": "1.2", "letterSpacing": "0.02em", "fontWeight": "600" }]
+                    },
+                    "boxShadow": {
+                        "warm-ambient": "0 8px 20px rgba(74, 59, 50, 0.05)"
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .gradient-text {
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .gradient-btn {
+            background: linear-gradient(135deg, #FF6B35, #F7B32B);
+            transition: all 0.2s ease-in-out;
+        }
+        .gradient-btn:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+        }
+    </style>
+</head>
+<body class="bg-background min-h-screen flex items-center justify-center p-4 antialiased">
+<!-- Main Container / Bento Grid Style for Visual Interest on Desktop, Stacks on Mobile -->
+<div class="w-full max-w-5xl mx-auto flex flex-col md:flex-row gap-6 md:gap-8 items-stretch">
+<!-- Left Side: Visual / Branding Area (Hidden on very small screens) -->
+<div class="hidden md:flex flex-1 rounded-[2rem] bg-surface-container-low overflow-hidden relative shadow-warm-ambient flex-col justify-between p-8 border border-outline-variant/30">
+<div class="absolute inset-0 z-0">
+<img alt="Students learning" class="w-full h-full object-cover opacity-80 mix-blend-multiply filter contrast-125 saturate-150" data-alt="A brightly lit, modern classroom or study area bathed in warm morning sunlight. Students are engaged in collaborative learning around sleek wooden tables. The overall color palette features vibrant oranges, soft yellows, and warm off-whites to match a welcoming, tactile UI design aesthetic. The mood is optimistic, energetic, and educational, devoid of harsh corporate blues." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDWfgkNrU1MFE32-yVsIB6C7hv0jVuYyEbXphzzgjd-bF4TuGQD7Uq0ILFkYEkOiJNMeRIVT7n-SAV0JrTFf0PiQu_ceGO5aHJ9BgQ4geJtvchCp9UrVF-nZZkzIqGJg-FJ_CGgP4jy-Qpo2Sd3Unw27SuqDDUNv_MalVWvLByskc9WaCa6LD8TbbQBpIvKSF2RMXOXxAKCLovyITVz45uNRnQTYH6J9WcL4xsIqaa7I_Z18tKI1aZG4zVspcvs26RFiwxNtwlwHrE"/>
+<div class="absolute inset-0 bg-gradient-to-t from-background/90 via-background/40 to-transparent"></div>
+</div>
+<div class="relative z-10 mt-auto pb-8">
+<h2 class="font-headline-xl text-headline-xl text-on-surface mb-4">Transformando la <br/>gestión escolar.</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-md">Una experiencia intuitiva y cálida para educadores, estudiantes y familias.</p>
+</div>
+</div>
+<!-- Right Side: Login Card -->
+<div class="flex-1 w-full max-w-md mx-auto bg-surface-container-lowest rounded-card shadow-warm-ambient p-8 md:p-10 border border-outline-variant/20 flex flex-col justify-center">
+<!-- Logo Header -->
+<div class="text-center mb-8">
+<h1 class="font-headline-xl text-headline-xl bg-gradient-to-r from-primary-container to-secondary-container gradient-text pb-1">
+                    ProyectoEscuela
+                </h1>
+<p class="font-body-md text-body-md text-on-surface-variant mt-2">Bienvenido de vuelta</p>
+</div>
+<!-- Login Form -->
+<form class="space-y-6">
+<!-- Email Input -->
+<div class="space-y-2">
+<label class="font-label-md text-label-md text-on-surface ml-1 block" for="email">Correo Electrónico</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline">mail</span>
+<input class="w-full pl-12 pr-4 py-3 bg-[#FFF8F0] border border-outline-variant/50 rounded-input font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary-container/50 focus:border-primary-container transition-all placeholder:text-outline/70" id="email" name="email" placeholder="usuario@escuela.edu" type="email"/>
+</div>
+</div>
+<!-- Password Input -->
+<div class="space-y-2">
+<label class="font-label-md text-label-md text-on-surface ml-1 block" for="password">Contraseña</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline">lock</span>
+<input class="w-full pl-12 pr-12 py-3 bg-[#FFF8F0] border border-outline-variant/50 rounded-input font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary-container/50 focus:border-primary-container transition-all placeholder:text-outline/70" id="password" name="password" placeholder="••••••••" type="password"/>
+<button class="absolute right-4 top-1/2 -translate-y-1/2 text-outline hover:text-primary transition-colors" type="button">
+<span class="material-symbols-outlined text-[20px]">visibility_off</span>
+</button>
+</div>
+</div>
+<!-- Forgot Password Link -->
+<div class="flex justify-end">
+<a class="font-label-md text-label-md text-tertiary hover:text-primary transition-colors" href="#">¿Olvidé mi contraseña?</a>
+</div>
+<!-- Submit Button -->
+<button class="w-full gradient-btn rounded-full py-4 px-6 flex justify-center items-center gap-2 mt-4" type="button">
+<span class="font-label-md text-label-md text-on-primary">Iniciar Sesión</span>
+<span class="material-symbols-outlined text-on-primary text-[20px]">arrow_forward</span>
+</button>
+</form>
+<!-- Optional: Alternative Login -->
+<div class="mt-8 pt-6 border-t border-outline-variant/30 text-center">
+<p class="font-body-md text-body-md text-on-surface-variant text-sm mb-4">¿Necesitas ayuda para acceder?</p>
+<a class="font-label-md text-label-md text-primary-container border border-primary-container rounded-full px-6 py-2 inline-block hover:bg-primary-container hover:text-on-primary transition-colors" href="#">Contactar Soporte</a>
+</div>
+</div>
+</div>
+</body></html>

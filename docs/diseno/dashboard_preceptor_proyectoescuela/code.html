@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+
+<html lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>DASHBOARD DE PRECEPTOR - ProyectoEscuela</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&amp;family=Plus+Jakarta+Sans:wght@400;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-surface-variant": "#594139",
+                        "on-primary-container": "#5f1900",
+                        "outline-variant": "#e1bfb5",
+                        "on-secondary-fixed": "#281900",
+                        "surface-tint": "#ab3500",
+                        "on-secondary-container": "#6e4c00",
+                        "error-container": "#ffdad6",
+                        "on-primary-fixed": "#390c00",
+                        "inverse-surface": "#3b2d25",
+                        "tertiary-container": "#ef7377",
+                        "surface-container-lowest": "#ffffff",
+                        "on-background": "#251911",
+                        "inverse-primary": "#ffb59d",
+                        "surface-container-highest": "#f6ded1",
+                        "on-surface": "#251911",
+                        "surface-container-high": "#fbe4d7",
+                        "surface": "#fff8f5",
+                        "primary-fixed": "#ffdbd0",
+                        "inverse-on-surface": "#ffede4",
+                        "outline": "#8d7168",
+                        "tertiary-fixed": "#ffdad9",
+                        "on-secondary-fixed-variant": "#5f4100",
+                        "error": "#ba1a1a",
+                        "surface-bright": "#fff8f5",
+                        "primary": "#ab3500",
+                        "tertiary": "#a43a40",
+                        "secondary-fixed-dim": "#ffba33",
+                        "tertiary-fixed-dim": "#ffb3b3",
+                        "surface-variant": "#f6ded1",
+                        "surface-container": "#ffeadf",
+                        "on-error": "#ffffff",
+                        "secondary-fixed": "#ffdeab",
+                        "background": "#fff8f5",
+                        "primary-container": "#ff6b35",
+                        "secondary": "#7e5700",
+                        "on-error-container": "#93000a",
+                        "on-secondary": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "surface-container-low": "#fff1ea",
+                        "on-tertiary-container": "#660a18",
+                        "surface-dim": "#edd5c9",
+                        "on-primary-fixed-variant": "#832600",
+                        "on-tertiary-fixed-variant": "#84222b",
+                        "on-tertiary-fixed": "#410009",
+                        "primary-fixed-dim": "#ffb59d",
+                        "on-tertiary": "#ffffff",
+                        "secondary-container": "#ffba33"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    spacing: {
+                        "unit": "8px",
+                        "gutter": "24px",
+                        "margin-mobile": "16px",
+                        "margin-desktop": "64px",
+                        "container-max": "1280px"
+                    },
+                    fontFamily: {
+                        "headline-lg": ["Montserrat"],
+                        "headline-xl-mobile": ["Montserrat"],
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "headline-md": ["Montserrat"],
+                        "headline-xl": ["Montserrat"],
+                        "body-md": ["Plus Jakarta Sans"],
+                        "label-md": ["Plus Jakarta Sans"]
+                    },
+                    fontSize: {
+                        "headline-lg": ["1.8rem", { lineHeight: "1.3", fontWeight: "700" }],
+                        "headline-xl-mobile": ["2rem", { lineHeight: "1.2", fontWeight: "700" }],
+                        "body-lg": ["1.125rem", { lineHeight: "1.6", fontWeight: "400" }],
+                        "headline-md": ["1.5rem", { lineHeight: "1.4", fontWeight: "600" }],
+                        "headline-xl": ["2.5rem", { lineHeight: "1.2", fontWeight: "700" }],
+                        "body-md": ["1rem", { lineHeight: "1.5", fontWeight: "400" }],
+                        "label-md": ["0.875rem", { lineHeight: "1.2", letterSpacing: "0.02em", fontWeight: "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md text-body-md min-h-screen flex">
+<!-- SideNavBar -->
+<nav class="hidden md:flex bg-surface-container-low h-screen w-64 rounded-r-xl shadow-[0_8px_20px_rgba(74,59,50,0.05)] fixed left-0 top-0 flex-col p-4 gap-2 z-40">
+<div class="flex items-center gap-4 mb-8 px-4 mt-4">
+<div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-headline-md text-headline-md">
+                PE
+            </div>
+<div>
+<h1 class="font-headline-md text-headline-md font-bold text-on-surface">ProyectoEscuela</h1>
+<p class="font-label-md text-label-md text-on-surface-variant">Admin Portal</p>
+</div>
+</div>
+<button class="bg-gradient-to-br from-primary-container to-secondary-container hover:from-primary hover:to-secondary-fixed text-on-primary font-label-md text-label-md rounded-full py-3 px-6 mb-6 shadow-sm flex items-center justify-center gap-2 transition-all duration-200">
+<span class="material-symbols-outlined" data-weight="fill" style="font-variation-settings: 'FILL' 1;">add</span>
+            New Report
+        </button>
+<div class="flex flex-col gap-1 flex-1">
+<a class="flex items-center gap-3 bg-secondary-container text-on-secondary-container rounded-full px-4 py-3 font-bold border-r-4 border-primary translate-x-1 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-label-md text-label-md">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-3 hover:bg-surface-variant hover:text-on-surface rounded-full transition-all" href="#">
+<span class="material-symbols-outlined">school</span>
+<span class="font-label-md text-label-md">Students</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-3 hover:bg-surface-variant hover:text-on-surface rounded-full transition-all" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-md text-label-md">Teachers</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-3 hover:bg-surface-variant hover:text-on-surface rounded-full transition-all" href="#">
+<span class="material-symbols-outlined">event_available</span>
+<span class="font-label-md text-label-md">Attendance</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-3 hover:bg-surface-variant hover:text-on-surface rounded-full transition-all" href="#">
+<span class="material-symbols-outlined">grade</span>
+<span class="font-label-md text-label-md">Grades</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-3 hover:bg-surface-variant hover:text-on-surface rounded-full transition-all" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-md text-label-md">Settings</span>
+</a>
+</div>
+<div class="mt-auto flex flex-col gap-1 border-t border-outline-variant pt-4">
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-3 hover:bg-surface-variant hover:text-on-surface rounded-full transition-all" href="#">
+<span class="material-symbols-outlined">help</span>
+<span class="font-label-md text-label-md">Help</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-3 hover:bg-surface-variant hover:text-on-surface rounded-full transition-all" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span class="font-label-md text-label-md">Logout</span>
+</a>
+</div>
+</nav>
+<!-- TopNavBar (Mobile Only for this layout structure to match constraints, though typically preceptor would be desktop focused. Keeping for responsiveness if needed, but instructions say use SideNav for main app. We will use a TopAppBar for mobile context if required, but the instruction asks to use SideNav as main. Let's assume standard responsive.) -->
+<div class="flex-1 md:ml-64 flex flex-col min-h-screen">
+<header class="md:hidden flex justify-between items-center w-full px-margin-mobile h-16 sticky top-0 z-50 bg-surface border-b border-outline-variant shadow-sm">
+<h1 class="font-headline-md text-headline-md font-bold text-primary">ProyectoEscuela</h1>
+<div class="flex items-center gap-4">
+<button class="text-on-surface-variant hover:text-primary transition-colors duration-200">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+</div>
+</header>
+<main class="p-margin-mobile md:p-margin-desktop max-w-container-max mx-auto w-full flex-1 flex flex-col gap-gutter">
+<header class="flex justify-between items-end pb-4 border-b border-outline-variant">
+<div>
+<h2 class="font-headline-xl text-headline-xl text-on-surface mb-2">Mi División</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant">3° Año - División B - Turno Mañana</p>
+</div>
+</header>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
+<!-- Main Content: Student List -->
+<div class="lg:col-span-2 flex flex-col gap-gutter">
+<!-- Search & Filter -->
+<div class="flex gap-4">
+<div class="relative flex-1">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+<input class="w-full pl-12 pr-4 py-3 bg-surface-container-low border border-outline-variant rounded-full font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" placeholder="Buscar alumno..." type="text"/>
+</div>
+<button class="px-6 py-3 border border-outline-variant text-on-surface font-label-md text-label-md rounded-full hover:bg-surface-variant transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined">filter_list</span>
+                            Filtros
+                        </button>
+</div>
+<!-- Table Card -->
+<div class="bg-surface-container-lowest rounded-[1rem] shadow-[0_8px_20px_rgba(74,59,50,0.05)] overflow-hidden">
+<div class="p-6 border-b border-outline-variant flex justify-between items-center bg-surface-bright">
+<h3 class="font-headline-md text-headline-md text-on-surface">Asistencia General</h3>
+<button class="text-primary font-label-md text-label-md hover:underline">Ver Historial Completo</button>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low text-on-surface-variant font-label-md text-label-md border-b border-outline-variant">
+<th class="p-4 font-semibold">Alumno</th>
+<th class="p-4 font-semibold">Inasistencias</th>
+<th class="p-4 font-semibold">% Justificadas</th>
+<th class="p-4 font-semibold">Estado</th>
+<th class="p-4 font-semibold text-right">Acciones</th>
+</tr>
+</thead>
+<tbody class="font-body-md text-body-md">
+<tr class="border-b border-outline-variant hover:bg-surface-container-low transition-colors">
+<td class="p-4 flex items-center gap-3">
+<img alt="Avatar" class="w-10 h-10 rounded-full object-cover border border-outline-variant" data-alt="A brightly lit, modern portrait of a cheerful young female student with dark hair, looking directly at the camera with a warm smile. The background is a soft, blurred off-white warm tone, reflecting the optimistic and welcoming aesthetic of the educational platform. Lighting is high-key and flattering." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCkwP08YyTln4L_5lcBm-IWpHz1lHpAkxCtKeMgxA6rf7Y8DWrA5fV2cJe4M5UmnVG0KKpUUcEdR3l9IpPTM4dLZeMSV-AIMXqbQxxFYF2ZqG6izw9recJcjwdyhIJldMZ5l-sjiE_GO8VUYi7p6SdiWLIMKqfyfzye2yzpnMs7Dm2ugjJ_ctVKKzbxXM3bpFHQ_c-iK_5sjOBK_QAyYBxN7vCvoRlLp6gNGQz9IXlQ7foL21DHZeL8uPAq1-AzE6TTm1a2N3r-6Ss"/>
+<div>
+<p class="font-semibold text-on-surface">Martina Rossi</p>
+<p class="text-sm text-on-surface-variant">DNI: 45.678.901</p>
+</div>
+</td>
+<td class="p-4 font-bold text-on-surface">1.5</td>
+<td class="p-4 text-secondary">100%</td>
+<td class="p-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-surface-container text-on-surface">Regular</span>
+</td>
+<td class="p-4 text-right">
+<button class="text-on-surface-variant hover:text-primary transition-colors"><span class="material-symbols-outlined">more_vert</span></button>
+</td>
+</tr>
+<tr class="border-b border-outline-variant bg-error-container/30 hover:bg-error-container/50 transition-colors">
+<td class="p-4 flex items-center gap-3">
+<img alt="Avatar" class="w-10 h-10 rounded-full object-cover border border-outline-variant" data-alt="A crisp, vibrant portrait of a young male student with short hair, captured in soft, natural daylight. He has a neutral, focused expression. The background is a subtle, warm beige, aligning with the modern, tactile UI style of the educational dashboard." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCDlhcsePc0BSUmIv7cWBrfgIIQa02AA6zIwfInC3qoQkQQa9Mb3v6G3--CIrP3Q-Gn2D1v5D4L0II4CD57vCNMeurPuI4lzFkp11tsUdiIC1oJ56MZvcfFicBpOyu62CyQc8xQiRc4gsKrrUDNsyp_4naE6tv2fhWy6NYnF2KmJ482shntr2-wlQX5SHDGbUcJgRJLAvBQdd3H6XQH5SeMiT2dzJ07yz6_DBWpqXthPmL-YF-oftmOqFtjzSXz5eUdRBedk_RLc3k"/>
+<div>
+<p class="font-semibold text-on-surface">Lucas Fernández</p>
+<p class="text-sm text-on-surface-variant">DNI: 45.123.456</p>
+</div>
+</td>
+<td class="p-4 font-bold text-error">4.5</td>
+<td class="p-4 text-on-surface-variant">33%</td>
+<td class="p-4">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-tertiary-container/20 text-tertiary">
+<span class="material-symbols-outlined text-[14px]">warning</span>
+                                                Alerta
+                                            </span>
+</td>
+<td class="p-4 text-right">
+<button class="text-on-surface-variant hover:text-primary transition-colors"><span class="material-symbols-outlined">more_vert</span></button>
+</td>
+</tr>
+<tr class="border-b border-outline-variant hover:bg-surface-container-low transition-colors">
+<td class="p-4 flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-secondary-fixed flex items-center justify-center text-on-secondary-fixed font-bold text-lg">
+                                                S
+                                            </div>
+<div>
+<p class="font-semibold text-on-surface">Sofía González</p>
+<p class="text-sm text-on-surface-variant">DNI: 46.789.012</p>
+</div>
+</td>
+<td class="p-4 font-bold text-on-surface">0.0</td>
+<td class="p-4 text-on-surface-variant">-</td>
+<td class="p-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-surface-container text-on-surface">Regular</span>
+</td>
+<td class="p-4 text-right">
+<button class="text-on-surface-variant hover:text-primary transition-colors"><span class="material-symbols-outlined">more_vert</span></button>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="p-4 flex items-center gap-3">
+<img alt="Avatar" class="w-10 h-10 rounded-full object-cover border border-outline-variant" data-alt="A bright, modern headshot of a smiling young male student with glasses. The lighting is soft and even, highlighting a friendly demeanor. The background is a solid, warm off-white, perfectly matching the optimistic and reliable visual language of the school administration interface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCrj4pt2zLwFQ1tZUDVuBmASjC8P7uE1rpIf48MONqAtKZgqbX6ASnUiz3wX5_eE_O0qFplPtvQbLkMmhb3_MI4ReEEh7wQeG8ebCw5CUjjv09PMT9w2BeDilS92pGDIev8BYUjKE6xczjywf_KwcUhfjroQ6-xptbdQWvU7EptZbByf8AvNzrJkzrmBKAWCgHCa6zOwptlVQeCY-vObEhlqaFor4Aee75k2LgXskHKbWVq23sYDxgF74wBYd257zVAXLYtEacfI6g"/>
+<div>
+<p class="font-semibold text-on-surface">Mateo Silva</p>
+<p class="text-sm text-on-surface-variant">DNI: 44.555.666</p>
+</div>
+</td>
+<td class="p-4 font-bold text-on-surface">2.0</td>
+<td class="p-4 text-secondary">50%</td>
+<td class="p-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-surface-container text-on-surface">Regular</span>
+</td>
+<td class="p-4 text-right">
+<button class="text-on-surface-variant hover:text-primary transition-colors"><span class="material-symbols-outlined">more_vert</span></button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<!-- Right Sidebar Context -->
+<div class="flex flex-col gap-gutter">
+<!-- Pending Certificates -->
+<div class="bg-surface-container-lowest rounded-[1rem] shadow-[0_8px_20px_rgba(74,59,50,0.05)] p-6 flex flex-col gap-4 border border-outline-variant/30">
+<div class="flex justify-between items-center">
+<h3 class="font-headline-md text-headline-md text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary">assignment</span>
+                                Certificados
+                            </h3>
+<span class="bg-secondary-container text-on-secondary-container text-xs font-bold px-2 py-1 rounded-full">3 Pendientes</span>
+</div>
+<div class="flex flex-col gap-3">
+<div class="flex justify-between items-center bg-surface-container-low p-3 rounded-lg border border-outline-variant">
+<div>
+<p class="font-semibold text-on-surface font-label-md text-label-md">Lucas Fernández</p>
+<p class="text-xs text-on-surface-variant">Cert. Médico - 12/05</p>
+</div>
+<button class="px-3 py-1 bg-secondary-fixed-dim text-on-secondary-fixed font-label-md text-xs rounded-full hover:bg-secondary-fixed transition-colors">Revisar</button>
+</div>
+<div class="flex justify-between items-center bg-surface-container-low p-3 rounded-lg border border-outline-variant">
+<div>
+<p class="font-semibold text-on-surface font-label-md text-label-md">Ana Gómez</p>
+<p class="text-xs text-on-surface-variant">Justif. Familiar - 10/05</p>
+</div>
+<button class="px-3 py-1 bg-secondary-fixed-dim text-on-secondary-fixed font-label-md text-xs rounded-full hover:bg-secondary-fixed transition-colors">Revisar</button>
+</div>
+</div>
+<button class="mt-2 text-primary font-label-md text-label-md hover:underline w-full text-center">Ver todos los certificados</button>
+</div>
+<!-- Quick Stats -->
+<div class="grid grid-cols-2 gap-4">
+<div class="bg-surface-container-highest p-4 rounded-xl flex flex-col items-center justify-center text-center gap-1 shadow-sm">
+<span class="font-headline-xl text-headline-xl text-primary font-bold">94%</span>
+<span class="font-label-md text-label-md text-on-surface-variant">Asistencia Hoy</span>
+</div>
+<div class="bg-surface-container-highest p-4 rounded-xl flex flex-col items-center justify-center text-center gap-1 shadow-sm">
+<span class="font-headline-xl text-headline-xl text-tertiary font-bold">2</span>
+<span class="font-label-md text-label-md text-on-surface-variant">Ausentes Hoy</span>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+<!-- Floating Action Button -->
+<button class="fixed bottom-8 right-8 w-16 h-16 bg-gradient-to-br from-primary-container to-secondary-container rounded-full shadow-[0_8px_20px_rgba(74,59,50,0.15)] flex items-center justify-center text-on-primary hover:scale-105 active:scale-95 transition-all duration-200 z-50 group">
+<span class="material-symbols-outlined text-[32px] group-hover:rotate-90 transition-transform duration-300">add</span>
+<!-- Tooltip -->
+<span class="absolute right-20 bg-inverse-surface text-inverse-on-surface text-sm px-3 py-1.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none font-label-md">
+            Registrar Inasistencias del Día
+        </span>
+</button>
+</body></html>

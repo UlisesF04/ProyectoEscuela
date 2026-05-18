@@ -10,11 +10,13 @@
 ## Estado General del Proyecto
 
 ```
-FASE 0 — Fundaciones            [✅⬜⬜⬜⬜⬜⬜⬜⬜⬜]  10%
-FASE 1 — Backend API            [⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜]   0%
-FASE 2 — Frontend Completo      [⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜]   0%
-FASE 3 — Agente + WhatsApp      [⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜]   0%
-FASE 4 — Cierre                 [⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜]   0%
+FASE 0 — Fundaciones            [✅✅✅✅✅✅✅✅✅✅] 100% (3/3)
+FASE 1 — Backend API Core       [✅✅✅✅✅✅✅✅✅✅] 100% (5/5 completos ✅)
+FASE 1B — Backend Nuevos Mód.   [⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜]   0% (3 pendientes: 019,021,023)
+FASE 2 — Frontend Core          [⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜]   0% (5 pendientes: 009,010,011,012,013)
+FASE 2B — Frontend Nuevos Mód.  [⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜]   0% (3 pendientes: 020,022,024)
+FASE 3 — Agente + WhatsApp      [⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜]   0% (3 pendientes: 014,015,016)
+FASE 4 — Cierre                 [⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜]   0% (2 pendientes: 017,018)
 ```
 
 ### Lo que ya existe (scaffolding inicial)
@@ -22,13 +24,22 @@ FASE 4 — Cierre                 [⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜]   0%
 | Componente | Estado | Detalle |
 |---|---|---|
 | Backend `package.json` | ✅ Listo | express, sequelize, pg, bcryptjs, jsonwebtoken, cors, dotenv instalados |
-| Backend `app.js` | ⚠️ Parcial | Express server + DB connect + health endpoint + error middleware. **Sin rutas de módulos** |
+| Backend `app.js` | ⚠️ Parcial | Express server + DB connect + health endpoint + error middleware + ruta `/api/auth`. **Sin rutas de otros módulos** |
 | Backend `config/database.js` | ✅ Listo | Conexión PostgreSQL vía Sequelize |
 | Backend `.env.example` | ✅ Listo | Variables DB + JWT + Puerto |
-| Frontend `package.json` | ✅ Listo | React 19 + Vite 8 + Chakra UI v3 + React Router v7 |
+| Backend `modules/auth/` | ✅ Listo | auth.model, auth.controller, auth.routes, auth.middleware — JWT + bcrypt + roles |
+| Backend `modules/absences/` | ✅ Listo | CRUD completo + RN-03 (ventana 2 días hábiles) + RN-02 (riesgo) + justificación |
+| Backend `modules/grades/` | ✅ Listo | CRUD completo + RN-04 (nota crítica) + RN-05 (promedio bajo) |
+| Backend `modules/tasks/` | ✅ Listo | CRUD tareas + entregas + RN-06 (2 tareas consecutivas) |
+| Backend `modules/teachers/` | ✅ Listo | Licencias docente + RN-07 (≤3 alerta) + panel inasistencias alumnos |
+| Frontend `package.json` | ✅ Listo | React 19 + Vite 8 + Chakra UI v3 + React Router v7 + Axios |
 | Frontend `main.jsx` | ✅ Listo | ChakraProvider con `createSystem` |
-| Frontend `App.jsx` | ⚠️ Parcial | Renderiza Login. **Sin routing** |
-| Frontend `Login.jsx` | ⚠️ Parcial | Formulario estático. **Sin integración API** |
+| Frontend `App.jsx` | ✅ Listo | Router con login + dashboard protegido |
+| Frontend `Login.jsx` | ✅ Listo | Integrado con `/api/auth/login` |
+| Frontend `Dashboard.jsx` | ✅ Listo | Página base post-login |
+| Frontend `AuthContext.jsx` | ✅ Listo | Manejo de sesión con JWT en localStorage |
+| Frontend `ProtectedRoute.jsx` | ✅ Listo | Guard de rutas según auth |
+| Frontend `services/api.js` | ✅ Listo | Axios con interceptor JWT |
 | Agent `main.py` | ⬜ Skeleton | Solo punto de entrada (2 líneas) |
 | Agent `tasks/db_reader.py` | ⬜ Skeleton | Pendiente de implementar con PostgreSQL |
 | Agent `tasks/notifier.py` | ⬜ Skeleton | Pendiente de implementar (provider WhatsApp TBD) |
@@ -57,6 +68,7 @@ FASE 4 — Cierre                 [⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜]   0%
 | HU-004 | Registro de inasistencias diarias | Alta | CHANGE-004, CHANGE-009 |
 | HU-005 | Visualización historial de inasistencias | Alta | CHANGE-004, CHANGE-009 |
 | HU-006 | Edición de inasistencias | Media | CHANGE-004, CHANGE-009 |
+| HU-019 | Justificación de inasistencias (RN-13) | Alta | CHANGE-004, CHANGE-023, CHANGE-009 |
 
 ### MÓDULO 3: Gestión de Calificaciones y Tareas
 
@@ -89,6 +101,27 @@ FASE 4 — Cierre                 [⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜]   0%
 | ID | Historia | Prioridad | Change |
 |---|---|---|---|
 | HU-018 | Consulta web del estado académico (padre) | Alta | CHANGE-008, CHANGE-013 |
+
+### MÓDULO 7: Analítica y Tablero de Evolución
+
+| ID | Historia | Prioridad | Change |
+|---|---|---|---|
+| HU-020 | Tablero analítica de asistencias (RN-12, RN-16) | Alta | CHANGE-019, CHANGE-020 |
+| HU-021 | Tablero analítica de calificaciones (RN-12, RN-16) | Alta | CHANGE-019, CHANGE-020 |
+
+### MÓDULO 8: Comunicación Interna
+
+| ID | Historia | Prioridad | Change |
+|---|---|---|---|
+| HU-022 | Envío de mensajes a personal (RN-14) | Alta | CHANGE-021, CHANGE-022 |
+| HU-023 | Bandeja de mensajes para personal (RN-14) | Alta | CHANGE-021, CHANGE-022 |
+
+### MÓDULO 9: Certificados Digitales
+
+| ID | Historia | Prioridad | Change |
+|---|---|---|---|
+| HU-024 | Carga de certificado de justificación (RN-15) | Alta | CHANGE-023, CHANGE-024 |
+| HU-025 | Validación de certificados por personal (RN-15, RN-13) | Alta | CHANGE-023, CHANGE-024 |
 
 ---
 
@@ -218,10 +251,12 @@ MODIFICAR:
 
 **Descripción:**
 Módulo CRUD de inasistencias con validación RN-03 (máximo 2 días hábiles de atraso),
-endpoint de historial por alumno con porcentaje calculado, y detección de alumnos
-en riesgo de regularidad (>20% inasistencias, RN-02).
+endpoint de historial por alumno con porcentaje calculado, detección de alumnos
+en riesgo de regularidad (>20% inasistencias, RN-02), y endpoint para marcar
+inasistencia como justificada (asociada a certificado, RN-13). El modelo Inasistencia
+incluye campo `justificada` (boolean) y `certificado_id` (FK opcional).
 
-**HU asociadas:** HU-004, HU-005, HU-006
+**HU asociadas:** HU-004, HU-005, HU-006, HU-019
 
 **Archivos:**
 ```
@@ -235,7 +270,7 @@ MODIFICAR:
 
 **Depende de:** CHANGE-002 (middleware auth), CHANGE-001 (tabla `inasistencias`)
 
-**Estado:** PROPUESTO
+**Estado:** COMPLETADO — 2026-05-18
 
 ---
 
@@ -260,7 +295,7 @@ MODIFICAR:
 
 **Depende de:** CHANGE-002, CHANGE-001
 
-**Estado:** PROPUESTO
+**Estado:** COMPLETADO — 2026-05-18
 
 ---
 
@@ -286,32 +321,34 @@ MODIFICAR:
 
 **Depende de:** CHANGE-002, CHANGE-001
 
-**Estado:** PROPUESTO
+**Estado:** COMPLETADO — 2026-05-18
 
 ---
 
-### CHANGE-007: backend-teachers-licenses
+### CHANGE-008: backend-tutors-portal
 
 **Descripción:**
-Módulo de gestión docente: endpoint de consulta de licencias (días disponibles vs
-usados), lógica de alerta cuando quedan <=3 días (RN-07), y panel de inasistencias
-acumuladas de los alumnos a cargo del docente (HU-011).
+Endpoints para el portal de padres/tutores: consulta de datos de hijos registrados
+(solo los propios — RN-09), resumen consolidado con inasistencias, calificaciones
+por materia y tareas pendientes.
 
-**HU asociadas:** HU-010, HU-011
+**HU asociadas:** HU-018
 
 **Archivos:**
 ```
 CREAR:
-  backend/modules/teachers/teacher.model.js
-  backend/modules/teachers/teacher.controller.js
-  backend/modules/teachers/teacher.routes.js
+  backend/modules/tutors/tutor.model.js
+  backend/modules/tutors/tutor.controller.js
+  backend/modules/tutors/tutor.routes.js
 MODIFICAR:
-  backend/app.js — montar rutas /api/teachers
+  backend/app.js — montar rutas /api/tutors
 ```
 
 **Depende de:** CHANGE-002, CHANGE-001, CHANGE-004 (datos de inasistencias)
 
-**Estado:** PROPUESTO
+**Estado:** COMPLETADO — 2026-05-18
+
+**Estado:** COMPLETADO — 2026-05-18
 
 ---
 
@@ -336,6 +373,89 @@ MODIFICAR:
 
 **Depende de:** CHANGE-002, CHANGE-001, CHANGE-004, CHANGE-005, CHANGE-006
 
+**Estado:** COMPLETADO — 2026-05-18
+
+---
+
+### FASE 1B — BACKEND NUEVOS MÓDULOS
+
+---
+
+### CHANGE-019: backend-analytics
+
+**Descripción:**
+Tablero de analítica con endpoint `/api/analytics/student/:id` que retorna evolución
+de inasistencias (desglose mensual justificadas/no justificadas, alertas RN-01 y RN-02)
+y evolución de calificaciones (por materia, por trimestre, promedio general, alertas
+RN-04 y RN-05). Acceso segmentado por rol según RN-16.
+
+**HU asociadas:** HU-020, HU-021
+
+**Archivos:**
+```
+CREAR:
+  backend/modules/analytics/analytics.controller.js
+  backend/modules/analytics/analytics.routes.js
+MODIFICAR:
+  backend/app.js — montar rutas /api/analytics
+```
+
+**Depende de:** CHANGE-002 (auth), CHANGE-004 (absences), CHANGE-005 (grades)
+
+**Estado:** PROPUESTO
+
+---
+
+### CHANGE-021: backend-communication
+
+**Descripción:**
+Módulo de comunicación interna. Endpoints para crear mensajes, listar conversaciones
+por usuario, marcar como leído. Tabla `mensajes` con: id, emisor_id, receptor_id,
+receptor_tipo (docente/preceptor/secretaria), asunto, cuerpo, leido, created_at.
+Valida RN-14 (destinatarios permitidos, no conversaciones entre familias).
+
+**HU asociadas:** HU-022, HU-023
+
+**Archivos:**
+```
+CREAR:
+  backend/modules/communication/message.model.js
+  backend/modules/communication/message.controller.js
+  backend/modules/communication/message.routes.js
+MODIFICAR:
+  backend/app.js — montar rutas /api/communication
+```
+
+**Depende de:** CHANGE-002 (auth)
+
+**Estado:** PROPUESTO
+
+---
+
+### CHANGE-023: backend-certificates
+
+**Descripción:**
+Módulo de certificados digitales. Endpoint de upload (multer + Cloudinary, máx 5MB),
+listado de certificados pendientes por alumno, aceptar/rechazar con comentario.
+Tabla `certificados`. Al aceptar, marca automáticamente la inasistencia asociada
+como justificada (RN-13). Extiende modelo `Inasistencia` con campo `justificada` y
+FK `certificado_id`.
+
+**HU asociadas:** HU-024, HU-025, HU-019
+
+**Archivos:**
+```
+CREAR:
+  backend/modules/certificates/certificate.model.js
+  backend/modules/certificates/certificate.controller.js
+  backend/modules/certificates/certificate.routes.js
+MODIFICAR:
+  backend/app.js — montar rutas /api/certificates
+  backend/models/Inasistencia.js — agregar justificada, certificado_id
+```
+
+**Depende de:** CHANGE-002 (auth), CHANGE-004 (tabla inasistencias)
+
 **Estado:** PROPUESTO
 
 ---
@@ -349,9 +469,10 @@ MODIFICAR:
 **Descripción:**
 Páginas de gestión de inasistencias: registro diario con selector de curso y tabla
 de alumnos (checkboxes), historial por alumno con porcentaje y alerta visual de
-riesgo, edición con registro de auditoría.
+riesgo, edición con registro de auditoría, y panel de justificación con toggle
+justificada/no justificada y referencia a certificado.
 
-**HU asociadas:** HU-004, HU-005, HU-006
+**HU asociadas:** HU-004, HU-005, HU-006, HU-019
 
 **Archivos:**
 ```
@@ -469,6 +590,98 @@ MODIFICAR:
 ```
 
 **Depende de:** CHANGE-003, CHANGE-008
+
+**Estado:** PROPUESTO
+
+---
+
+### FASE 2B — FRONTEND NUEVOS MÓDULOS
+
+---
+
+### CHANGE-020: frontend-analytics
+
+**Descripción:**
+Tablero de analítica con gráficos (Recharts): evolución de inasistencias (barras
+apiladas justificadas/no justificadas, alertas RN-01 y RN-02), evolución de notas
+(líneas por materia, filtros por materia y trimestre, alertas RN-04 y RN-05).
+Acceso por rol (RN-16): padre ve solo sus hijos, docente sus alumnos, etc.
+Respeta DESIGN.md (vibrant_scholastic) y las skills de frontend (taste, impeccable,
+EmilKowalski animations con Framer Motion).
+
+**HU asociadas:** HU-020, HU-021
+
+**Archivos:**
+```
+CREAR:
+  frontend/src/pages/AnalyticsDashboard.jsx
+  frontend/src/components/Analytics/AbsenceChart.jsx
+  frontend/src/components/Analytics/GradeChart.jsx
+  frontend/src/components/Analytics/AlertBanner.jsx
+  frontend/src/components/Analytics/FilterBar.jsx
+MODIFICAR:
+  frontend/src/App.jsx — agregar ruta /analytics
+```
+
+**Depende de:** CHANGE-003 (auth), CHANGE-019 (backend analytics)
+
+**Estado:** PROPUESTO
+
+---
+
+### CHANGE-022: frontend-communication
+
+**Descripción:**
+Bandeja de entrada para personal con contador de no leídos, formulario de nuevo
+mensaje para padres con selector de destinatario (docente/preceptor/secretaria),
+hilo de conversación con timestamps. Animaciones EmilKowalski style con Framer
+Motion (entrada/salida de mensajes, transiciones de estado leído/no leído).
+Respeta DESIGN.md (vibrant_scholastic).
+
+**HU asociadas:** HU-022, HU-023
+
+**Archivos:**
+```
+CREAR:
+  frontend/src/pages/Inbox.jsx
+  frontend/src/pages/NewMessage.jsx
+  frontend/src/components/ConversationThread.jsx
+  frontend/src/components/MessageBubble.jsx
+  frontend/src/components/RecipientSelector.jsx
+MODIFICAR:
+  frontend/src/App.jsx — agregar rutas /inbox, /messages/new
+```
+
+**Depende de:** CHANGE-003 (auth), CHANGE-021 (backend communication)
+
+**Estado:** PROPUESTO
+
+---
+
+### CHANGE-024: frontend-certificates
+
+**Descripción:**
+Portal de certificados: formulario de carga con preview del archivo (padre/tutor),
+lista de certificados enviados con pill de estado (pendiente/aceptado/rechazado),
+panel de revisión para preceptor/admin con previsualización inline. Al aceptar,
+la inasistencia se marca como justificada (RN-13). Respeta DESIGN.md y skills
+de frontend.
+
+**HU asociadas:** HU-024, HU-025
+
+**Archivos:**
+```
+CREAR:
+  frontend/src/pages/CertificateUpload.jsx
+  frontend/src/pages/CertificateReview.jsx
+  frontend/src/components/CertificateCard.jsx
+  frontend/src/components/CertificatePreview.jsx
+  frontend/src/components/StatusBadge.jsx
+MODIFICAR:
+  frontend/src/App.jsx — agregar rutas /certificates, /certificates/review
+```
+
+**Depende de:** CHANGE-003 (auth), CHANGE-023 (backend certificates)
 
 **Estado:** PROPUESTO
 
@@ -635,12 +848,24 @@ CHANGE-001 (database-schema)
   │     │     ├── CHANGE-010 (frontend-grades-pages)
   │     │     ├── CHANGE-011 (frontend-tasks-pages)
   │     │     ├── CHANGE-012 (frontend-teacher-dashboard)
-  │     │     └── CHANGE-013 (frontend-parent-portal)
+  │     │     ├── CHANGE-013 (frontend-parent-portal)
+  │     │     ├── CHANGE-020 (frontend-analytics)
+  │     │     ├── CHANGE-022 (frontend-communication)
+  │     │     └── CHANGE-024 (frontend-certificates)
+  │     │
   │     ├── CHANGE-004 (backend-absences) ───┘
+  │     │     └── CHANGE-023 (backend-certificates) ───┘
+  │     │           └── CHANGE-024 (frontend-certificates)
   │     ├── CHANGE-005 (backend-grades) ──────┘
+  │     │     └── CHANGE-019 (backend-analytics)
+  │     │           └── CHANGE-020 (frontend-analytics)
   │     ├── CHANGE-006 (backend-tasks) ───────┘
-  │     └── CHANGE-007 (backend-teachers) ────┘
-  │           └── CHANGE-008 (backend-tutors) ─┘
+  │     ├── CHANGE-007 (backend-teachers) ────┘
+  │     │     └── CHANGE-008 (backend-tutors) ─┘
+  │     ├── CHANGE-021 (backend-communication)
+  │     │     └── CHANGE-022 (frontend-communication)
+  │     ├── CHANGE-019 (backend-analytics) ───┘
+  │     └── CHANGE-023 (backend-certificates) ─┘
   │
   ├── CHANGE-014 (agent-db-reader)
   │     └── CHANGE-015 (agent-notifier) ⚠️ provider TBD
@@ -668,6 +893,11 @@ CHANGE-001 (database-schema)
 | RN-09 | Datos confidenciales por tutor | CHANGE-008, CHANGE-013 |
 | RN-10 | Agente solo lun-vie 07-20hs | CHANGE-016 |
 | RN-11 | Una notificación por evento/día | CHANGE-015, CHANGE-016 |
+| RN-12 | Analítica: evolución asistencias/calificaciones | CHANGE-019, CHANGE-020 |
+| RN-13 | Inasistencias justificadas con certificado | CHANGE-004, CHANGE-023, CHANGE-009, CHANGE-024 |
+| RN-14 | Comunicación interna con registro | CHANGE-021, CHANGE-022 |
+| RN-15 | Certificados digitales con upload y validación | CHANGE-023, CHANGE-024 |
+| RN-16 | Analítica: acceso segmentado por rol | CHANGE-019, CHANGE-020 |
 
 ---
 
@@ -705,5 +935,10 @@ en todos los módulos frontend.
 
 ---
 
-*Última actualización: 2026-05-15*
-*Estado: MAPA COMPLETO - Pendiente de implementación*
+*Última actualización: 2026-05-18*
+*Estado: FASE 1 COMPLETA ✅ — CHANGE-004,005,006,007,008 completados y probados (57/57 tests)*
+
+> **Nota:** CHANGE-019 a CHANGE-024 añadidos para cubrir Módulo 7 (Analítica, HU-020/021),
+> Módulo 8 (Comunicación Interna, HU-022/023) y Módulo 9 (Certificados Digitales,
+> HU-024/025). HU-019 (Justificación) integrada en CHANGE-004 + CHANGE-023.
+> Total: 24 changes planificados.
