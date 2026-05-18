@@ -9,6 +9,9 @@ import gradeRoutes from './modules/grades/grade.routes.js';
 import taskRoutes from './modules/tasks/task.routes.js';
 import teacherRoutes from './modules/teachers/teacher.routes.js';
 import tutorRoutes from './modules/tutors/tutor.routes.js';
+import analyticsRoutes from './modules/analytics/analytics.routes.js';
+import communicationRoutes from './modules/communication/message.routes.js';
+import certificateRoutes from './modules/certificates/certificate.routes.js';
 
 dotenv.config();
 
@@ -58,6 +61,20 @@ app.use('/api/grades', gradeRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/teachers', teacherRoutes);
 app.use('/api/tutors', tutorRoutes);
+app.use('/api/analytics', analyticsRoutes);
+app.use('/api/communication', communicationRoutes);
+app.use('/api/certificates', certificateRoutes);
+
+// Multer error handler
+app.use((err, req, res, next) => {
+  if (err.code === 'LIMIT_FILE_SIZE') {
+    return res.status(400).json({ message: 'El archivo supera el tamaño máximo de 5MB' });
+  }
+  if (err.message && err.message.startsWith('Formato no permitido')) {
+    return res.status(400).json({ message: err.message });
+  }
+  next(err);
+});
 
 app.get('/api/models', (req, res) => {
   const modelList = Object.keys(models).filter(k => k !== 'sequelize');

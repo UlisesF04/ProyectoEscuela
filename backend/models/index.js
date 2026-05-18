@@ -12,6 +12,8 @@ import Calificacion from './Calificacion.js';
 import Tarea from './Tarea.js';
 import EntregaTarea from './EntregaTarea.js';
 import NotificacionLog from './NotificacionLog.js';
+import Mensaje from './Mensaje.js';
+import Certificado from '../modules/certificates/certificate.model.js';
 
 const models = {
   Usuario,
@@ -27,6 +29,8 @@ const models = {
   Tarea,
   EntregaTarea,
   NotificacionLog,
+  Mensaje,
+  Certificado,
 };
 
 Object.values(models).forEach(model => {

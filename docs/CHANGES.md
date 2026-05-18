@@ -12,7 +12,7 @@
 ```
 FASE 0 — Fundaciones            [✅✅✅✅✅✅✅✅✅✅] 100% (3/3)
 FASE 1 — Backend API Core       [✅✅✅✅✅✅✅✅✅✅] 100% (5/5 completos ✅)
-FASE 1B — Backend Nuevos Mód.   [⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜]   0% (3 pendientes: 019,021,023)
+FASE 1B — Backend Nuevos Mód.   [✅✅✅✅✅✅✅✅✅✅]  100% (3/3: 019 ✅, 021 ✅, 023 ✅)
 FASE 2 — Frontend Core          [⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜]   0% (5 pendientes: 009,010,011,012,013)
 FASE 2B — Frontend Nuevos Mód.  [⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜]   0% (3 pendientes: 020,022,024)
 FASE 3 — Agente + WhatsApp      [⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜]   0% (3 pendientes: 014,015,016)
@@ -32,6 +32,9 @@ FASE 4 — Cierre                 [⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜]   0% (2 pendi
 | Backend `modules/grades/` | ✅ Listo | CRUD completo + RN-04 (nota crítica) + RN-05 (promedio bajo) |
 | Backend `modules/tasks/` | ✅ Listo | CRUD tareas + entregas + RN-06 (2 tareas consecutivas) |
 | Backend `modules/teachers/` | ✅ Listo | Licencias docente + RN-07 (≤3 alerta) + panel inasistencias alumnos |
+| Backend `modules/analytics/` | ✅ Listo | Dashboard analítico: evolución ausencias mensual + evolución calificaciones por materia + alertas RN-01/02/04/05 + acceso segmentado RN-16 |
+| Backend `modules/communication/` | ✅ Listo | Mensajería interna: enviar, listar conversaciones, leer hilo, marcar leído. RN-14 (bloqueo tutor↔tutor) |
+| Backend `modules/certificates/` | ✅ Listo | Certificados digitales: upload (docente/tutor), aprobar/rechazar (admin), listar pendientes. RN-09 tutor solo hijos. RN-13 justifica ausencia al aprobar |
 | Frontend `package.json` | ✅ Listo | React 19 + Vite 8 + Chakra UI v3 + React Router v7 + Axios |
 | Frontend `main.jsx` | ✅ Listo | ChakraProvider con `createSystem` |
 | Frontend `App.jsx` | ✅ Listo | Router con login + dashboard protegido |
@@ -402,7 +405,7 @@ MODIFICAR:
 
 **Depende de:** CHANGE-002 (auth), CHANGE-004 (absences), CHANGE-005 (grades)
 
-**Estado:** PROPUESTO
+**Estado:** COMPLETADO — 2026-05-18
 
 ---
 
@@ -428,7 +431,7 @@ MODIFICAR:
 
 **Depende de:** CHANGE-002 (auth)
 
-**Estado:** PROPUESTO
+**Estado:** COMPLETADO — 2026-05-18
 
 ---
 
@@ -456,7 +459,7 @@ MODIFICAR:
 
 **Depende de:** CHANGE-002 (auth), CHANGE-004 (tabla inasistencias)
 
-**Estado:** PROPUESTO
+**Estado:** COMPLETADO — 2026-05-18
 
 ---
 
