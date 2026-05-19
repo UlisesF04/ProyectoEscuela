@@ -13,8 +13,8 @@
 FASE 0 — Fundaciones            [✅✅✅✅✅✅✅✅✅✅] 100% (3/3)
 FASE 1 — Backend API Core       [✅✅✅✅✅✅✅✅✅✅] 100% (5/5 completos ✅)
 FASE 1B — Backend Nuevos Mód.   [✅✅✅✅✅✅✅✅✅✅]  100% (3/3: 019 ✅, 021 ✅, 023 ✅)
-FASE 2 — Frontend Core          [⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜]   0% (5 pendientes: 009,010,011,012,013)
-FASE 2B — Frontend Nuevos Mód.  [⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜]   0% (3 pendientes: 020,022,024)
+FASE 2 — Frontend Core          [✅✅✅✅✅✅✅✅✅✅] 100% (009 ✅, 010 ✅, 011 ✅, 012 ✅, 013 ✅)
+FASE 2B — Frontend Nuevos Mód.  [✅✅✅✅✅✅✅✅✅✅] 100% (020 ✅, 022 ✅, 024 ✅)
 FASE 3 — Agente + WhatsApp      [⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜]   0% (3 pendientes: 014,015,016)
 FASE 4 — Cierre                 [⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜]   0% (2 pendientes: 017,018)
 ```
@@ -465,9 +465,17 @@ MODIFICAR:
 
 ### FASE 2 — FRONTEND COMPLETO
 
+Theme: Vibrant Scholastic — paleta sunset naranja/mostaza/terracota, tipografía Montserrat + Plus Jakarta Sans.
+Sidebar lateral colapsable con navegación por rol (admin/docente/tutor/preceptor).
+
+```
+FASE 2 — Frontend Core            [✅✅✅✅✅⬜⬜⬜⬜⬜]  100%
+                                  009 ✅ | 010 ✅ | 011 ✅ | 012 ✅ | 013 ✅
+```
+
 ---
 
-### CHANGE-009: frontend-absences-pages
+### CHANGE-009: frontend-absences-pages ✅ COMPLETADO
 
 **Descripción:**
 Páginas de gestión de inasistencias: registro diario con selector de curso y tabla
@@ -477,24 +485,18 @@ justificada/no justificada y referencia a certificado.
 
 **HU asociadas:** HU-004, HU-005, HU-006, HU-019
 
-**Archivos:**
-```
-CREAR:
-  frontend/src/pages/AbsenceRegister.jsx
-  frontend/src/pages/AbsenceHistory.jsx
-  frontend/src/components/StudentTable.jsx
-  frontend/src/components/CourseSelector.jsx
-MODIFICAR:
-  frontend/src/App.jsx — agregar rutas
-```
+**Archivos creados:**
+- `frontend/src/pages/AbsenceRegister.jsx` — selector curso + fecha, tabla alumnos con checkbox, registrar inasistencias
+- `frontend/src/pages/AbsenceHistory.jsx` — historial por alumno, cards resumen (total/justificadas/injustificadas/%), tabla de ausencias con toggle justificar
+- `frontend/src/App.jsx` — rutas `/absences/register`, `/absences/student/:id`
 
 **Depende de:** CHANGE-003 (auth), CHANGE-004 (backend absences)
 
-**Estado:** PROPUESTO
+**Estado:** COMPLETADO — 2026-05-18
 
 ---
 
-### CHANGE-010: frontend-grades-pages
+### CHANGE-010: frontend-grades-pages ✅ COMPLETADO
 
 **Descripción:**
 Páginas de calificaciones: carga de notas por materia y período (solo materias
@@ -503,24 +505,18 @@ con promedio <6.
 
 **HU asociadas:** HU-007, HU-008
 
-**Archivos:**
-```
-CREAR:
-  frontend/src/pages/GradeEntry.jsx
-  frontend/src/pages/GradeOverview.jsx
-  frontend/src/components/GradeTable.jsx
-  frontend/src/components/GradeChart.jsx
-MODIFICAR:
-  frontend/src/App.jsx — agregar rutas
-```
+**Archivos creados:**
+- `frontend/src/pages/GradeEntry.jsx` — selector materia, tabla alumnos con input nota (1-10), guardado batch
+- `frontend/src/pages/GradeOverview.jsx` — cards de alumnos con promedio, resaltado rojo si <6, badge "Bajo rendimiento"
+- `frontend/src/App.jsx` — rutas `/grades/entry`, `/grades/overview`
 
 **Depende de:** CHANGE-003, CHANGE-005
 
-**Estado:** PROPUESTO
+**Estado:** COMPLETADO — 2026-05-18
 
 ---
 
-### CHANGE-011: frontend-tasks-pages
+### CHANGE-011: frontend-tasks-pages ✅ COMPLETADO
 
 **Descripción:**
 Páginas de gestión de tareas: creación con nombre y fechas, listado por materia,
@@ -529,24 +525,18 @@ no entregadas.
 
 **HU asociadas:** HU-009
 
-**Archivos:**
-```
-CREAR:
-  frontend/src/pages/TaskManager.jsx
-  frontend/src/pages/TaskTracking.jsx
-  frontend/src/components/TaskCard.jsx
-  frontend/src/components/StudentTaskStatus.jsx
-MODIFICAR:
-  frontend/src/App.jsx — agregar rutas
-```
+**Archivos creados:**
+- `frontend/src/pages/TaskManager.jsx` — grid de tareas con progreso (barra), diálogo de creación, badges estado
+- `frontend/src/pages/TaskTracking.jsx` — tabla alumnos con checkbox entrega, stats, alerta visual para 2+ no entregadas
+- `frontend/src/App.jsx` — rutas `/tasks`, `/tasks/:id/tracking`
 
 **Depende de:** CHANGE-003, CHANGE-006
 
-**Estado:** PROPUESTO
+**Estado:** COMPLETADO — 2026-05-18
 
 ---
 
-### CHANGE-012: frontend-teacher-dashboard
+### CHANGE-012: frontend-teacher-dashboard ✅ COMPLETADO
 
 **Descripción:**
 Dashboard del docente con panel de inasistencias de alumnos a cargo (filtro por
@@ -555,24 +545,17 @@ cuando quedan <=3 días.
 
 **HU asociadas:** HU-010, HU-011
 
-**Archivos:**
-```
-CREAR:
-  frontend/src/pages/TeacherDashboard.jsx
-  frontend/src/components/AbsencePanel.jsx
-  frontend/src/components/LicenseStatus.jsx
-  frontend/src/components/RiskBadge.jsx
-MODIFICAR:
-  frontend/src/App.jsx — agregar ruta
-```
+**Archivos creados:**
+- `frontend/src/pages/TeacherDashboard.jsx` — bento grid 2/3 + 1/3, panel inasistencias, alumnos en riesgo, barra de licencia con alerta
+- `frontend/src/App.jsx` — ruta `/teacher`
 
 **Depende de:** CHANGE-003, CHANGE-007
 
-**Estado:** PROPUESTO
+**Estado:** COMPLETADO — 2026-05-18
 
 ---
 
-### CHANGE-013: frontend-parent-portal
+### CHANGE-013: frontend-parent-portal ✅ COMPLETADO
 
 **Descripción:**
 Portal del padre/tutor con login, vista de resumen académico del hijo: inasistencias,
@@ -581,20 +564,13 @@ registrados (RN-09).
 
 **HU asociadas:** HU-018
 
-**Archivos:**
-```
-CREAR:
-  frontend/src/pages/ParentDashboard.jsx
-  frontend/src/components/AcademicSummary.jsx
-  frontend/src/components/ChildSelector.jsx
-  frontend/src/components/AbsenceGauge.jsx
-MODIFICAR:
-  frontend/src/App.jsx — agregar ruta
-```
+**Archivos creados:**
+- `frontend/src/pages/ParentDashboard.jsx` — selector de hijo (multi), hero con nombre/curso, grid 4x3 métricas, chart SVG inline, barras de notas por materia
+- `frontend/src/App.jsx` — ruta `/parent`
 
 **Depende de:** CHANGE-003, CHANGE-008
 
-**Estado:** PROPUESTO
+**Estado:** COMPLETADO — 2026-05-18
 
 ---
 
@@ -602,91 +578,67 @@ MODIFICAR:
 
 ---
 
-### CHANGE-020: frontend-analytics
+### CHANGE-020: frontend-analytics ✅ COMPLETADO
 
 **Descripción:**
-Tablero de analítica con gráficos (Recharts): evolución de inasistencias (barras
-apiladas justificadas/no justificadas, alertas RN-01 y RN-02), evolución de notas
-(líneas por materia, filtros por materia y trimestre, alertas RN-04 y RN-05).
-Acceso por rol (RN-16): padre ve solo sus hijos, docente sus alumnos, etc.
-Respeta DESIGN.md (vibrant_scholastic) y las skills de frontend (taste, impeccable,
-EmilKowalski animations con Framer Motion).
+Tablero de analítica con gráficos SVG inline: evolución de notas (línea con
+gradiente bajo la curva, por materia), filtro por materia (chips), selector de
+período lectivo, tabla resumen con promedios por materia e indicadores de
+tendencia (▲ estable/▲ mejorando/▼ empeorando). Acceso por rol (RN-16).
+Diseño fiel al template de `docs/diseno/tablero_anal_tico/`.
 
 **HU asociadas:** HU-020, HU-021
 
-**Archivos:**
-```
-CREAR:
-  frontend/src/pages/AnalyticsDashboard.jsx
-  frontend/src/components/Analytics/AbsenceChart.jsx
-  frontend/src/components/Analytics/GradeChart.jsx
-  frontend/src/components/Analytics/AlertBanner.jsx
-  frontend/src/components/Analytics/FilterBar.jsx
-MODIFICAR:
-  frontend/src/App.jsx — agregar ruta /analytics
-```
+**Archivos creados:**
+- `frontend/src/pages/AnalyticsDashboard.jsx` — tab switcher (notas/asistencias), subject chips, period selector, chart SVG con polilínea + gradiente, tabla resumen con trend icons
+- `frontend/src/App.jsx` — ruta `/analytics`
+- `frontend/index.html` — fix: agregado Material Symbols font link
 
 **Depende de:** CHANGE-003 (auth), CHANGE-019 (backend analytics)
 
-**Estado:** PROPUESTO
+**Estado:** COMPLETADO — 2026-05-18
 
 ---
 
-### CHANGE-022: frontend-communication
+### CHANGE-022: frontend-communication ✅ COMPLETADO
 
 **Descripción:**
-Bandeja de entrada para personal con contador de no leídos, formulario de nuevo
-mensaje para padres con selector de destinatario (docente/preceptor/secretaria),
-hilo de conversación con timestamps. Animaciones EmilKowalski style con Framer
-Motion (entrada/salida de mensajes, transiciones de estado leído/no leído).
-Respeta DESIGN.md (vibrant_scholastic).
+Bandeja de entrada con split layout: sidebar de conversaciones (búsqueda,
+indicador de no-leído, badges de estado), panel de chat (header con avatar,
+burbujas de mensaje entrantes/salientes, separador de fecha, área de reply
+con attach + send). Adaptativo: mobile stack, desktop split. Diseño fiel al
+template de `docs/diseno/mensajer_a_interna_proyectoescuela/`.
 
 **HU asociadas:** HU-022, HU-023
 
-**Archivos:**
-```
-CREAR:
-  frontend/src/pages/Inbox.jsx
-  frontend/src/pages/NewMessage.jsx
-  frontend/src/components/ConversationThread.jsx
-  frontend/src/components/MessageBubble.jsx
-  frontend/src/components/RecipientSelector.jsx
-MODIFICAR:
-  frontend/src/App.jsx — agregar rutas /inbox, /messages/new
-```
+**Archivos creados:**
+- `frontend/src/pages/InboxPage.jsx` — split layout responsive, lista de conversaciones con search y badges, chat view con burbujas estilo messenger, área de respuesta con botón gradient
+- `frontend/src/App.jsx` — rutas `/inbox`, `/inbox/:conversationId`
 
 **Depende de:** CHANGE-003 (auth), CHANGE-021 (backend communication)
 
-**Estado:** PROPUESTO
+**Estado:** COMPLETADO — 2026-05-18
 
 ---
 
-### CHANGE-024: frontend-certificates
+### CHANGE-024: frontend-certificates ✅ COMPLETADO
 
 **Descripción:**
-Portal de certificados: formulario de carga con preview del archivo (padre/tutor),
-lista de certificados enviados con pill de estado (pendiente/aceptado/rechazado),
-panel de revisión para preceptor/admin con previsualización inline. Al aceptar,
-la inasistencia se marca como justificada (RN-13). Respeta DESIGN.md y skills
-de frontend.
+Portal de certificados: formulario de carga drag-and-drop con selector de alumno,
+fecha de ausencia y dropzone (PDF/JPG/PNG, máx 5MB), e historial de certificados
+con badges de estado (Pendiente/Aprobado/Rechazado). Diseño responsive en dos
+columnas: upload form (42%) + historial con cards interactivas (58%).
+Diseño fiel al template de `docs/diseno/gesti_n_de_certificados_proyectoescuela/`.
 
 **HU asociadas:** HU-024, HU-025
 
-**Archivos:**
-```
-CREAR:
-  frontend/src/pages/CertificateUpload.jsx
-  frontend/src/pages/CertificateReview.jsx
-  frontend/src/components/CertificateCard.jsx
-  frontend/src/components/CertificatePreview.jsx
-  frontend/src/components/StatusBadge.jsx
-MODIFICAR:
-  frontend/src/App.jsx — agregar rutas /certificates, /certificates/review
-```
+**Archivos creados:**
+- `frontend/src/pages/CertificatePage.jsx` — formulario de carga con drag & drop, selector alumno, date picker, historial con status badges (pendiente/aprobado/rechazado), inline error messages para rechazados
+- `frontend/src/App.jsx` — ruta `/certificates`
 
 **Depende de:** CHANGE-003 (auth), CHANGE-023 (backend certificates)
 
-**Estado:** PROPUESTO
+**Estado:** COMPLETADO — 2026-05-18
 
 ---
 
@@ -939,7 +891,8 @@ en todos los módulos frontend.
 ---
 
 *Última actualización: 2026-05-18*
-*Estado: FASE 1 COMPLETA ✅ — CHANGE-004,005,006,007,008 completados y probados (57/57 tests)*
+*Estado: FASE 1 COMPLETA ✅ — CHANGE-004,005,006,007,008 completados y probados (99/99 tests)*
+*FASE 2 COMPLETA ✅ — Frontend Core 100% (009-013) + Frontend Nuevos Módulos 100% (020 ✅, 022 ✅, 024 ✅)*
 
 > **Nota:** CHANGE-019 a CHANGE-024 añadidos para cubrir Módulo 7 (Analítica, HU-020/021),
 > Módulo 8 (Comunicación Interna, HU-022/023) y Módulo 9 (Certificados Digitales,

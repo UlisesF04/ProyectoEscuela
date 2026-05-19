@@ -1,24 +1,111 @@
-import { Box, Flex, Heading, Badge } from '@chakra-ui/react'
+import { Box, Flex, Text, SimpleGrid, Card, Badge, VStack } from '@chakra-ui/react'
 import { useAuth } from '../context/AuthContext'
 
 export default function Dashboard() {
   const { user } = useAuth()
 
+  const roleLabels = {
+    admin: 'Administrador',
+    docente: 'Docente',
+    tutor: 'Tutor / Padre',
+    preceptor: 'Preceptor',
+  }
+
   return (
-    <Flex
-      minH="calc(100vh - 64px)"
-      align="center"
-      justify="center"
-      bg="#f4f8f9"
-    >
-      <Box textAlign="center">
-        <Heading size="xl" color="#2d3e50" mb={4}>
-          Bienvenido, {user?.email}
-        </Heading>
-        <Badge colorPalette="blue" px={3} py={1} fontSize="md">
-          {user?.rol}
-        </Badge>
-      </Box>
-    </Flex>
+    <Box maxW="container-max" mx="auto">
+      {/* Welcome */}
+      <Card.Root
+        bg="bg.card"
+        borderRadius="xl"
+        shadow="card"
+        p={8}
+        mb={6}
+        position="relative"
+        overflow="hidden"
+      >
+        <Box
+          position="absolute"
+          right="-32px"
+          top="-32px"
+          w="140px"
+          h="140px"
+          borderRadius="full"
+          bg="linear-gradient(135deg, {colors.primary-container}, {colors.secondary-container})"
+          opacity={0.08}
+        />
+        <Box position="relative" zIndex={1}>
+          <Text textStyle="heading-xl" color="fg" mb={1}>
+            ¡Bienvenido, {user?.email?.split('@')[0] || 'Usuario'}!
+          </Text>
+          <Text textStyle="body-lg" color="fg.muted">
+            {roleLabels[user?.rol] || user?.rol} · ProyectoEscuela
+          </Text>
+          <Badge
+            mt={3}
+            borderRadius="full"
+            px={3}
+            py={1}
+            colorPalette="orange"
+            textTransform="capitalize"
+          >
+            {user?.rol}
+          </Badge>
+        </Box>
+      </Card.Root>
+
+      {/* Quick access by role */}
+      <Text textStyle="heading-md" color="fg" mb={4}>Acceso Rápido</Text>
+      <SimpleGrid columns={{ base: 1, sm: 2, lg: 3 }} gap={4}>
+        {getQuickLinks(user?.rol).map((link) => (
+          <Card.Root
+            key={link.path}
+            as="a"
+            href={link.path}
+            bg="bg.card"
+            borderRadius="xl"
+            shadow="card"
+            p={6}
+            _hover={{ shadow: 'card-hover', transform: 'translateY(-2px)', textDecor: 'none' }}
+            transition="all 0.2s"
+          >
+            <Flex align="center" gap={3} mb={2}>
+              <Box w={10} h={10} borderRadius="full" bg="surface-container-low" display="flex" alignItems="center" justifyContent="center">
+                <Box as="span" className="material-symbols-outlined" color="primary" fontSize="22px">{link.icon}</Box>
+              </Box>
+              <Text fontWeight="semibold" color="fg">{link.label}</Text>
+            </Flex>
+            <Text textStyle="body-md" color="fg.muted">{link.desc}</Text>
+          </Card.Root>
+        ))}
+      </SimpleGrid>
+    </Box>
   )
+}
+
+function getQuickLinks(rol) {
+  const common = [
+    { label: 'Dashboard', path: '/dashboard', icon: 'dashboard', desc: 'Panel principal' },
+  ]
+  const byRole = {
+    admin: [
+      { label: 'Inasistencias', path: '/absences/register', icon: 'event_busy', desc: 'Registrar inasistencias' },
+      { label: 'Panel Docente', path: '/teacher', icon: 'badge', desc: 'Ver dashboard del docente' },
+      { label: 'Portal Padres', path: '/parent', icon: 'family_history', desc: 'Vista como padre' },
+    ],
+    docente: [
+      { label: 'Registrar Inasistencias', path: '/absences/register', icon: 'event_busy', desc: 'Cargar ausencias del día' },
+      { label: 'Cargar Notas', path: '/grades/entry', icon: 'edit_note', desc: 'Ingresar calificaciones' },
+      { label: 'Mis Tareas', path: '/tasks', icon: 'assignment', desc: 'Gestionar trabajos prácticos' },
+    ],
+    tutor: [
+      { label: 'Mis Hijos', path: '/parent', icon: 'family_history', desc: 'Resumen académico' },
+      { label: 'Calificaciones', path: '/grades/overview', icon: 'grade', desc: 'Ver notas' },
+      { label: 'Mensajería', path: '/inbox', icon: 'chat', desc: 'Contactar a la escuela' },
+    ],
+    preceptor: [
+      { label: 'Inasistencias', path: '/absences/register', icon: 'event_busy', desc: 'Registrar ausencias' },
+      { label: 'Certificados', path: '/certificates', icon: 'description', desc: 'Revisar certificados' },
+    ],
+  }
+  return [...common, ...(byRole[rol] || byRole.admin)]
 }

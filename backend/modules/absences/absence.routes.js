@@ -7,8 +7,8 @@ const router = Router();
 // All routes require authentication
 router.use(authenticate);
 
-// POST /api/absences/register — Register daily absences (admin, preceptor)
-router.post('/register', authorize('admin', 'preceptor'), AbsenceController.register);
+// POST /api/absences/register — Register daily absences (admin, preceptor, docente)
+router.post('/register', authorize('admin', 'preceptor', 'docente'), AbsenceController.register);
 
 // GET /api/absences/course/:id — Get absences by course+date (admin, preceptor, docente)
 router.get('/course/:id', authorize('admin', 'preceptor', 'docente'), AbsenceController.getByCourse);
