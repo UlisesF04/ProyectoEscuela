@@ -1,27 +1,33 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Box, Flex, Text, Button, SimpleGrid, Card, Badge, VStack, HStack, Separator, Spinner } from '@chakra-ui/react'
-import api from '../services/api'
+import { Box, Flex, Text, Button, SimpleGrid, Card, Badge, VStack, Table } from '@chakra-ui/react'
+import FeedbackBanner from '../components/molecules/FeedbackBanner'
+import LoadingSpinner from '../components/molecules/LoadingSpinner'
+import ErrorState from '../components/molecules/ErrorState'
+import EmptyState from '../components/molecules/EmptyState'
+import { useAbsenceHistory } from '../hooks'
 
 export default function AbsenceHistory() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const [data, setData] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const { data, loading, error, justify, refetch } = useAbsenceHistory(id)
+  const [feedback, setFeedback] = useState('')
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const { data: res } = await api.get(`/absences/student/${id}`)
-        setData(res)
-      } catch { /* ignore */ }
-      finally { setLoading(false) }
-    }
-    load()
-  }, [id])
-
-  if (loading) return <Flex justify="center" py={20}><Spinner /></Flex>
-  if (!data) return <Text>Estudiante no encontrado</Text>
+  if (loading) return <LoadingSpinner />
+  if (error) return (
+    <Box maxW="container-max" mx="auto">
+      <Flex justify="space-between" align="center" mb={6}>
+        <Box>
+          <Text textStyle="heading-xl" color="fg">Historial de Inasistencias</Text>
+        </Box>
+        <Button variant="ghost" borderRadius="full" onClick={() => navigate('/absences/register')}>
+          Volver
+        </Button>
+      </Flex>
+      <ErrorState message={error} />
+    </Box>
+  )
+  if (!data) return <EmptyState heading="Estudiante no encontrado" message="No se encontró el estudiante solicitado." />
 
   const { student, summary, absences } = data
 
@@ -37,6 +43,8 @@ export default function AbsenceHistory() {
           Volver
         </Button>
       </Flex>
+
+      <FeedbackBanner feedback={feedback} />
 
       {/* Summary cards */}
       <SimpleGrid columns={{ base: 2, md: 4 }} gap={4} mb={6}>
@@ -63,47 +71,52 @@ export default function AbsenceHistory() {
       {/* Absence list */}
       <Card.Root bg="bg.card" borderRadius="xl" shadow="card">
         <Card.Body p={0}>
-          <Box overflowX="auto">
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ background: 'var(--chakra-colors-surface-container-low)' }}>
-                  <th style={{ textAlign: 'left', padding: '12px 16px', color: 'var(--chakra-colors-fg-muted)' }}>Fecha</th>
-                  <th style={{ textAlign: 'left', padding: '12px 16px', color: 'var(--chakra-colors-fg-muted)' }}>Estado</th>
-                  <th style={{ textAlign: 'right', padding: '12px 16px', color: 'var(--chakra-colors-fg-muted)' }}>Acción</th>
-                </tr>
-              </thead>
-              <tbody>
-                {absences.map((a) => (
-                  <tr key={a.id} style={{ borderBottom: '1px solid var(--chakra-colors-border-default)' }}>
-                    <td style={{ padding: '12px 16px' }}>{new Date(a.fecha).toLocaleDateString('es-AR')}</td>
-                    <td style={{ padding: '12px 16px' }}>
-                      <Badge
-                        colorPalette={a.justificada ? 'green' : 'orange'}
-                        borderRadius="full"
-                        px={2}
-                      >
-                        {a.justificada ? 'Justificada' : 'No Justificada'}
-                      </Badge>
-                    </td>
-                    <td style={{ padding: '12px 16px', textAlign: 'right' }}>
-                      {!a.justificada && (
-                        <Button size="xs" borderRadius="full" variant="outline"
-                          onClick={async () => {
-                            try {
-                              await api.put(`/absences/${a.id}`, { justificada: true })
-                              window.location.reload()
-                            } catch {}
-                          }}
-                        >
-                          Justificar
-                        </Button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </Box>
+          {absences.length > 0 ? (
+            <Box overflowX="auto">
+              <Table.Root>
+                <Table.Header>
+                  <Table.Row bg="surface-container-low">
+                    <Table.ColumnHeader px={4} py={3}>Fecha</Table.ColumnHeader>
+                    <Table.ColumnHeader px={4} py={3}>Estado</Table.ColumnHeader>
+                    <Table.ColumnHeader px={4} py={3} textAlign="right">Acción</Table.ColumnHeader>
+                  </Table.Row>
+                </Table.Header>
+                <Table.Body>
+                  {absences.map((a) => (
+                    <Table.Row key={a.id} borderBottom="1px solid" borderColor="border.default">
+                      <Table.Cell px={4} py={3}>{new Date(a.fecha).toLocaleDateString('es-AR')}</Table.Cell>
+                      <Table.Cell px={4} py={3}>
+                        <Badge colorPalette={a.justificada ? 'green' : 'orange'} borderRadius="full" px={2}>
+                          {a.justificada ? 'Justificada' : 'No Justificada'}
+                        </Badge>
+                      </Table.Cell>
+                      <Table.Cell px={4} py={3} textAlign="right">
+                        {!a.justificada && (
+                          <Button size="xs" borderRadius="full" variant="outline"
+                            onClick={async () => {
+                              try {
+                                await justify(a.id)
+                                setFeedback('✅ Inasistencia justificada correctamente')
+                                refetch()
+                              } catch (err) {
+                                setFeedback('❌ ' + (err.response?.data?.message || 'Error al justificar'))
+                              }
+                            }}
+                          >
+                            Justificar
+                          </Button>
+                        )}
+                      </Table.Cell>
+                    </Table.Row>
+                  ))}
+                </Table.Body>
+              </Table.Root>
+            </Box>
+          ) : (
+            <Box p={6}>
+              <EmptyState heading="Sin inasistencias" message="Este alumno no tiene inasistencias registradas." />
+            </Box>
+          )}
         </Card.Body>
       </Card.Root>
     </Box>

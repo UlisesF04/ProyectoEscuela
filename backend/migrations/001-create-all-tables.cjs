@@ -7,7 +7,7 @@ module.exports = {
       id: { type: Sequelize.INTEGER, primaryKey: true, autoIncrement: true, allowNull: false },
       email: { type: Sequelize.STRING, allowNull: false, unique: true },
       password_hash: { type: Sequelize.STRING, allowNull: false },
-      rol: { type: Sequelize.ENUM('admin', 'docente', 'tutor'), allowNull: false },
+      rol: { type: Sequelize.ENUM('admin', 'docente', 'tutor', 'preceptor'), allowNull: false },
       whatsapp_number: { type: Sequelize.STRING, allowNull: true },
       created_at: { type: Sequelize.DATE, allowNull: false, defaultValue: Sequelize.literal('CURRENT_TIMESTAMP') },
       updated_at: { type: Sequelize.DATE, allowNull: false, defaultValue: Sequelize.literal('CURRENT_TIMESTAMP') },
@@ -166,9 +166,26 @@ module.exports = {
       created_at: { type: Sequelize.DATE, allowNull: false, defaultValue: Sequelize.literal('CURRENT_TIMESTAMP') },
       updated_at: { type: Sequelize.DATE, allowNull: false, defaultValue: Sequelize.literal('CURRENT_TIMESTAMP') },
     });
+
+    // 14. mensajes
+    await queryInterface.createTable('mensajes', {
+      id: { type: Sequelize.INTEGER, primaryKey: true, autoIncrement: true, allowNull: false },
+      emisor_id: { type: Sequelize.INTEGER, allowNull: false, references: { model: 'usuarios', key: 'id' }, onUpdate: 'CASCADE', onDelete: 'CASCADE' },
+      receptor_id: { type: Sequelize.INTEGER, allowNull: false, references: { model: 'usuarios', key: 'id' }, onUpdate: 'CASCADE', onDelete: 'CASCADE' },
+      asunto: { type: Sequelize.STRING(200), allowNull: false },
+      cuerpo: { type: Sequelize.TEXT, allowNull: false },
+      leido: { type: Sequelize.BOOLEAN, defaultValue: false },
+      leido_at: { type: Sequelize.DATE, allowNull: true },
+      created_at: { type: Sequelize.DATE, allowNull: false, defaultValue: Sequelize.literal('CURRENT_TIMESTAMP') },
+      updated_at: { type: Sequelize.DATE, allowNull: false, defaultValue: Sequelize.literal('CURRENT_TIMESTAMP') },
+    });
+    await queryInterface.addIndex('mensajes', ['emisor_id'], { name: 'idx_mensajes_emisor' });
+    await queryInterface.addIndex('mensajes', ['receptor_id'], { name: 'idx_mensajes_receptor' });
+    await queryInterface.addIndex('mensajes', ['emisor_id', 'receptor_id'], { name: 'idx_mensajes_par' });
   },
 
   down: async (queryInterface, Sequelize) => {
+    await queryInterface.dropTable('mensajes');
     await queryInterface.dropTable('notificaciones_log');
     await queryInterface.dropTable('entrega_tareas');
     await queryInterface.dropTable('tareas');
@@ -183,6 +200,8 @@ module.exports = {
     await queryInterface.dropTable('cursos');
     await queryInterface.dropTable('usuarios');
 
+    // Note: if preceptor was added later, the ENUM may have extra values.
+    // Dropping the type will fail if 'preceptor' is in use unless CASCADE is used.
     await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_usuarios_rol"');
     await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_notificaciones_log_estado"');
   },

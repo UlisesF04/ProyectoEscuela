@@ -1,1 +1,0 @@
-Componentes reutilizables del frontend. Mantén aquí los formularios, botones, tablas, etc.

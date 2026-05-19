@@ -51,7 +51,7 @@ export default function Login() {
             <Box
               position="absolute"
               inset={0}
-              bg="linear-gradient(135deg, #ff6b35, #ffba33)"
+              css={{ background: 'linear-gradient(135deg, {colors.primary-container}, {colors.secondary-container})' }}
               opacity={0.06}
             />
             <Box
@@ -161,7 +161,7 @@ export default function Login() {
                     borderRadius="input"
                     border="1px solid"
                     borderColor="border.default"
-                    bg="#fff8f0"
+                    bg="bg.subtle"
                     placeholder="usuario@escuela.edu"
                     type="email"
                     value={email}
@@ -194,7 +194,7 @@ export default function Login() {
                     borderRadius="input"
                     border="1px solid"
                     borderColor="border.default"
-                    bg="#fff8f0"
+                    bg="bg.subtle"
                     placeholder="••••••••"
                     type="password"
                     value={password}

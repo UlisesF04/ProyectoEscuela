@@ -6,7 +6,7 @@ const router = Router();
 router.use(authenticate);
 
 // POST /api/communication/messages — Send a message
-router.post('/messages', authorize('admin', 'docente', 'tutor'), async (req, res, next) => {
+router.post('/messages', authorize('admin', 'docente', 'preceptor', 'tutor'), async (req, res, next) => {
   try {
     const message = await MessageController.sendMessage({
       emisorId: req.user.id,
@@ -28,7 +28,7 @@ router.post('/messages', authorize('admin', 'docente', 'tutor'), async (req, res
 });
 
 // GET /api/communication/conversations — List current user's conversations
-router.get('/conversations', authorize('admin', 'docente', 'tutor'), async (req, res, next) => {
+router.get('/conversations', authorize('admin', 'docente', 'preceptor', 'tutor'), async (req, res, next) => {
   try {
     const conversations = await MessageController.getConversations(req.user.id);
     return res.json({ total: conversations.length, conversaciones: conversations });
@@ -38,7 +38,7 @@ router.get('/conversations', authorize('admin', 'docente', 'tutor'), async (req,
 });
 
 // GET /api/communication/conversations/:userId/messages — Get message thread
-router.get('/conversations/:userId/messages', authorize('admin', 'docente', 'tutor'), async (req, res, next) => {
+router.get('/conversations/:userId/messages', authorize('admin', 'docente', 'preceptor', 'tutor'), async (req, res, next) => {
   try {
     const partnerId = parseInt(req.params.userId, 10);
     const data = await MessageController.getConversationMessages(req.user.id, partnerId);
@@ -52,7 +52,7 @@ router.get('/conversations/:userId/messages', authorize('admin', 'docente', 'tut
 });
 
 // PUT /api/communication/messages/:id/read — Mark message as read
-router.put('/messages/:id/read', authorize('admin', 'docente', 'tutor'), async (req, res, next) => {
+router.put('/messages/:id/read', authorize('admin', 'docente', 'preceptor', 'tutor'), async (req, res, next) => {
   try {
     const messageId = parseInt(req.params.id, 10);
     const message = await MessageController.markAsRead(messageId, req.user.id);

@@ -167,7 +167,22 @@ export async function getLowAverageStudents(threshold = 6) {
   return result.sort((a, b) => a.promedio - b.promedio);
 }
 
-export async function getTeacherSubjects(userId) {
+export async function getTeacherSubjects(userId, userRol) {
+  // Admin sees ALL subjects (not tied to a teacher)
+  if (userRol === 'admin') {
+    const materias = await Materia.findAll({
+      include: [{ model: Curso, attributes: ['nombre', 'anio', 'division'] }],
+    });
+    return materias.map(m => ({
+      docente_id: null,
+      materia_id: m.id,
+      materia: m.nombre,
+      curso: m.Curso
+        ? `${m.Curso.nombre} ${m.Curso.anio}${m.Curso.division}`
+        : null,
+    }));
+  }
+
   const docente = await Docente.findOne({ where: { usuario_id: userId } });
   if (!docente) throw new Error('Docente no encontrado');
 

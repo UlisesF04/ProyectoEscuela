@@ -1,292 +1,230 @@
-import { useState } from 'react'
-import { Box, Flex, Text, Button, IconButton } from '@chakra-ui/react'
-
-/* ── mock data ── */
-
-const AVATARS = {
-  carlos: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAQ7GgTsuILX1zS0Gx9Fd97xFndmbNrig2nQk75jrJDn8iRROvoUJ797z0J47MursWoWmhvZSFAiUPPljM_wGj1E3pKV7HiE5IjaCmyfDQC2eYVuWwJf1_fFs4r_91gox7eT9a8qSzANfwznrHze8pg0R7zEyk-goxSNUWZq-NIctCEluWyWiAqnIdlrHQdimGYMLtm_ej8FLgklVj9Tyrd3yxoc7qgUs-mL-hRpl7b_LCDq8HqNeDEVOG2WHzLYtnwDWFuycP7ASE',
-  ana: 'https://lh3.googleusercontent.com/aida-public/AB6AXuC5PtB4lTE8UWU8EEMcpKeKrcuzGlv0lTo8xNlb4rDY298Z1C2ixUOfNBgQ_FwMZ0kOFbOUrrRntt1yjB4acUWa6YpcuGWPk3hgIp3k0ONYT4q9aWTzaq7e8FhzMzDbKS61S-3pXfq1JdOZ4lbjw-ORHAYlEIJskYScw14ryF1AC8w0HWH6ZUI9bTnNDa9V-q66ELdEHGSZ-6Eewp04vvCkq9-b22R505_yKa_lBC8dadijbEaCW49MN6gQL1bsDEYcc3hMb16MYgw',
-  maria_numeral: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBT1dwHTNGlX1n0BtfdV6-Bza_IHxqwKhcuiVdfdRYNeBYRJAdP0cu_2LrY21YNZwaQgZ_eamVY_nEm-UDrn_jmsoYm5H0605ULKUZL3PE0RVvIMjGLFzPvJt4rkFJL4AfOn2yRufdwOCMPCrJhri7okvDNOCBqT2m_SKHMIslIl80A_jXxerT2VoTwlfG8zFSko7TFxONYV4CCzEzWWkwG7i_YT9ycV-q0xcFLy6m5BcK_1-GnPn7vM39F1UQPHXCzFI-6GaVp5uk',
-}
-
-const MOCK_CONVERSATIONS = [
-  {
-    id: 'conv-1',
-    name: 'Carlos Gómez',
-    role: 'Padre de Lucas Gómez (3º B)',
-    avatar: AVATARS.carlos,
-    unread: true,
-    lastMessage: 'Hola, quería saber si es necesario...',
-    subject: 'Consulta sobre excursión a...',
-    timestamp: '10:42 AM',
-    dateLabel: 'Hoy',
-    badge: null,
-    messages: [
-      { id: 'm1', sender: 'carlos', text: 'Hola, buen día. Quería saber si es necesario que los chicos lleven almuerzo para la excursión del próximo viernes al museo de ciencias, o si está incluido en el costo que abonamos.\n\nMuchas gracias.', time: '10:42 AM', subject: 'Consulta sobre excursión al museo' },
-    ],
-  },
-  {
-    id: 'conv-2',
-    name: 'Ana Martínez',
-    role: 'Madre de Sofía Martínez (5º A)',
-    avatar: AVATARS.ana,
-    unread: false,
-    lastMessage: 'Gracias por avisar, le enviaré el...',
-    subject: 'Falta de asistencia - Sofía...',
-    timestamp: 'Ayer',
-    dateLabel: 'Ayer',
-    badge: null,
-    messages: [
-      { id: 'm2', sender: 'ana', text: 'Hola, quería informar que Sofía no podrá asistir a clases mañana por una consulta médica. ¿Necesito presentar algún justificativo?', time: '4:15 PM' },
-      { id: 'm3', sender: 'me', text: 'Hola Ana, gracias por avisar. Sí, por favor traiga el certificado médico cuando la llevé al control. Que se mejore Sofía.', time: '4:30 PM' },
-      { id: 'm4', sender: 'ana', text: 'Gracias por avisar, le enviaré el certificado en cuanto tengamos el turno.', time: '4:32 PM' },
-    ],
-  },
-  {
-    id: 'conv-3',
-    name: 'María Fernández',
-    role: 'Madre de Valentina Fernández (2º C)',
-    avatar: null,
-    initial: 'M',
-    unread: false,
-    lastMessage: 'Confirmamos nuestra asistencia para el...',
-    subject: 'Reunión de padres',
-    timestamp: 'Lun, 12 Oct',
-    dateLabel: '12 Oct',
-    badge: 'respondido',
-    messages: [
-      { id: 'm5', sender: 'maria', text: 'Buenas tardes, quería confirmar nuestra asistencia a la reunión de padres del próximo jueves. Asistiremos los dos padres. ¿A qué hora exactamente comienza?', time: '3:00 PM' },
-      { id: 'm6', sender: 'me', text: 'Hola María, confirmamos su asistencia. La reunión comienza a las 18:30 hs en el aula de Valentina. ¡Los esperamos!', time: '3:45 PM' },
-      { id: 'm7', sender: 'maria', text: 'Confirmamos nuestra asistencia para el jueves. Muchas gracias por la confirmación.', time: '4:00 PM' },
-    ],
-  },
-]
-
-const MOCK_ME = {
-  name: 'Tú',
-  avatar: null,
-  initial: 'T',
-}
-
-/* ── helper components ── */
-
-function AvatarImg({ src, name, size = 12 }) {
-  if (src) {
-    return (
-      <Box
-        as="img"
-        src={src}
-        alt={name}
-        w={size}
-        h={size}
-        borderRadius="full"
-        objectFit="cover"
-        flexShrink={0}
-      />
-    )
-  }
-  return null
-}
-
-function AvatarPlaceholder({ initial, color = 'tertiary-container', textColor = 'on-tertiary-container', size = 12 }) {
-  return (
-    <Flex
-      w={size}
-      h={size}
-      borderRadius="full"
-      bg={color}
-      color={textColor}
-      align="center"
-      justify="center"
-      fontWeight="bold"
-      fontSize={typeof size === 'number' && size >= 10 ? 'lg' : 'sm'}
-      flexShrink={0}
-    >
-      {initial}
-    </Flex>
-  )
-}
+import { useState, useEffect, useRef } from 'react'
+import { Box, Flex, Text, Button, IconButton, Input, VStack, Badge, Spinner, NativeSelect } from '@chakra-ui/react'
+import { useParams, useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
+import { MS_PER_DAY } from '../constants/business'
+import FeedbackBanner from '../components/molecules/FeedbackBanner'
+import Avatar from '../components/atoms/Avatar'
+import { AnimatePresence, motion } from 'framer-motion'
+import { useConversations } from '../hooks'
+import StaggerContainer from '../components/StaggerContainer'
 
 function formatTime(dateStr) {
-  // just return as-is for mock data
-  return dateStr
+  const d = new Date(dateStr)
+  const now = new Date()
+  const diff = now - d
+  const days = Math.floor(diff / MS_PER_DAY)
+
+  if (days === 0) {
+    return d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })
+  }
+  if (days === 1) return 'Ayer'
+  if (days < 7) return d.toLocaleDateString('es-AR', { weekday: 'short' })
+  return d.toLocaleDateString('es-AR', { day: 'numeric', month: 'short' })
 }
 
-/* ── main page ── */
+function formatDateLabel(dateStr) {
+  const d = new Date(dateStr)
+  const now = new Date()
+  const diff = now - d
+  const days = Math.floor(diff / MS_PER_DAY)
+  if (days === 0) return 'Hoy'
+  if (days === 1) return 'Ayer'
+  return d.toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' })
+}
+
+/* ── Main page ── */
 
 export default function InboxPage() {
+  const { user } = useAuth()
+  const navigate = useNavigate()
+  const { conversationId: urlPartnerId } = useParams()
+
+  const myId = user?.id
+
+  // State
+  const [selectedUserId, setSelectedUserId] = useState(urlPartnerId ? parseInt(urlPartnerId) : null)
   const [searchQuery, setSearchQuery] = useState('')
-  const [selectedId, setSelectedId] = useState(null)
-  const [replyText, setReplyText] = useState('')
+  const [replySubject, setReplySubject] = useState('')
+  const [replyBody, setReplyBody] = useState('')
+  const [sending, setSending] = useState(false)
+  const [feedback, setFeedback] = useState('')
+  const [showNewMsg, setShowNewMsg] = useState(false)
+  const [newRecipientId, setNewRecipientId] = useState('')
+  const [newSubject, setNewSubject] = useState('')
+  const [newBody, setNewBody] = useState('')
 
-  const filtered = MOCK_CONVERSATIONS.filter((c) =>
-    c.name.toLowerCase().includes(searchQuery.toLowerCase())
+  const { conversations, conversationsLoading, messages, messagesLoading, partner: partnerInfo, error, fetchMessages, sendMessage, markAsRead, refetchConversations } = useConversations()
+
+  const messagesEndRef = useRef(null)
+  const messagesContainerRef = useRef(null)
+
+  // Auto-scroll on new messages
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
+
+  // Load messages when conversation selected + mark as read
+  useEffect(() => {
+    if (!selectedUserId) return
+    fetchMessages(selectedUserId).then((freshMessages) => {
+      // Mark unread messages from partner as read after fetching
+      if (!freshMessages?.length) return
+      const unread = freshMessages.filter(m => m.emisor?.id === selectedUserId && !m.leido)
+      Promise.all(unread.map(m => markAsRead(m.id).catch(() => {})))
+    })
+  }, [selectedUserId])
+
+  // Support /inbox/:conversationId URL param
+  useEffect(() => {
+    if (urlPartnerId) {
+      setSelectedUserId(parseInt(urlPartnerId))
+    }
+  }, [urlPartnerId])
+
+  // Filter conversations
+  const filtered = conversations.filter(c =>
+    (c.usuario?.email || '').toLowerCase().includes(searchQuery.toLowerCase())
   )
-  const activeConv = MOCK_CONVERSATIONS.find((c) => c.id === selectedId)
 
-  const handleSelect = (id) => {
-    setSelectedId(id)
+  const selectedConv = conversations.find(c => c.usuario?.id === selectedUserId)
+
+  // Send reply
+  const handleSend = async () => {
+    if (!selectedUserId || !replyBody.trim()) return
+    setSending(true)
+    try {
+      await sendMessage({ receptor_id: selectedUserId, asunto: replySubject || 'Sin asunto', cuerpo: replyBody })
+      await fetchMessages(selectedUserId)
+      setReplyBody('')
+      setReplySubject('')
+      setFeedback('✅ Mensaje enviado')
+    } catch (err) {
+      setFeedback(`❌ ${err.response?.data?.message || 'Error al enviar mensaje'}`)
+    } finally {
+      setSending(false)
+    }
   }
 
-  const handleBack = () => {
-    setSelectedId(null)
+  // Send new message
+  const handleNewMessage = async () => {
+    const id = parseInt(newRecipientId)
+    if (!id || !newSubject.trim() || !newBody.trim()) {
+      setFeedback('⚠️ Complet\u00e1 todos los campos')
+      return
+    }
+    setSending(true)
+    try {
+      await sendMessage({ receptor_id: id, asunto: newSubject, cuerpo: newBody })
+      setShowNewMsg(false)
+      setNewRecipientId('')
+      setNewSubject('')
+      setNewBody('')
+      setSelectedUserId(id)
+      setFeedback('✅ Mensaje enviado')
+      refetchConversations()
+    } catch (err) {
+      setFeedback(`❌ ${err.response?.data?.message || 'Error al enviar mensaje'}`)
+    } finally {
+      setSending(false)
+    }
   }
 
-  /* ── inbox sidebar ── */
+  // Group messages by date
+  const groupedMessages = messages.reduce((groups, msg) => {
+    const label = formatDateLabel(msg.created_at)
+    if (!groups[label]) groups[label] = []
+    groups[label].push(msg)
+    return groups
+  }, {})
+
+  /* ── Inbox sidebar ── */
   const inboxPanel = (
     <Flex direction="column" h="full" overflow="hidden">
-      {/* header */}
-      <Box px={5} pt={5} pb={4} borderBottom="1px solid" borderColor="outline-variant" bg="surface-container-low">
-        <Text textStyle="heading-md" color="on-surface" mb={4}>
-          Mensajes
-        </Text>
+      <Box px={5} pt={5} pb={4} borderBottom="1px solid" borderColor="border.default" bg="surface-container-low">
+        <Flex justify="space-between" align="center" mb={4}>
+          <Text textStyle="heading-xl" color="fg">Mensajes</Text>
+          <Button
+            variant="ghost" borderRadius="full" size="sm"
+            onClick={() => { setShowNewMsg(true); setFeedback('') }}
+          >
+            + Nuevo
+          </Button>
+        </Flex>
         <Box position="relative">
-          <Box
-            as="span"
-            className="material-symbols-outlined"
-            position="absolute"
-            left={4}
-            top="50%"
-            transform="translateY(-50%)"
-            color="on-surface-variant"
-            fontSize="20px"
-            pointerEvents="none"
+          <Box as="span" className="material-symbols-outlined"
+            position="absolute" left={4} top="50%" transform="translateY(-50%)"
+            color="fg.muted" fontSize="20px" pointerEvents="none"
           >
             search
           </Box>
-          <Box
-            as="input"
-            type="text"
+          <Input
             placeholder="Buscar conversaciones..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            w="full"
-            pl={12}
-            pr={4}
-            py={3}
-            bg="surface-variant"
-            border="none"
-            borderRadius="full"
-            fontFamily="body"
-            fontSize="md"
-            outline="none"
-            transition="all 0.2s ease-out"
-            _focus={{
-              bg: 'surface-container-lowest',
-              boxShadow: '0 0 0 2px #ab3500',
-            }}
-            sx={{
-              '&::placeholder': { color: '#594139', opacity: 0.6 },
-            }}
+            pl={12} pr={4} py={3} borderRadius="full"
+            bg="surface-variant" border="none"
+            _focus={{ bg: 'bg', ring: 2, ringColor: 'primary-container' }}
           />
         </Box>
       </Box>
 
-      {/* conversation list */}
       <Box flex={1} overflowY="auto">
-        {filtered.map((conv) => {
-          const isActive = selectedId === conv.id
-          return (
-            <Flex
-              key={conv.id}
-              px={5}
-              py={3.5}
-              borderBottom="1px solid"
-              borderColor="outline-variant"
-              bg={isActive ? 'secondary-container' : conv.unread ? 'surface-container-lowest' : 'transparent'}
-              cursor="pointer"
-              transition="background 0.15s ease"
-              _hover={{ bg: isActive ? 'secondary-container' : 'surface-variant' }}
-              onClick={() => handleSelect(conv.id)}
-              gap={3}
-              align="flex-start"
-              position="relative"
-            >
-              {/* unread dot */}
-              {conv.unread && (
-                <Box
-                  position="absolute"
-                  left={3}
-                  top={6}
-                  w={2}
-                  h={2}
-                  borderRadius="full"
-                  bg="primary"
-                  flexShrink={0}
-                />
-              )}
-
-              {/* avatar */}
-              {conv.avatar ? (
-                <AvatarImg src={conv.avatar} name={conv.name} size={12} />
-              ) : (
-                <AvatarPlaceholder initial={conv.initial} size={12} />
-              )}
-
-              {/* content */}
-              <Box flex={1} minW={0} ml={conv.unread ? 0 : 0}>
-                <Flex justify="space-between" align="baseline" mb={0.5}>
-                  <Text
-                    textStyle="label-md"
-                    fontWeight={conv.unread ? 'bold' : 'normal'}
-                    color="on-surface"
-                    truncate
-                  >
-                    {conv.name}
-                  </Text>
-                  <Text
-                    fontSize="xs"
-                    fontWeight={conv.unread ? 'semibold' : 'normal'}
-                    color={conv.unread ? 'primary' : 'on-surface-variant'}
-                    whiteSpace="nowrap"
-                    ml={2}
-                  >
-                    {conv.timestamp}
-                  </Text>
-                </Flex>
-
-                {conv.badge ? (
-                  <Flex align="center" gap={2} mb={0.5}>
-                    <Box
-                      as="span"
-                      fontSize="10px"
-                      fontWeight="bold"
-                      textTransform="uppercase"
-                      letterSpacing="wider"
-                      bg="#e8f5e9"
-                      color="#2e7d32"
-                      px={2}
-                      py={0.5}
-                      borderRadius="sm"
+        {conversationsLoading ? (
+          <Flex justify="center" py={10}><Spinner /></Flex>
+        ) : filtered.length > 0 ? (
+          <StaggerContainer>
+            {filtered.map((conv) => {
+              const isActive = selectedUserId === conv.usuario?.id
+              const unread = conv.no_leidos > 0
+              return (
+                <StaggerContainer.Item key={conv.usuario?.id}>
+                  <Flex
+                px={5} py={3.5}
+                borderBottom="1px solid" borderColor="border.default"
+                bg={isActive ? 'secondary-container' : unread ? 'bg' : 'transparent'}
+                cursor="pointer"
+                _hover={{ bg: isActive ? 'secondary-container' : 'surface-variant' }}
+                onClick={() => { setSelectedUserId(conv.usuario?.id); navigate(`/inbox/${conv.usuario?.id}`, { replace: true }) }}
+                gap={3} align="flex-start" position="relative"
+              >
+                {unread && (
+                  <Box position="absolute" left={3} top={6}
+                    w={2} h={2} borderRadius="full" bg="primary" flexShrink={0}
+                  />
+                )}
+                <Avatar label={conv.usuario?.email || '?'} size={12} />
+                <Box flex={1} minW={0} ml={unread ? 0 : 0}>
+                  <Flex justify="space-between" align="baseline" mb={0.5}>
+                    <Text textStyle="label-md" fontWeight={unread ? 'bold' : 'normal'} color="fg" truncate>
+                      {conv.usuario?.email || 'Usuario'}
+                    </Text>
+                    <Text fontSize="xs" fontWeight={unread ? 'semibold' : 'normal'}
+                      color={unread ? 'primary' : 'fg.muted'} whiteSpace="nowrap" ml={2}
                     >
-                      {conv.badge}
-                    </Box>
-                    <Text fontSize="sm" color="on-surface-variant" truncate>
-                      {conv.subject}
+                      {conv.ultimo_mensaje ? formatTime(conv.ultimo_mensaje.created_at) : ''}
                     </Text>
                   </Flex>
-                ) : (
-                  <Text
-                    fontSize="sm"
-                    fontWeight={conv.unread ? 'semibold' : 'normal'}
-                    color={conv.unread ? 'on-surface' : 'on-surface-variant'}
-                    truncate
-                    mb={0.5}
-                  >
-                    {conv.subject}
-                  </Text>
-                )}
-
-                <Text fontSize="sm" color="on-surface-variant" truncate>
-                  {conv.lastMessage}
-                </Text>
-              </Box>
-            </Flex>
-          )
-        })}
-
-        {filtered.length === 0 && (
-          <Flex align="center" justify="center" py={12} color="on-surface-variant">
+                  {conv.ultimo_mensaje && (
+                    <>
+                      <Text fontSize="sm" fontWeight={unread ? 'semibold' : 'normal'}
+                        color={unread ? 'fg' : 'fg.muted'} truncate mb={0.5}
+                      >
+                        {conv.ultimo_mensaje.asunto}
+                      </Text>
+                      <Text fontSize="sm" color="fg.muted" truncate>
+                        {conv.ultimo_mensaje.cuerpo}
+                      </Text>
+                    </>
+                  )}
+                </Box>
+              </Flex>
+                </StaggerContainer.Item>
+              )
+            })}
+          </StaggerContainer>
+        ) : (
+          <Flex align="center" justify="center" py={12} color="fg.muted">
             <Text fontSize="sm">No se encontraron conversaciones</Text>
           </Flex>
         )}
@@ -294,260 +232,241 @@ export default function InboxPage() {
     </Flex>
   )
 
-  /* ── chat view ── */
-  const chatView = activeConv ? (
-    <Flex direction="column" h="full" bg="surface" position="relative">
-      {/* chat header */}
-      <Flex
-        h="20"
-        px={6}
-        borderBottom="1px solid"
-        borderColor="outline-variant"
-        bg="surface-container-lowest"
-        align="center"
-        justify="space-between"
-        flexShrink={0}
+  /* ── Chat view ── */
+  const chatView = selectedUserId && partnerInfo ? (
+    <Flex direction="column" h="full" bg="bg" position="relative">
+      {/* Header */}
+      <Flex h="20" px={6} borderBottom="1px solid" borderColor="border.default"
+        bg="surface-container-lowest" align="center" justify="space-between" flexShrink={0}
       >
         <Flex align="center" gap={4}>
-          {/* back button mobile */}
-          <IconButton
-            aria-label="Volver"
-            variant="ghost"
-            display={{ md: 'none' }}
-            borderRadius="full"
-            onClick={handleBack}
+          <IconButton aria-label="Volver" variant="ghost" display={{ md: 'none' }}
+            borderRadius="full" onClick={() => { setSelectedUserId(null); navigate('/inbox', { replace: true }) }}
           >
-            <Box as="span" className="material-symbols-outlined" fontSize="20px">
-              arrow_back
-            </Box>
+            <Box as="span" className="material-symbols-outlined" fontSize="20px">arrow_back</Box>
           </IconButton>
-
-          {activeConv.avatar ? (
-            <AvatarImg src={activeConv.avatar} name={activeConv.name} size={12} />
-          ) : (
-            <AvatarPlaceholder initial={activeConv.initial} size={12} />
-          )}
+          <Avatar label={partnerInfo?.email || '?'} size={12} color="tertiary-container" textColor="on-tertiary-container" />
           <Box>
-            <Text textStyle="body-lg" fontWeight="bold" color="on-surface">
-              {activeConv.name}
+            <Text textStyle="body-lg" fontWeight="bold" color="fg">
+              {partnerInfo?.email || 'Usuario'}
             </Text>
-            <Text fontSize="sm" color="on-surface-variant">
-              {activeConv.role}
-            </Text>
+            <Text fontSize="sm" color="fg.muted">{partnerInfo?.rol || ''}</Text>
           </Box>
         </Flex>
-        <IconButton aria-label="Más opciones" variant="ghost" borderRadius="full">
-          <Box as="span" className="material-symbols-outlined" fontSize="20px">
-            more_vert
-          </Box>
-        </IconButton>
       </Flex>
 
-      {/* messages */}
-      <Flex flex={1} direction="column" overflowY="auto" px={6} py={4} gap={5}>
-        {/* date separator */}
-        <Flex justify="center">
-          <Box
-            bg="surface-variant"
-            color="on-surface-variant"
-            fontSize="xs"
-            fontWeight="semibold"
-            fontFamily="body"
-            px={3}
-            py={1}
-            borderRadius="full"
-          >
-            {activeConv.dateLabel}
-          </Box>
-        </Flex>
-
-        {activeConv.messages.map((msg) => {
-          const isMe = msg.sender === 'me'
-          const senderData = isMe
-            ? MOCK_ME
-            : activeConv
-          return (
-            <Flex
-              key={msg.id}
-              gap={3}
-              maxW={{ base: 'full', md: '75%', lg: '60%' }}
-              alignSelf={isMe ? 'flex-end' : 'flex-start'}
-              direction={isMe ? 'row-reverse' : 'row'}
-            >
-              {senderData.avatar ? (
-                <AvatarImg src={senderData.avatar} name={senderData.name} size={8} />
-              ) : (
-                <AvatarPlaceholder
-                  initial={senderData.initial}
-                  color={isMe ? 'primary-container' : 'tertiary-container'}
-                  textColor={isMe ? 'on-primary-container' : 'on-tertiary-container'}
-                  size={8}
-                />
-              )}
-              <Box
-                bg={isMe ? 'primary-container' : 'surface-container-lowest'}
-                p={4}
-                borderRadius="2xl"
-                borderTopLeftRadius={isMe ? '2xl' : 'sm'}
-                borderTopRightRadius={isMe ? 'sm' : '2xl'}
-                boxShadow="warm-ambient"
-              >
-                {msg.subject && (
-                  <Text fontSize="sm" fontWeight="bold" color="on-surface" mb={1}>
-                    {msg.subject}
-                  </Text>
-                )}
-                <Text fontSize="md" color="on-surface" whiteSpace="pre-line">
-                  {msg.text}
-                </Text>
-                <Text
-                  fontSize="xs"
-                  color="on-surface-variant"
-                  textAlign={isMe ? 'left' : 'right'}
-                  mt={2}
+      {/* Messages */}
+      <Flex ref={messagesContainerRef} flex={1} direction="column" overflowY="auto" px={6} py={4} gap={5}>
+        {messagesLoading ? (
+          <Flex justify="center" py={10}><Spinner /></Flex>
+        ) : messages.length > 0 ? (
+          Object.entries(groupedMessages).map(([dateLabel, msgs]) => (
+            <Box key={dateLabel}>
+              <Flex justify="center" mb={4}>
+                <Box bg="surface-variant" color="fg.muted" fontSize="xs" fontWeight="semibold"
+                  px={3} py={1} borderRadius="full"
                 >
-                  {msg.time}
-                </Text>
-              </Box>
-            </Flex>
-          )
-        })}
+                  {dateLabel}
+                </Box>
+              </Flex>
+              <StaggerContainer>
+                {msgs.map((msg) => {
+                  const isMe = msg.emisor?.id === myId
+                  return (
+                    <StaggerContainer.Item key={msg.id}>
+                      <Flex gap={3}
+                    maxW={{ base: 'full', md: '75%', lg: '60%' }}
+                    alignSelf={isMe ? 'flex-end' : 'flex-start'}
+                    direction={isMe ? 'row-reverse' : 'row'} mb={3}
+                  >
+                    <Avatar
+                      label={isMe ? (user?.email || 'Tú') : (partnerInfo?.email || '?')}
+                      size={8}
+                      color={isMe ? 'primary-container' : 'tertiary-container'}
+                      textColor={isMe ? 'on-primary-container' : 'on-tertiary-container'}
+                    />
+                    <Box
+                      bg={isMe ? 'primary-container' : 'surface-container-low'}
+                      p={4} borderRadius="2xl"
+                      borderTopLeftRadius={isMe ? '2xl' : 'sm'}
+                      borderTopRightRadius={isMe ? 'sm' : '2xl'}
+                      shadow="card"
+                    >
+                      <Text fontSize="sm" fontWeight="bold" color="fg" mb={1}>{msg.asunto}</Text>
+                      <Text fontSize="md" color="fg" whiteSpace="pre-line">{msg.cuerpo}</Text>
+                      <Text fontSize="xs" color="fg.muted" textAlign={isMe ? 'left' : 'right'} mt={2}>
+                        {formatTime(msg.created_at)}
+                        {isMe && (
+                          <Box as="span" ml={2}>{msg.leido ? '✓✓ Leído' : '✓ Enviado'}</Box>
+                        )}
+                      </Text>
+                    </Box>
+                  </Flex>
+                    </StaggerContainer.Item>
+                  )
+                })}
+              </StaggerContainer>
+            </Box>
+          ))
+        ) : (
+          <Flex align="center" justify="center" flex={1}>
+            <Text color="fg.muted">Sin mensajes en esta conversación</Text>
+          </Flex>
+        )}
+        <div ref={messagesEndRef} />
       </Flex>
 
-      {/* reply area */}
-      <Box
-        px={6}
-        py={4}
-        bg="surface-container-lowest"
-        borderTop="1px solid"
-        borderColor="outline-variant"
-        flexShrink={0}
+      {/* Reply area */}
+      <Box px={6} py={4} bg="surface-container-lowest"
+        borderTop="1px solid" borderColor="border.default" flexShrink={0}
       >
-        <Flex
-          maxW="4xl"
-          mx="auto"
-          gap={3}
-          align="flex-end"
-          bg="surface-variant"
-          borderRadius="2xl"
-          p={2}
-          border="1px solid"
-          borderColor="outline-variant"
-          transition="all 0.2s ease-out"
-          sx={{
-            '&:focus-within': {
-              borderColor: 'primary',
-              boxShadow: '0 0 0 1px #ab3500',
-            },
-          }}
-        >
-          <IconButton
-            aria-label="Adjuntar archivo"
-            variant="ghost"
-            borderRadius="full"
-            color="on-surface-variant"
-            _hover={{ color: 'primary' }}
-          >
-            <Box as="span" className="material-symbols-outlined" fontSize="20px">
-              attach_file
-            </Box>
-          </IconButton>
-          <Box
-            as="textarea"
-            placeholder="Escribe tu respuesta aquí..."
-            value={replyText}
-            onChange={(e) => setReplyText(e.target.value)}
-            rows={2}
-            w="full"
-            bg="transparent"
-            border="none"
-            p={2}
-            resize="none"
-            fontFamily="body"
-            fontSize="md"
-            color="on-surface"
-            outline="none"
-            sx={{
-              '&::placeholder': { color: '#594139', opacity: 0.6 },
-            }}
+        <Box maxW="4xl" mx="auto">
+          <Input
+            placeholder="Asunto (opcional)"
+            value={replySubject}
+            onChange={(e) => setReplySubject(e.target.value)}
+            borderRadius="full" mb={2} borderColor="border.default" bg="bg"
           />
-          <Button
-            borderRadius="xl"
-            bg="linear-gradient(135deg, #ff6b35, #f7b32b)"
-            color="white"
-            fontWeight="bold"
-            fontSize="sm"
-            px={5}
-            py={3}
-            h="auto"
-            _hover={{ opacity: 0.9 }}
-            transition="all 0.2s ease-out"
-            rightIcon={
-              <Box as="span" className="material-symbols-outlined" fontSize="16px">
-                send
-              </Box>
-            }
-            onClick={() => {
-              if (replyText.trim()) {
-                // TODO: send message via API
-                setReplyText('')
-              }
-            }}
+          <Flex gap={3} align="flex-end" bg="surface-variant" borderRadius="2xl" p={2}
+            border="1px solid" borderColor="border.default"
+            _focusWithin={{ borderColor: 'primary', ring: 1, ringColor: 'primary' }}
           >
-            Responder
-          </Button>
-        </Flex>
+            <Box
+              as="textarea"
+              placeholder="Escribe tu respuesta aquí..."
+              value={replyBody}
+              onChange={(e) => setReplyBody(e.target.value)}
+              rows={2} w="full" bg="transparent" border="none" p={2}
+              resize="none" fontFamily="body" fontSize="md" color="fg" outline="none"
+              _placeholder={{ color: 'fg.muted', opacity: 0.6 }}
+            />
+            <Button
+              borderRadius="xl" bg="primary" color="white" fontWeight="bold"
+              _hover={{ bg: 'primary-container' }} _active={{ transform: 'scale(0.97)' }}
+              fontSize="sm" px={5} py={3} h="auto"
+              _hover={{ bg: 'primary-container' }}
+              onClick={handleSend}
+              loading={sending}
+              disabled={!replyBody.trim()}
+            >
+              Responder
+            </Button>
+          </Flex>
+        </Box>
       </Box>
     </Flex>
   ) : (
-    <Flex align="center" justify="center" h="full" bg="surface" display={{ base: 'none', md: 'flex' }}>
-      <Box textAlign="center" color="on-surface-variant">
-        <Box as="span" className="material-symbols-outlined" fontSize="48px" display="block" mb={3}>
-          chat
-        </Box>
-        <Text fontSize="lg" fontWeight="medium">
-          Selecciona una conversación
-        </Text>
-        <Text fontSize="sm" mt={1}>
-          Elige un chat del panel izquierdo para empezar
-        </Text>
+    <Flex align="center" justify="center" h="full" bg="bg" display={{ base: 'none', md: 'flex' }}>
+      <Box textAlign="center" color="fg.muted">
+        <Box as="span" className="material-symbols-outlined" fontSize="48px" display="block" mb={3}>chat</Box>
+        <Text fontSize="lg" fontWeight="medium">Selecciona una conversación</Text>
+        <Text fontSize="sm" mt={1}>Elige un chat del panel izquierdo para empezar</Text>
       </Box>
     </Flex>
   )
 
-  /* ── main layout ── */
-  return (
-    <Flex
-      h={{ base: 'calc(100vh - 64px)', md: 'calc(100vh - 64px)' }}
-      overflow="hidden"
-      borderRadius="xl"
-      bg="surface"
-      border="1px solid"
-      borderColor="outline-variant"
-      boxShadow="warm-ambient"
-    >
-      {/* inbox sidebar — hidden on mobile when a chat is selected */}
-      <Box
-        w={{ base: 'full', md: '360px', lg: '400px' }}
-        borderRight="1px solid"
-        borderColor="outline-variant"
-        flexShrink={0}
-        display={{ base: selectedId ? 'none' : 'flex', md: 'flex' }}
-        flexDir="column"
-        bg="surface-container-lowest"
-      >
-        {inboxPanel}
+  /* ── New message dialog ── */
+  const newMsgDialog = (
+    <AnimatePresence>
+      {showNewMsg && (
+        <Box
+          as={motion.div}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          position="fixed" inset={0}
+          css={{ background: 'rgba(0, 0, 0, 0.4)' }}
+          zIndex={200}
+          display="flex" alignItems="center" justifyContent="center" p={4}
+          onClick={() => setShowNewMsg(false)}
+        >
+          <Box
+            as={motion.div}
+            initial={{ opacity: 0, scale: 0.92, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.92, y: 10 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+            bg="bg" borderRadius="xl" p={6} maxW="480px" w="full" shadow="xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+        <Text textStyle="heading-md" color="fg" mb={4}>Nuevo Mensaje</Text>
+        <VStack gap={3}>
+          <Box w="full">
+            <Text textStyle="label-md" color="fg.muted" mb={1}>Destinatario *</Text>
+            <NativeSelect.Root size="lg">
+              <NativeSelect.Field
+                value={newRecipientId}
+                placeholder="Seleccionar destinatario"
+                onChange={(e) => setNewRecipientId(e.target.value)}
+              >
+                {conversations.map(c => (
+                  <option key={c.usuario?.id} value={c.usuario?.id}>
+                    {c.usuario?.email} ({c.usuario?.rol})
+                  </option>
+                ))}
+              </NativeSelect.Field>
+            </NativeSelect.Root>
+          </Box>
+          <Box w="full">
+            <Text textStyle="label-md" color="fg.muted" mb={1}>Asunto *</Text>
+            <Input placeholder="Ej: Consulta sobre tarea" value={newSubject}
+              onChange={(e) => setNewSubject(e.target.value)} borderRadius="full" borderColor="border.default" bg="bg"
+            />
+          </Box>
+          <Box w="full">
+            <Text textStyle="label-md" color="fg.muted" mb={1}>Mensaje *</Text>
+            <Box
+              as="textarea"
+              placeholder="Escribí tu mensaje..."
+              value={newBody}
+              onChange={(e) => setNewBody(e.target.value)}
+              rows={4} w="full" borderRadius="xl" p={3} border="1px solid" borderColor="border.default" bg="bg"
+              resize="none" fontFamily="body" fontSize="md" color="fg" outline="none"
+              _focus={{ ring: 2, ringColor: 'primary-container' }}
+              _placeholder={{ color: 'fg.muted' }}
+            />
+          </Box>
+        </VStack>
+        <Flex justify="flex-end" gap={3} mt={4}>
+          <Button variant="ghost" borderRadius="full" onClick={() => setShowNewMsg(false)}>Cancelar</Button>
+          <Button borderRadius="full" bg="primary" color="white"
+            _hover={{ bg: 'primary-container' }}
+            _active={{ transform: 'scale(0.97)' }}
+            onClick={handleNewMessage} loading={sending}
+          >
+            Enviar
+          </Button>
+        </Flex>
       </Box>
+    </Box>
+    )}
+    </AnimatePresence>
+  )
 
-      {/* chat area — full width on mobile when selected */}
-      <Box
-        flex={1}
-        display={{ base: selectedId ? 'flex' : 'none', md: 'flex' }}
-        flexDir="column"
-        minW={0}
+  /* ── Main layout ── */
+  return (
+    <>
+      <FeedbackBanner feedback={feedback} />
+      {error && (
+        <Box px={6} py={2} bg="error-container" color="on-error-container" borderRadius="md" mx={6} mt={2}>
+          <Text fontSize="sm">{error}</Text>
+        </Box>
+      )}
+      <Flex h={{ base: 'calc(100vh - 64px)', md: 'calc(100vh - 64px)' }}
+        overflow="hidden" borderRadius="xl" bg="bg" border="1px solid" borderColor="border.default" shadow="card"
       >
-        {chatView}
-      </Box>
-    </Flex>
+        <Box w={{ base: 'full', md: '360px', lg: '400px' }}
+          borderRight="1px solid" borderColor="border.default" flexShrink={0}
+          display={{ base: selectedUserId ? 'none' : 'flex', md: 'flex' }}
+          flexDir="column" bg="surface-container-lowest"
+        >
+          {inboxPanel}
+        </Box>
+        <Box flex={1} display={{ base: selectedUserId ? 'flex' : 'none', md: 'flex' }} flexDir="column" minW={0}>
+          {chatView}
+        </Box>
+      </Flex>
+      {newMsgDialog}
+    </>
   )
 }

@@ -7,9 +7,9 @@ const router = Router();
 router.use(authenticate);
 
 // GET /api/tutors/children — List tutor's children (tutor only)
-router.get('/children', authorize('tutor'), TutorController.getChildren);
+router.get('/children', authorize('admin', 'tutor'), TutorController.getChildren);
 
 // GET /api/tutors/children/:id/summary — Consolidated summary for a child (tutor only)
-router.get('/children/:id/summary', authorize('tutor'), TutorController.getChildSummary);
+router.get('/children/:id/summary', authorize('admin', 'tutor'), TutorController.getChildSummary);
 
 export default router;

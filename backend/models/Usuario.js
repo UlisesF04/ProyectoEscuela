@@ -19,7 +19,7 @@ Usuario.init({
     allowNull: false,
   },
   rol: {
-    type: DataTypes.ENUM('admin', 'docente', 'tutor'),
+    type: DataTypes.ENUM('admin', 'docente', 'tutor', 'preceptor'),
     allowNull: false,
   },
   whatsapp_number: {

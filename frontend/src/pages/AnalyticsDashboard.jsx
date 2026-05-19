@@ -1,479 +1,356 @@
-import { useState } from 'react'
-import { Box, Flex, Text, Button } from '@chakra-ui/react'
+import { useState, useEffect } from 'react'
+import { Box, Flex, Text, Button, Card, Badge, SimpleGrid, VStack, Input } from '@chakra-ui/react'
+import { useSearchParams } from 'react-router-dom'
+import { MIN_PASSING_GRADE, MIN_CHART_DATA_POINTS, MONTHLY_UNEXCUSED_ALERT } from '../constants/business'
+import TrendChart from '../components/atoms/TrendChart'
+import LoadingSpinner from '../components/molecules/LoadingSpinner'
+import EmptyState from '../components/molecules/EmptyState'
+import { useAnalytics } from '../hooks'
 
-/* ── mock data ── */
-const MOCK_SUBJECTS = [
-  { id: 'all', label: 'Todas' },
-  { id: 'mates', label: 'Matemáticas' },
-  { id: 'lengua', label: 'Lengua' },
-  { id: 'historia', label: 'Historia' },
-  { id: 'bio', label: 'Biología' },
-  { id: 'fisica', label: 'Física' },
-  { id: 'quimica', label: 'Química' },
-  { id: 'ef', label: 'Educación Física' },
-]
-
-const PERIODS = [
-  { value: 'anual', label: 'Anual (Resumen)' },
-  { value: 'trim1', label: 'Trimestre 1' },
-  { value: 'trim2', label: 'Trimestre 2' },
-  { value: 'trim3', label: 'Trimestre 3' },
-]
-
-const MONTHS = ['Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago']
-
-const MOCK_CHART_DATA = [60, 40, 55, 30, 45, 20] // percentages from top
-
-const TABLE_DATA = [
-  { subject: 'Matemáticas', avg: '8.5', trend: 'up', color: 'secondary-container' },
-  { subject: 'Literatura', avg: '7.2', trend: 'up', color: 'primary-container' },
-  { subject: 'Física', avg: '5.8', trend: 'down', color: 'error', critical: true },
-  { subject: 'Química', avg: '3.5', trend: 'down', color: 'tertiary', danger: true },
-  { subject: 'Educación Física', avg: '9.0', trend: 'neutral', color: 'outline' },
-]
-
-/* ── helper components ── */
-
-function TrendIcon({ trend }) {
-  const iconMap = {
-    up: { icon: 'arrow_upward', bg: '#e8f5e9', color: '#2e7d32' },
-    down: { icon: 'arrow_downward', bg: '#fff8f5', color: '#ba1a1a' },
-    neutral: { icon: 'horizontal_rule', bg: 'transparent', color: '#594139' },
-  }
-  const t = iconMap[trend] || iconMap.neutral
-  return (
-    <Box
-      as="span"
-      className="material-symbols-outlined"
-      display="inline-flex"
-      alignItems="center"
-      justifyContent="center"
-      w={8}
-      h={8}
-      borderRadius="full"
-      bg={t.bg}
-      color={t.color}
-      fontSize="18px"
-      lineHeight="1"
-    >
-      {t.icon}
-    </Box>
-  )
-}
-
-/* ── chart component ── */
-
-function TrendChart({ data, months }) {
-  const w = 100
-  const h = 100
-  const points = data.map((p, i) => `${(i / (data.length - 1)) * w},${p}`).join(' ')
-  const polygonPoints = `0,${h} 0,${data[0]} ${points} ${w},${h}`
-
-  return (
-    <Box w="full" h="72" position="relative" pt={4} pb={8} px={0}>
-      {/* grid lines */}
-      {[10, 8, 6, 4, 2].map((val, i) => {
-        const y = ((10 - val) / 10) * 100
-        const isLast = i === 4
-        return (
-          <Box
-            key={val}
-            position="absolute"
-            left={0}
-            right={0}
-            top={`${y}%`}
-            borderBottom={isLast ? '1px solid' : '1px dashed'}
-            borderColor={isLast ? 'outline' : 'outline-variant'}
-            opacity={isLast ? 1 : 0.5}
-            pointerEvents="none"
-          >
-            <Text
-              position="absolute"
-              left={-5}
-              top={-3}
-              fontSize="xs"
-              color="on-surface-variant"
-              fontFamily="body"
-            >
-              {val}
-            </Text>
-          </Box>
-        )
-      })}
-
-      {/* SVG line */}
-      <Box as="svg" position="absolute" inset={0} w="full" h="full" pb={8} overflow="visible">
-        <defs>
-          <linearGradient id="chart-grad" x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stopColor="#ab3500" stopOpacity="0.15" />
-            <stop offset="100%" stopColor="#fff8f5" stopOpacity="0" />
-          </linearGradient>
-        </defs>
-        <polyline
-          points={points}
-          fill="none"
-          stroke="#ab3500"
-          strokeWidth="3"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        <polygon points={polygonPoints} fill="url(#chart-grad)" />
-        {data.map((p, i) => (
-          <circle
-            key={i}
-            cx={(i / (data.length - 1)) * w}
-            cy={p}
-            r="2.5"
-            fill="#ff6b35"
-            stroke="#fff8f5"
-            strokeWidth="1"
-          />
-        ))}
-      </Box>
-
-      {/* x-axis labels */}
-      <Flex
-        position="absolute"
-        bottom={0}
-        left={0}
-        right={0}
-        justify="space-between"
-        px={0}
-      >
-        {months.map((m) => (
-          <Text key={m} fontSize="xs" color="on-surface-variant" fontFamily="body">
-            {m}
-          </Text>
-        ))}
-      </Flex>
-    </Box>
-  )
-}
-
-/* ── main page ── */
-
+/* ── Main page ── */
 export default function AnalyticsDashboard() {
-  const [activeTab, setActiveTab] = useState('grades')
-  const [selectedSubject, setSelectedSubject] = useState('all')
-  const [period, setPeriod] = useState('trim2')
-  const [showAllSubjects, setShowAllSubjects] = useState(false)
+  const [searchParams] = useSearchParams()
+  const studentIdFromUrl = searchParams.get('student')
 
-  const subjects = showAllSubjects
-    ? MOCK_SUBJECTS
-    : [...MOCK_SUBJECTS.slice(0, 5), { id: '+more', label: `+${MOCK_SUBJECTS.length - 5} Más` }]
+  const [studentInput, setStudentInput] = useState(studentIdFromUrl || '')
+  const [activeStudentId, setActiveStudentId] = useState(studentIdFromUrl ? parseInt(studentIdFromUrl) : null)
+  const { data, loading, error } = useAnalytics(activeStudentId)
+  const [inputError, setInputError] = useState('')
+  const [activeTab, setActiveTab] = useState('grades')
+  const [selectedSubject, setSelectedSubject] = useState(null)
+
+  // Reset selected subject when student changes
+  useEffect(() => { setSelectedSubject(null) }, [activeStudentId])
+
+  // Auto-load if studentIdFromUrl is present
+  useEffect(() => {
+    if (studentIdFromUrl) {
+      setStudentInput(studentIdFromUrl)
+      setActiveStudentId(parseInt(studentIdFromUrl))
+    }
+  }, [studentIdFromUrl])
+
+  const handleSearch = () => {
+    const id = parseInt(studentInput)
+    if (!id || isNaN(id)) {
+      setInputError('Ingres\u00e1 un ID de estudiante v\u00e1lido')
+      return
+    }
+    setInputError('')
+    setActiveStudentId(id)
+  }
+
+  // Subjects for filter
+  const allSubjects = data?.calificaciones?.materias || []
+  const subjects = selectedSubject
+    ? allSubjects.filter(s => s.materia === selectedSubject)
+    : allSubjects
+
+  // Chart data
+  const chartData = activeTab === 'grades'
+    ? subjects
+    : null
+
+  const monthlyData = data?.inasistencias?.evolucion_mensual || []
+  const attendanceChartData = monthlyData.map(m => m.total)
+  const attendanceMonths = monthlyData.map(m => {
+    const [, mes] = m.mes.split('-')
+    const nombres = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
+    return nombres[parseInt(mes) - 1] || m.mes
+  })
 
   return (
-    <Flex direction="column" gap={6}>
-      {/* ── Header + Tabs ── */}
-      <Flex direction={{ base: 'column', lg: 'row' }} justify="space-between" align={{ lg: 'flex-end' }} gap={6}>
+    <Box maxW="container-max" mx="auto">
+      {/* Header */}
+      <Flex direction={{ base: 'column', lg: 'row' }} justify="space-between" align={{ lg: 'flex-end' }} gap={6} mb={6}>
         <Box>
-          <Text textStyle="heading-xl" color="on-surface" mb={1}>
-            Tablero Analítico
-          </Text>
-          <Text textStyle="body-lg" color="on-surface-variant">
-            Rendimiento académico global y tendencias por materia.
+          <Text textStyle="heading-xl" color="fg" mb={1}>Tablero Analítico</Text>
+          <Text textStyle="body-md" color="fg.muted">
+            {data
+              ? `${data.estudiante.nombre} ${data.estudiante.apellido} · ${data.estudiante.curso} · DNI ${data.estudiante.dni}`
+              : 'Rendimiento académico, asistencias y alertas por estudiante'}
           </Text>
         </Box>
-
-        {/* tab pill */}
-        <Flex bg="surface-variant" p={1} borderRadius="full" alignSelf={{ base: 'flex-start', lg: 'auto' }}>
-          <Button
-            variant="ghost"
-            borderRadius="full"
-            bg={activeTab === 'grades' ? 'primary' : 'transparent'}
-            color={activeTab === 'grades' ? 'on-primary' : 'on-surface-variant'}
-            fontWeight={activeTab === 'grades' ? 'bold' : 'normal'}
-            fontSize="sm"
-            px={5}
-            py={2}
-            h="auto"
-            minH="44px"
-            _hover={{ bg: activeTab === 'grades' ? 'primary' : 'surface-container-high' }}
-            transition="all 0.2s ease-out"
-            onClick={() => setActiveTab('grades')}
-            leftIcon={
-              <Box as="span" className="material-symbols-outlined" fontSize="18px" lineHeight="1">
-                trending_up
-              </Box>
-            }
-          >
-            EVOLUCIÓN DE NOTAS
-          </Button>
-          <Button
-            variant="ghost"
-            borderRadius="full"
-            bg={activeTab === 'attendance' ? 'primary' : 'transparent'}
-            color={activeTab === 'attendance' ? 'on-primary' : 'on-surface-variant'}
-            fontWeight={activeTab === 'attendance' ? 'bold' : 'normal'}
-            fontSize="sm"
-            px={5}
-            py={2}
-            h="auto"
-            minH="44px"
-            _hover={{ bg: activeTab === 'attendance' ? 'primary' : 'surface-container-high' }}
-            transition="all 0.2s ease-out"
-            onClick={() => setActiveTab('attendance')}
-            leftIcon={
-              <Box as="span" className="material-symbols-outlined" fontSize="18px" lineHeight="1">
-                calendar_month
-              </Box>
-            }
-          >
-            EVOLUCIÓN DE ASISTENCIAS
-          </Button>
-        </Flex>
       </Flex>
 
-      {/* ── Filters Row ── */}
-      <Box
-        bg="surface"
-        borderRadius="xl"
-        p={6}
-        boxShadow="warm-ambient"
-        borderWidth="1px"
-        borderColor="outline-variant"
-      >
-        <Flex direction={{ base: 'column', lg: 'row' }} gap={6}>
-          {/* subject chips */}
-          <Box flex={2}>
-            <Text textStyle="label-md" color="on-surface-variant" textTransform="uppercase" letterSpacing="wider" mb={3}>
-              Filtro por Materia
-            </Text>
-            <Flex wrap="wrap" gap={2}>
-              {subjects.map((s) => {
-                const isActive = selectedSubject === s.id
-                const isMore = s.id === '+more'
-                return (
-                  <Button
-                    key={s.id}
-                    variant="ghost"
-                    borderRadius="full"
-                    fontSize="sm"
-                    px={4}
-                    py={1.5}
-                    h="auto"
-                    minH="32px"
-                    bg={isActive ? 'primary' : isMore ? 'surface-variant' : 'tertiary-container'}
-                    color={isActive ? 'on-primary' : isMore ? 'on-surface-variant' : 'on-tertiary-container'}
-                    fontWeight={isActive ? 'bold' : 'normal'}
-                    _hover={{
-                      bg: isActive ? 'primary' : isMore ? 'outline-variant' : undefined,
-                      opacity: isActive ? 0.9 : undefined,
-                    }}
-                    transition="all 0.2s ease-out"
-                    onClick={() => {
-                      if (isMore) {
-                        setShowAllSubjects(true)
-                      } else {
-                        setSelectedSubject(s.id)
-                        setShowAllSubjects(false)
-                      }
-                    }}
-                  >
-                    {s.label}
-                  </Button>
-                )
-              })}
-            </Flex>
-          </Box>
-
-          {/* period selector */}
+      {/* Student selector */}
+      <Card.Root bg="bg.card" borderRadius="xl" shadow="card" p={6} mb={6}>
+        <Flex gap={4} align={{ base: 'stretch', md: 'flex-end' }} direction={{ base: 'column', md: 'row' }}>
           <Box flex={1}>
-            <Text textStyle="label-md" color="on-surface-variant" textTransform="uppercase" letterSpacing="wider" mb={3}>
-              Período Lectivo
-            </Text>
-            <Box position="relative">
-              <Box
-                as="select"
-                value={period}
-                onChange={(e) => setPeriod(e.target.value)}
-                w="full"
-                bg="surface-container-low"
-                border="1px solid"
-                borderColor="outline-variant"
-                color="on-surface"
-                fontFamily="body"
-                fontSize="md"
-                py={3}
-                px={4}
-                borderRadius="2xl"
-                appearance="none"
-                outline="none"
-                cursor="pointer"
-                transition="all 0.2s ease-out"
-                _focus={{
-                  ring: 2,
-                  ringColor: 'primary',
-                  borderColor: 'primary',
-                }}
-                sx={{
-                  '&:focus': {
-                    boxShadow: '0 0 0 2px #ab3500',
-                    borderColor: '#ab3500',
-                  },
-                }}
-              >
-                {PERIODS.map((p) => (
-                  <option key={p.value} value={p.value}>
-                    {p.label}
-                  </option>
-                ))}
-              </Box>
-              <Box
-                as="span"
-                className="material-symbols-outlined"
-                position="absolute"
-                right={4}
-                top="50%"
-                transform="translateY(-50%)"
-                color="on-surface-variant"
-                pointerEvents="none"
-                fontSize="20px"
-              >
-                expand_more
-              </Box>
-            </Box>
+            <Text textStyle="label-md" color="fg.muted" mb={1}>ID del Estudiante</Text>
+            <Input
+              placeholder="Ej: 1, 2, 3..."
+              value={studentInput}
+              onChange={(e) => setStudentInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+              borderRadius="full"
+              borderColor="border.default"
+              bg="bg"
+              _focus={{ ring: 2, ringColor: 'primary-container' }}
+            />
           </Box>
-        </Flex>
-      </Box>
-
-      {/* ── Chart Section ── */}
-      <Box
-        bg="surface"
-        borderRadius="xl"
-        p={6}
-        boxShadow="warm-ambient"
-        borderWidth="1px"
-        borderColor="outline-variant"
-      >
-        <Flex justify="space-between" align="center" mb={4}>
-          <Text textStyle="heading-md" color="on-surface">
-            Tendencia General de Calificaciones
-          </Text>
-          <Box
-            as="span"
-            bg="surface-container-high"
-            color="on-surface-variant"
-            fontSize="xs"
-            fontWeight="semibold"
-            fontFamily="body"
-            px={3}
-            py={1}
-            borderRadius="full"
-          >
-            Escala 1-10
-          </Box>
-        </Flex>
-        <TrendChart data={MOCK_CHART_DATA} months={MONTHS} />
-      </Box>
-
-      {/* ── Summary Table ── */}
-      <Box
-        bg="surface"
-        borderRadius="xl"
-        boxShadow="warm-ambient"
-        borderWidth="1px"
-        borderColor="outline-variant"
-        overflow="hidden"
-      >
-        <Box bg="surface-container-low" borderBottom="1px solid" borderColor="outline-variant" px={6} py={4}>
-          <Text textStyle="heading-md" color="on-surface">
-            Resumen por Materia
-          </Text>
-        </Box>
-        <Box overflowX="auto">
-          <Box as="table" w="full" sx={{ borderCollapse: 'collapse' }}>
-            <Box as="thead">
-              <Box
-                as="tr"
-                borderBottom="1px solid"
-                borderColor="outline-variant"
-                bg="surface-container-highest"
-              >
-                <Box as="th" textStyle="label-md" color="on-surface-variant" textAlign="left" px={5} py={3.5}>
-                  Materia
-                </Box>
-                <Box as="th" textStyle="label-md" color="on-surface-variant" textAlign="right" px={5} py={3.5}>
-                  Promedio
-                </Box>
-                <Box as="th" textStyle="label-md" color="on-surface-variant" textAlign="center" px={5} py={3.5}>
-                  Tendencia
-                </Box>
-              </Box>
-            </Box>
-            <Box as="tbody">
-              {TABLE_DATA.map((row, i) => (
-                <Box
-                  as="tr"
-                  key={row.subject}
-                  borderBottom={i < TABLE_DATA.length - 1 ? '1px solid' : 'none'}
-                  borderColor="outline-variant"
-                  bg={row.critical ? 'error-container' : 'transparent'}
-                  transition="background 0.15s ease"
-                  _hover={{ bg: row.critical ? 'error-container' : 'surface-variant' }}
-                >
-                  <Box as="td" px={5} py={3.5}>
-                    <Flex align="center" gap={3}>
-                      <Box w={2} h={2} borderRadius="full" bg={row.color} flexShrink={0} />
-                      <Text
-                        color={row.critical ? 'on-error-container' : 'on-surface'}
-                        fontWeight="medium"
-                      >
-                        {row.subject}
-                      </Text>
-                    </Flex>
-                  </Box>
-                  <Box as="td" px={5} py={3.5} textAlign="right">
-                    {row.danger ? (
-                      <Box
-                        as="span"
-                        bg="tertiary"
-                        color="on-tertiary"
-                        px={3}
-                        py={1}
-                        borderRadius="md"
-                        fontWeight="bold"
-                        fontSize="sm"
-                        display="inline-block"
-                      >
-                        {row.avg}
-                      </Box>
-                    ) : (
-                      <Text
-                        color={row.critical ? 'on-error-container' : 'on-surface'}
-                        fontWeight="bold"
-                      >
-                        {row.avg}
-                      </Text>
-                    )}
-                  </Box>
-                  <Box as="td" px={5} py={3.5} textAlign="center">
-                    <TrendIcon trend={row.trend} />
-                  </Box>
-                </Box>
-              ))}
-            </Box>
-          </Box>
-        </Box>
-        <Flex justify="center" px={6} py={4} bg="surface-container-lowest" borderTop="1px solid" borderColor="outline-variant">
           <Button
-            variant="ghost"
-            color="primary"
-            fontSize="sm"
-            fontWeight="semibold"
-            fontFamily="body"
-            _hover={{ textDecor: 'underline' }}
-            transition="all 0.15s ease"
-            rightIcon={
-              <Box as="span" className="material-symbols-outlined" fontSize="16px">
-                arrow_forward
-              </Box>
-            }
+            borderRadius="full"
+            bg="primary"
+            color="white"
+            _hover={{ bg: 'primary-container' }}
+            onClick={handleSearch}
+            loading={loading}
+            px={8}
           >
-            Ver detalle completo
+            Cargar
           </Button>
         </Flex>
-      </Box>
-    </Flex>
+      </Card.Root>
+
+      {(error || inputError) && (
+        <Box mb={4} p={3} borderRadius="full" bg="error-container" color="on-error-container" textStyle="body-md" fontWeight="medium">
+          ❌ {error || inputError}
+        </Box>
+      )}
+
+      {loading && <LoadingSpinner py={10} />}
+
+      {data && !loading && (
+        <>
+          {/* Alerts banner */}
+          {data.resumen_alertas?.total > 0 && (
+            <Card.Root bg="error-container" borderRadius="xl" shadow="card" p={4} mb={6}>
+              <Flex align="center" gap={3} wrap="wrap">
+                <Badge colorPalette="red" borderRadius="full" px={3} py={1}>
+                  {data.resumen_alertas.total} alerta(s) activa(s)
+                </Badge>
+                <Text textStyle="body-md" color="on-error-container" fontWeight="medium">
+                  {data.resumen_alertas.items.map(a => a.descripcion).join(' · ')}
+                </Text>
+              </Flex>
+            </Card.Root>
+          )}
+
+          {/* Tabs */}
+          <Flex bg="surface-container-low" p={1} borderRadius="full" mb={6} w="fit-content">
+            <Button
+              variant="ghost" borderRadius="full"
+              bg={activeTab === 'grades' ? 'primary' : 'transparent'}
+              color={activeTab === 'grades' ? 'white' : 'fg'}
+              fontWeight={activeTab === 'grades' ? 'bold' : 'normal'}
+              fontSize="sm" px={6} py={2} h="auto" minH="44px"
+              _hover={{ bg: activeTab === 'grades' ? 'primary' : 'surface-container-high' }}
+              onClick={() => setActiveTab('grades')}
+            >
+              CALIFICACIONES
+            </Button>
+            <Button
+              variant="ghost" borderRadius="full"
+              bg={activeTab === 'attendance' ? 'primary' : 'transparent'}
+              color={activeTab === 'attendance' ? 'white' : 'fg'}
+              fontWeight={activeTab === 'attendance' ? 'bold' : 'normal'}
+              fontSize="sm" px={6} py={2} h="auto" minH="44px"
+              _hover={{ bg: activeTab === 'attendance' ? 'primary' : 'surface-container-high' }}
+              onClick={() => setActiveTab('attendance')}
+            >
+              ASISTENCIAS
+            </Button>
+          </Flex>
+
+          {/* ── GRADES TAB ── */}
+          {activeTab === 'grades' && (
+            <VStack gap={6} align="stretch">
+              {/* Subject selector */}
+              {allSubjects.length > 1 && (
+                <Flex wrap="wrap" gap={2}>
+                  <Button
+                    variant="ghost" borderRadius="full" fontSize="sm" px={4} py={1} h="auto" minH="32px"
+                    bg={!selectedSubject ? 'primary' : 'surface-container-low'}
+                    color={!selectedSubject ? 'white' : 'fg'}
+                    onClick={() => setSelectedSubject(null)}
+                  >
+                    Todas
+                  </Button>
+                  {allSubjects.map(s => (
+                    <Button
+                      key={s.materia}
+                      variant="ghost" borderRadius="full" fontSize="sm" px={4} py={1} h="auto" minH="32px"
+                      bg={selectedSubject === s.materia ? 'primary' : 'surface-container-low'}
+                      color={selectedSubject === s.materia ? 'white' : 'fg'}
+                      onClick={() => setSelectedSubject(s.materia)}
+                    >
+                      {s.materia}
+                    </Button>
+                  ))}
+                </Flex>
+              )}
+
+              {/* Chart */}
+              {chartData && chartData.length > 0 && (
+                <Card.Root bg="bg.card" borderRadius="xl" shadow="card" p={6}>
+                  <Flex justify="space-between" align="center" mb={4}>
+                    <Text textStyle="heading-md" color="fg">
+                      {selectedSubject ? `Evolución — ${selectedSubject}` : 'Evolución de Calificaciones'}
+                    </Text>
+                    <Badge borderRadius="full" colorPalette="blue">Escala 1-10</Badge>
+                  </Flex>
+                  {(() => {
+                    // Find the selected subject's evolution data
+                    const subjectData = selectedSubject
+                      ? chartData.find(s => s.materia === selectedSubject)
+                      : chartData[0]
+                    if (!subjectData) return <Text color="fg.muted">Sin datos de evolución</Text>
+                    const evol = subjectData.evolucion || []
+                    const pts = evol.map(e => e.nota)
+                    const lbs = evol.map(e => {
+                      const d = new Date(e.fecha)
+                      return `${d.getDate()}/${d.getMonth() + 1}`
+                    })
+                    if (pts.length < MIN_CHART_DATA_POINTS) return <Text textStyle="body-md" color="fg.muted" py={4}>Se necesitan al menos {MIN_CHART_DATA_POINTS} calificaciones para mostrar evolución</Text>
+                    return <TrendChart data={pts} months={lbs} />
+                  })()}
+                </Card.Root>
+              )}
+
+              {/* Summary table */}
+              <Card.Root bg="bg.card" borderRadius="xl" shadow="card" overflow="hidden">
+                <Box bg="surface-container-low" borderBottom="1px solid" borderColor="border.default" px={6} py={4}>
+                  <Text textStyle="heading-md" color="fg">Resumen por Materia</Text>
+                </Box>
+                <Box overflowX="auto">
+                  <Box as="table" w="full" sx={{ borderCollapse: 'collapse' }}>
+                    <Box as="thead">
+                      <Box as="tr" borderBottom="1px solid" borderColor="border.default" bg="surface-container-high">
+                        <Box as="th" textStyle="label-md" color="fg.muted" textAlign="left" px={5} py={3.5}>Materia</Box>
+                        <Box as="th" textStyle="label-md" color="fg.muted" textAlign="right" px={5} py={3.5}>Promedio</Box>
+                        <Box as="th" textStyle="label-md" color="fg.muted" textAlign="center" px={5} py={3.5}>Notas</Box>
+                        <Box as="th" textStyle="label-md" color="fg.muted" textAlign="center" px={5} py={3.5}>Críticas</Box>
+                      </Box>
+                    </Box>
+                    <Box as="tbody">
+                      {allSubjects.length > 0 ? allSubjects.map((s, i) => (
+                        <Box as="tr" key={s.materia}
+                          borderBottom={i < allSubjects.length - 1 ? '1px solid' : 'none'}
+                          borderColor="border.default"
+                          bg={s.criticas > 0 ? 'error-container' : 'transparent'}
+                          _hover={{ bg: s.criticas > 0 ? 'error-container' : 'surface-variant' }}
+                        >
+                          <Box as="td" px={5} py={3.5}>
+                            <Flex align="center" gap={3}>
+                              <Box w={2} h={2} borderRadius="full" bg={s.promedio < MIN_PASSING_GRADE ? 'error' : 'primary'} flexShrink={0} />
+                              <Text color={s.criticas > 0 ? 'on-error-container' : 'fg'} fontWeight="medium">{s.materia}</Text>
+                            </Flex>
+                          </Box>
+                          <Box as="td" px={5} py={3.5} textAlign="right">
+                            <Text fontWeight="bold" color={s.promedio < MIN_PASSING_GRADE ? 'error' : 'fg'}>{s.promedio.toFixed(1)}</Text>
+                          </Box>
+                          <Box as="td" px={5} py={3.5} textAlign="center">
+                            <Text color="fg.muted">{s.cantidad_notas}</Text>
+                          </Box>
+                          <Box as="td" px={5} py={3.5} textAlign="center">
+                            {s.criticas > 0 ? (
+                              <Badge colorPalette="red" borderRadius="full">{s.criticas}</Badge>
+                            ) : (
+                              <Text color="fg.muted">—</Text>
+                            )}
+                          </Box>
+                        </Box>
+                      )) : (
+                        <Box as="tr">
+                          <Box as="td" px={5} py={6} textAlign="center" colSpan={4} color="fg.muted">
+                            No hay calificaciones registradas
+                          </Box>
+                        </Box>
+                      )}
+                    </Box>
+                  </Box>
+                </Box>
+              </Card.Root>
+            </VStack>
+          )}
+
+          {/* ── ATTENDANCE TAB ── */}
+          {activeTab === 'attendance' && (
+            <VStack gap={6} align="stretch">
+              {/* Stats cards */}
+              <SimpleGrid columns={{ base: 1, sm: 3 }} gap={4}>
+                <Card.Root bg="bg.card" borderRadius="xl" shadow="card" p={5}>
+                  <Text textStyle="heading-xl" color="primary">{data.inasistencias.total}</Text>
+                  <Text textStyle="label-md" color="fg.muted">Total ausencias</Text>
+                </Card.Root>
+                <Card.Root bg="bg.card" borderRadius="xl" shadow="card" p={5}>
+                  <Text textStyle="heading-xl" color="success">{data.inasistencias.justificadas}</Text>
+                  <Text textStyle="label-md" color="fg.muted">Justificadas</Text>
+                </Card.Root>
+                <Card.Root bg="bg.card" borderRadius="xl" shadow="card" p={5}>
+                  <Text textStyle="heading-xl" color="tertiary">{data.inasistencias.no_justificadas}</Text>
+                  <Text textStyle="label-md" color="fg.muted">No justificadas</Text>
+                </Card.Root>
+              </SimpleGrid>
+
+              {/* Attendance chart */}
+              {monthlyData.length >= MIN_CHART_DATA_POINTS && (
+                <Card.Root bg="bg.card" borderRadius="xl" shadow="card" p={6}>
+                  <Flex justify="space-between" align="center" mb={4}>
+                    <Text textStyle="heading-md" color="fg">Evolución Mensual de Inasistencias</Text>
+                    <Badge borderRadius="full" colorPalette="orange">Total: {data.inasistencias.porcentaje}%</Badge>
+                  </Flex>
+                  <TrendChart data={attendanceChartData} months={attendanceMonths} color="var(--chakra-colors-primary)" gradientId="att-grad" />
+                </Card.Root>
+              )}
+
+              {/* Monthly table */}
+              {monthlyData.length > 0 && (
+                <Card.Root bg="bg.card" borderRadius="xl" shadow="card" overflow="hidden">
+                  <Box bg="surface-container-low" borderBottom="1px solid" borderColor="border.default" px={6} py={4}>
+                    <Text textStyle="heading-md" color="fg">Detalle Mensual</Text>
+                  </Box>
+                  <Box overflowX="auto">
+                    <Box as="table" w="full" sx={{ borderCollapse: 'collapse' }}>
+                      <Box as="thead">
+                        <Box as="tr" borderBottom="1px solid" borderColor="border.default" bg="surface-container-high">
+                          <Box as="th" textStyle="label-md" color="fg.muted" textAlign="left" px={5} py={3.5}>Mes</Box>
+                          <Box as="th" textStyle="label-md" color="fg.muted" textAlign="right" px={5} py={3.5}>Total</Box>
+                          <Box as="th" textStyle="label-md" color="fg.muted" textAlign="center" px={5} py={3.5}>Justificadas</Box>
+                          <Box as="th" textStyle="label-md" color="fg.muted" textAlign="center" px={5} py={3.5}>No justificadas</Box>
+                        </Box>
+                      </Box>
+                      <Box as="tbody">
+                        {monthlyData.map((m, i) => (
+                          <Box as="tr" key={m.mes}
+                            borderBottom={i < monthlyData.length - 1 ? '1px solid' : 'none'}
+                            borderColor="border.default"
+                            bg={m.no_justificadas >= MONTHLY_UNEXCUSED_ALERT ? 'error-container' : 'transparent'}
+                          >
+                            <Box as="td" px={5} py={3.5}>
+                              <Text fontWeight="medium" color="fg">{m.mes}</Text>
+                            </Box>
+                            <Box as="td" px={5} py={3.5} textAlign="right">
+                              <Text fontWeight="bold" color="fg">{m.total}</Text>
+                            </Box>
+                            <Box as="td" px={5} py={3.5} textAlign="center">
+                              <Badge colorPalette="green" borderRadius="full">{m.justificadas}</Badge>
+                            </Box>
+                            <Box as="td" px={5} py={3.5} textAlign="center">
+                              <Badge colorPalette={m.no_justificadas >= MONTHLY_UNEXCUSED_ALERT ? 'red' : 'orange'} borderRadius="full">
+                                {m.no_justificadas}
+                                {m.no_justificadas >= MONTHLY_UNEXCUSED_ALERT && ' ⚠'}
+                              </Badge>
+                            </Box>
+                          </Box>
+                        ))}
+                      </Box>
+                    </Box>
+                  </Box>
+                </Card.Root>
+              )}
+            </VStack>
+          )}
+        </>
+      )}
+
+      {!data && !loading && !error && (
+        <EmptyState
+          heading="Seleccion\u00e1 un estudiante"
+          message='Ingres\u00e9 el ID del estudiante y presion\u00e1 "Cargar" para ver su anal\u00edtica completa.'
+        />
+      )}
+    </Box>
   )
 }

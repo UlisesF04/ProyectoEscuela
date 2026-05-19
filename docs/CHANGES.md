@@ -9,12 +9,16 @@
 
 ## Estado General del Proyecto
 
+> ⚠️ **ESTADO REAL (post-auditoría 2026-05-19):** La documentación previa marcaba Fases 2 y 2B como 100% completadas.
+> La auditoría reveló que 6 de 8 changes frontend están **PARCIALES o NO COMPLETADOS** (usan datos mock/hardcodeados
+> en lugar de conectar al backend real). Ver cada change para detalle.
+
 ```
 FASE 0 — Fundaciones            [✅✅✅✅✅✅✅✅✅✅] 100% (3/3)
 FASE 1 — Backend API Core       [✅✅✅✅✅✅✅✅✅✅] 100% (5/5 completos ✅)
-FASE 1B — Backend Nuevos Mód.   [✅✅✅✅✅✅✅✅✅✅]  100% (3/3: 019 ✅, 021 ✅, 023 ✅)
-FASE 2 — Frontend Core          [✅✅✅✅✅✅✅✅✅✅] 100% (009 ✅, 010 ✅, 011 ✅, 012 ✅, 013 ✅)
-FASE 2B — Frontend Nuevos Mód.  [✅✅✅✅✅✅✅✅✅✅] 100% (020 ✅, 022 ✅, 024 ✅)
+FASE 1B — Backend Nuevos Mód.   [✅✅✅✅✅✅✅✅✅✅] 100% (3/3: 019 ✅, 021 ✅, 023 ✅)
+FASE 2 — Frontend Core          [⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜]  20% (009 PARCIAL, 010 PARCIAL, 011 FALSO, 012 FALSO, 013 FALSO)
+FASE 2B — Frontend Nuevos Mód.  [⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜]   0% (020 FALSO, 022 FALSO, 024 FALSO)
 FASE 3 — Agente + WhatsApp      [⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜]   0% (3 pendientes: 014,015,016)
 FASE 4 — Cierre                 [⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜]   0% (2 pendientes: 017,018)
 ```
@@ -39,10 +43,10 @@ FASE 4 — Cierre                 [⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜]   0% (2 pendi
 | Frontend `main.jsx` | ✅ Listo | ChakraProvider con `createSystem` |
 | Frontend `App.jsx` | ✅ Listo | Router con login + dashboard protegido |
 | Frontend `Login.jsx` | ✅ Listo | Integrado con `/api/auth/login` |
-| Frontend `Dashboard.jsx` | ✅ Listo | Página base post-login |
+| Frontend `Dashboard.jsx` | ✅ Listo | Página base post-login. **Pendiente:** redirigir automáticamente según rol. |
 | Frontend `AuthContext.jsx` | ✅ Listo | Manejo de sesión con JWT en localStorage |
-| Frontend `ProtectedRoute.jsx` | ✅ Listo | Guard de rutas según auth |
-| Frontend `services/api.js` | ✅ Listo | Axios con interceptor JWT |
+| Frontend `ProtectedRoute.jsx` | ⚠️ Parcial | Guard de rutas según auth. **Pendiente:** debe redirigir al dashboard en vez de mostrar "No autorizado". |
+| Frontend `services/api.js` | ⚠️ Parcial | Axios con interceptor JWT. **Pendiente:** agregar helpers centralizados (getStudents, getCourses, etc.). |
 | Agent `main.py` | ⬜ Skeleton | Solo punto de entrada (2 líneas) |
 | Agent `tasks/db_reader.py` | ⬜ Skeleton | Pendiente de implementar con PostgreSQL |
 | Agent `tasks/notifier.py` | ⬜ Skeleton | Pendiente de implementar (provider WhatsApp TBD) |
@@ -328,28 +332,26 @@ MODIFICAR:
 
 ---
 
-### CHANGE-008: backend-tutors-portal
+### CHANGE-007: backend-teachers-licenses
 
 **Descripción:**
-Endpoints para el portal de padres/tutores: consulta de datos de hijos registrados
-(solo los propios — RN-09), resumen consolidado con inasistencias, calificaciones
-por materia y tareas pendientes.
+Módulo de gestión docente: consulta de licencias (días disponibles/usados/restantes)
+con alerta automática cuando quedan ≤3 días (RN-07), y panel de inasistencias de
+alumnos a cargo del docente autenticado.
 
-**HU asociadas:** HU-018
+**HU asociadas:** HU-010, HU-011
 
 **Archivos:**
 ```
 CREAR:
-  backend/modules/tutors/tutor.model.js
-  backend/modules/tutors/tutor.controller.js
-  backend/modules/tutors/tutor.routes.js
+  backend/modules/teachers/teacher.model.js
+  backend/modules/teachers/teacher.controller.js
+  backend/modules/teachers/teacher.routes.js
 MODIFICAR:
-  backend/app.js — montar rutas /api/tutors
+  backend/app.js — montar rutas /api/teachers
 ```
 
-**Depende de:** CHANGE-002, CHANGE-001, CHANGE-004 (datos de inasistencias)
-
-**Estado:** COMPLETADO — 2026-05-18
+**Depende de:** CHANGE-002, CHANGE-001
 
 **Estado:** COMPLETADO — 2026-05-18
 
@@ -374,7 +376,7 @@ MODIFICAR:
   backend/app.js — montar rutas /api/tutors
 ```
 
-**Depende de:** CHANGE-002, CHANGE-001, CHANGE-004, CHANGE-005, CHANGE-006
+**Depende de:** CHANGE-002, CHANGE-001, CHANGE-004 (datos de inasistencias)
 
 **Estado:** COMPLETADO — 2026-05-18
 
@@ -469,13 +471,13 @@ Theme: Vibrant Scholastic — paleta sunset naranja/mostaza/terracota, tipograf�
 Sidebar lateral colapsable con navegación por rol (admin/docente/tutor/preceptor).
 
 ```
-FASE 2 — Frontend Core            [✅✅✅✅✅⬜⬜⬜⬜⬜]  100%
-                                  009 ✅ | 010 ✅ | 011 ✅ | 012 ✅ | 013 ✅
+FASE 2 — Frontend Core            [⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜]   20%
+                                   009 PARCIAL | 010 PARCIAL | 011 FALSO | 012 FALSO | 013 FALSO
 ```
 
 ---
 
-### CHANGE-009: frontend-absences-pages ✅ COMPLETADO
+### CHANGE-009: frontend-absences-pages — PARCIAL
 
 **Descripción:**
 Páginas de gestión de inasistencias: registro diario con selector de curso y tabla
@@ -492,11 +494,28 @@ justificada/no justificada y referencia a certificado.
 
 **Depende de:** CHANGE-003 (auth), CHANGE-004 (backend absences)
 
-**Estado:** COMPLETADO — 2026-05-18
+**Estado:** PARCIAL — 2026-05-19
+
+**Issues encontrados:**
+- ISSUE-FE-001: `cursos` hardcodeado en línea 50-53 (array estático de 2 cursos). Sin endpoint `GET /api/courses`.
+- ISSUE-FE-012: `AbsenceHistory.jsx` catch block vacío — errores de API silenciados.
+- ISSUE-ROL-002: Ruta `/absences/register` permite `docente` en frontend Y backend, pero debería ser solo `admin, preceptor`.
+
+**Lo que funciona:**
+- ✅ `AbsenceRegister.jsx` llama a `GET /api/absences/course/:id` y `POST /api/absences/register` correctamente.
+- ✅ `AbsenceHistory.jsx` llama a `GET /api/absences/student/:id` correctamente.
+- ✅ Filtro de búsqueda por apellido/nombre/DNI con normalización de acentos.
+- ✅ Ordenamiento por columnas ascendente/descendente.
+- ✅ Selector de fecha y carga de alumnos.
+
+**Lo que falta:**
+- ❌ Cursos deben venir de API, no estar hardcodeados.
+- ❌ Manejo visible de errores en AbsenceHistory.
+- ❌ Roles: `docente` no debe poder registrar inasistencias.
 
 ---
 
-### CHANGE-010: frontend-grades-pages ✅ COMPLETADO
+### CHANGE-010: frontend-grades-pages — PARCIAL
 
 **Descripción:**
 Páginas de calificaciones: carga de notas por materia y período (solo materias
@@ -512,11 +531,26 @@ con promedio <6.
 
 **Depende de:** CHANGE-003, CHANGE-005
 
-**Estado:** COMPLETADO — 2026-05-18
+**Estado:** PARCIAL — 2026-05-19
+
+**Issues encontrados:**
+- ISSUE-FE-002: materias hardcodeadas (líneas 13-18). Existe `GET /api/grades/subjects` pero no se usa.
+- ISSUE-FE-003: `GradeEntry.jsx` courseId hardcodeado a `1` en línea 24.
+- ISSUE-FE-004: `GradeOverview.jsx` courseId hardcodeado a `1` en línea 14 — para rol `tutor` no tiene sentido.
+
+**Lo que funciona:**
+- ✅ `GradeEntry.jsx` llama a `POST /api/grades` correctamente para guardar notas.
+- ✅ `GradeOverview.jsx` llama a `GET /api/grades/course/1` y muestra promedios.
+- ✅ Resaltado visual de promedio <6 en rojo.
+
+**Lo que falta:**
+- ❌ Selector de materia debe cargarse desde API (`GET /api/grades/subjects`).
+- ❌ Selector de curso debe agregarse (o usar el curso del docente autenticado).
+- ❌ Vista para tutor debe obtener datos del hijo, no de un courseId fijo.
 
 ---
 
-### CHANGE-011: frontend-tasks-pages ✅ COMPLETADO
+### CHANGE-011: frontend-tasks-pages — NO COMPLETADO
 
 **Descripción:**
 Páginas de gestión de tareas: creación con nombre y fechas, listado por materia,
@@ -532,11 +566,21 @@ no entregadas.
 
 **Depende de:** CHANGE-003, CHANGE-006
 
-**Estado:** COMPLETADO — 2026-05-18
+**Estado:** NO COMPLETADO — 2026-05-19
+
+**Issues encontrados:**
+- ISSUE-FE-005: `TaskManager.jsx` — **100% hardcodeado**. Tasks array literal (líneas 8-12), `createTask()` solo modifica estado local. Sin `useEffect`. Sin llamadas API. materias hardcodeadas (líneas 16-21).
+- ISSUE-FE-006: `TaskTracking.jsx` — **100% hardcodeado**. Students array literal (líneas 9-15). Sin import `api.js`. Sin llamadas API.
+
+**Qué se necesita:**
+- Conectar `TaskManager` a `GET /api/tasks` (listar), `POST /api/tasks` (crear).
+- Conectar `TaskTracking` a `GET /api/tasks/:id/submissions`, `PUT /api/tasks/:id/students/:estudianteId`.
+- Cargar materias desde `GET /api/grades/subjects`.
+- ISSUE-ROL-004: Ruta `/tasks` permite `tutor` pero backend rechaza tutors en `GET /api/tasks` — inconsistencia.
 
 ---
 
-### CHANGE-012: frontend-teacher-dashboard ✅ COMPLETADO
+### CHANGE-012: frontend-teacher-dashboard — NO COMPLETADO
 
 **Descripción:**
 Dashboard del docente con panel de inasistencias de alumnos a cargo (filtro por
@@ -551,11 +595,20 @@ cuando quedan <=3 días.
 
 **Depende de:** CHANGE-003, CHANGE-007
 
-**Estado:** COMPLETADO — 2026-05-18
+**Estado:** NO COMPLETADO — 2026-05-19
+
+**Issues encontrados:**
+- ISSUE-FE-007: `TeacherDashboard.jsx` — **100% hardcodeado**. cursos (líneas 7-10), studentsAtRisk (líneas 12-15), license data (líneas 17-19). Sin import `api.js`. Sin `useEffect`. Sin llamadas API.
+
+**Qué se necesita:**
+- Conectar a `GET /api/teachers/license` (licencias).
+- Conectar a `GET /api/teachers/students/absences` (inasistencias de alumnos).
+- Conectar a `GET /api/absences/risk` (alumnos en riesgo).
+- Cursos deben cargarse desde API (mismo endpoint que courses).
 
 ---
 
-### CHANGE-013: frontend-parent-portal ✅ COMPLETADO
+### CHANGE-013: frontend-parent-portal — NO COMPLETADO
 
 **Descripción:**
 Portal del padre/tutor con login, vista de resumen académico del hijo: inasistencias,
@@ -570,7 +623,14 @@ registrados (RN-09).
 
 **Depende de:** CHANGE-003, CHANGE-008
 
-**Estado:** COMPLETADO — 2026-05-18
+**Estado:** NO COMPLETADO — 2026-05-19
+
+**Issues encontrados:**
+- ISSUE-FE-008: `ParentDashboard.jsx` — **100% hardcodeado**. hijos (líneas 9-12), metrics completas con inasistencias/materias/tareas (líneas 16-25). Sin import `api.js`. Sin `useEffect`. Sin llamadas API.
+
+**Qué se necesita:**
+- Conectar a `GET /api/tutors/children` para cargar hijos del tutor autenticado.
+- Conectar a `GET /api/tutors/children/:id/summary` para cargar datos reales de cada hijo.
 
 ---
 
@@ -578,7 +638,7 @@ registrados (RN-09).
 
 ---
 
-### CHANGE-020: frontend-analytics ✅ COMPLETADO
+### CHANGE-020: frontend-analytics — NO COMPLETADO
 
 **Descripción:**
 Tablero de analítica con gráficos SVG inline: evolución de notas (línea con
@@ -596,11 +656,19 @@ Diseño fiel al template de `docs/diseno/tablero_anal_tico/`.
 
 **Depende de:** CHANGE-003 (auth), CHANGE-019 (backend analytics)
 
-**Estado:** COMPLETADO — 2026-05-18
+**Estado:** NO COMPLETADO — 2026-05-19
+
+**Issues encontrados:**
+- ISSUE-FE-009: `AnalyticsDashboard.jsx` — **100% hardcodeado**. MOCK_SUBJECTS (líneas 5-14), MOCK_CHART_DATA (línea 25), TABLE_DATA (líneas 27-33). Sin import `api.js`. Sin `useEffect`. Sin llamadas API.
+
+**Qué se necesita:**
+- Conectar a `GET /api/analytics/student/:id` para datos reales.
+- Agregar selector de estudiante (para admin/preceptor/docente).
+- Para tutor, auto-detectar el hijo desde `GET /api/tutors/children` y cargar su analytics.
 
 ---
 
-### CHANGE-022: frontend-communication ✅ COMPLETADO
+### CHANGE-022: frontend-communication — NO COMPLETADO
 
 **Descripción:**
 Bandeja de entrada con split layout: sidebar de conversaciones (búsqueda,
@@ -617,11 +685,21 @@ template de `docs/diseno/mensajer_a_interna_proyectoescuela/`.
 
 **Depende de:** CHANGE-003 (auth), CHANGE-021 (backend communication)
 
-**Estado:** COMPLETADO — 2026-05-18
+**Estado:** NO COMPLETADO — 2026-05-19
+
+**Issues encontrados:**
+- ISSUE-FE-010: `InboxPage.jsx` — **100% hardcodeado**. MOCK_CONVERSATIONS con mensajes completos (líneas 12-63), AVATARS con URLs externas (líneas 6-10), MOCK_ME (líneas 65-69). Sin import `api.js`. Sin `useEffect`. Sin llamadas API. Línea 492: `// TODO: send message via API`.
+- ISSUE-ROL-005: Backend comunicación excluye `preceptor` en `authorize()` pero App.jsx incluye `preceptor` — inconsistencia.
+
+**Qué se necesita:**
+- Conectar a `GET /api/communication/conversations` para lista de chats.
+- Conectar a `GET /api/communication/conversations/:userId/messages` para hilos.
+- Conectar a `POST /api/communication/messages` para enviar mensajes.
+- Agregar `'preceptor'` a los authorize del backend de comunicación.
 
 ---
 
-### CHANGE-024: frontend-certificates ✅ COMPLETADO
+### CHANGE-024: frontend-certificates — NO COMPLETADO
 
 **Descripción:**
 Portal de certificados: formulario de carga drag-and-drop con selector de alumno,
@@ -638,7 +716,17 @@ Diseño fiel al template de `docs/diseno/gesti_n_de_certificados_proyectoescuela
 
 **Depende de:** CHANGE-003 (auth), CHANGE-023 (backend certificates)
 
-**Estado:** COMPLETADO — 2026-05-18
+**Estado:** NO COMPLETADO — 2026-05-19
+
+**Issues encontrados:**
+- ISSUE-FE-011: `CertificatePage.jsx` — **100% hardcodeado**. MOCK_CHILDREN (líneas 6-9), MOCK_CERTIFICATES (líneas 11-48). Sin import `api.js`. Sin `useEffect`. Sin llamadas API. Línea 118: `// TODO: connect to backend /api/certificates`. Línea 119: `alert('Certificado subido (simulado)')`.
+- ISSUE-ROL-006: `POST /api/certificates/upload` sin `authorize()` — cualquier usuario autenticado puede subir.
+- ISSUE-ROL-007: `GET /api/certificates/:id` sin `authorize()` — cualquier usuario autenticado puede ver cualquier certificado.
+
+**Qué se necesita:**
+- Conectar upload a `POST /api/certificates/upload` con FormData.
+- Conectar historial a `GET /api/certificates` y `GET /api/certificates/pending/:estudiante_id`.
+- Agregar `authorize()` faltante en backend.
 
 ---
 
@@ -890,9 +978,12 @@ en todos los módulos frontend.
 
 ---
 
-*Última actualización: 2026-05-18*
-*Estado: FASE 1 COMPLETA ✅ — CHANGE-004,005,006,007,008 completados y probados (99/99 tests)*
-*FASE 2 COMPLETA ✅ — Frontend Core 100% (009-013) + Frontend Nuevos Módulos 100% (020 ✅, 022 ✅, 024 ✅)*
+*Última actualización: 2026-05-19*
+*⚠️ ESTADO REAL POST-AUDITORÍA:*
+*FASE 1 COMPLETA ✅ — CHANGE-002,004,005,006,007,008 completados y probados (backend OK)*
+*FASE 1B COMPLETA ✅ — CHANGE-019,021,023 completados y probados (backend OK)*
+*FASE 2 FRONTEND: 20% real — CHANGE-009 PARCIAL, 010 PARCIAL, 011-013 FALSOS (hardcodeados)*
+*FASE 2B FRONTEND: 0% real — CHANGE-020,022,024 FALSOS (hardcodeados)*
 
 > **Nota:** CHANGE-019 a CHANGE-024 añadidos para cubrir Módulo 7 (Analítica, HU-020/021),
 > Módulo 8 (Comunicación Interna, HU-022/023) y Módulo 9 (Certificados Digitales,

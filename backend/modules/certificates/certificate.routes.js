@@ -40,17 +40,17 @@ const upload = multer({
 
 const router = Router();
 
-// POST /upload — subir certificado (admin, docente, tutor)
-router.post('/upload', authenticate, upload.single('archivo'), uploadCertificate);
+// POST /upload — subir certificado (admin, docente, tutor, preceptor)
+router.post('/upload', authenticate, authorize('admin', 'docente', 'tutor', 'preceptor'), upload.single('archivo'), uploadCertificate);
 
 // GET / — listar todos (admin) o filtrar
-router.get('/', authenticate, authorize('admin', 'docente', 'tutor'), listCertificates);
+router.get('/', authenticate, authorize('admin', 'docente', 'tutor', 'preceptor'), listCertificates);
 
 // GET /pending/:estudiante_id — pendientes por alumno
-router.get('/pending/:estudiante_id', authenticate, authorize('admin', 'docente', 'tutor'), getPendingCertificates);
+router.get('/pending/:estudiante_id', authenticate, authorize('admin', 'docente', 'tutor', 'preceptor'), getPendingCertificates);
 
-// GET /:id — detalle de certificado
-router.get('/:id', authenticate, getCertificate);
+// GET /:id — detalle de certificado (admin, docente, tutor, preceptor)
+router.get('/:id', authenticate, authorize('admin', 'docente', 'tutor', 'preceptor'), getCertificate);
 
 // PUT /:id/approve — aprobar (admin)
 router.put('/:id/approve', authenticate, authorize('admin'), approveCertificate);

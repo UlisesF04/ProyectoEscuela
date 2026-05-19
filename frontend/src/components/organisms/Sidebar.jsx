@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { Box, Flex, Text, VStack, IconButton, Button, Separator } from '@chakra-ui/react'
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from '../../context/AuthContext'
 
 const NAV_ITEMS = {
   admin: [
@@ -17,18 +17,15 @@ const NAV_ITEMS = {
   ],
   docente: [
     { label: 'Dashboard', path: '/dashboard', icon: 'dashboard' },
-    { label: 'Inasistencias', path: '/absences/register', icon: 'event_busy' },
+    { label: 'Mi Panel', path: '/teacher', icon: 'badge' },
     { label: 'Cargar Notas', path: '/grades/entry', icon: 'edit_note' },
     { label: 'Tareas', path: '/tasks', icon: 'assignment' },
-    { label: 'Mi Panel', path: '/teacher', icon: 'badge' },
     { label: 'Mensajería', path: '/inbox', icon: 'chat' },
     { label: 'Analítica', path: '/analytics', icon: 'analytics' },
   ],
   tutor: [
     { label: 'Dashboard', path: '/dashboard', icon: 'dashboard' },
     { label: 'Mis Hijos', path: '/parent', icon: 'family_history' },
-    { label: 'Calificaciones', path: '/grades/overview', icon: 'grade' },
-    { label: 'Tareas', path: '/tasks', icon: 'assignment' },
     { label: 'Mensajería', path: '/inbox', icon: 'chat' },
     { label: 'Certificados', path: '/certificates', icon: 'description' },
     { label: 'Analítica', path: '/analytics', icon: 'analytics' },

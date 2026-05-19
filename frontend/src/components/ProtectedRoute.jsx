@@ -1,6 +1,6 @@
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import Layout from './Layout'
+import Layout from './organisms/Layout'
 
 export default function ProtectedRoute({ children, roles }) {
   const { isAuthenticated, user } = useAuth()
@@ -10,14 +10,7 @@ export default function ProtectedRoute({ children, roles }) {
   }
 
   if (roles && user && !roles.includes(user.rol)) {
-    return (
-      <Layout>
-        <div style={{ textAlign: 'center', marginTop: '4rem', color: '#2d3e50' }}>
-          <h2>No autorizado</h2>
-          <p>No tenés permisos para acceder a esta página.</p>
-        </div>
-      </Layout>
-    )
+    return <Navigate to="/dashboard" replace />
   }
 
   return <Layout>{children}</Layout>

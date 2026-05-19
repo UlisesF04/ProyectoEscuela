@@ -1,8 +1,15 @@
 import { Box, Flex, Text, SimpleGrid, Card, Badge, VStack } from '@chakra-ui/react'
 import { useAuth } from '../context/AuthContext'
+import { Navigate } from 'react-router-dom'
+import StaggerContainer from '../components/StaggerContainer'
 
 export default function Dashboard() {
   const { user } = useAuth()
+
+  // Redirect by role (RN-08)
+  if (user?.rol === 'docente') return <Navigate to="/teacher" replace />
+  if (user?.rol === 'tutor') return <Navigate to="/parent" replace />
+  if (user?.rol === 'preceptor') return <Navigate to="/absences/register" replace />
 
   const roleLabels = {
     admin: 'Administrador',
@@ -55,9 +62,11 @@ export default function Dashboard() {
 
       {/* Quick access by role */}
       <Text textStyle="heading-md" color="fg" mb={4}>Acceso Rápido</Text>
-      <SimpleGrid columns={{ base: 1, sm: 2, lg: 3 }} gap={4}>
-        {getQuickLinks(user?.rol).map((link) => (
-          <Card.Root
+      <StaggerContainer>
+        <SimpleGrid columns={{ base: 1, sm: 2, lg: 3 }} gap={4}>
+          {getQuickLinks(user?.rol).map((link) => (
+            <StaggerContainer.Item key={link.path}>
+              <Card.Root
             key={link.path}
             as="a"
             href={link.path}
@@ -76,8 +85,10 @@ export default function Dashboard() {
             </Flex>
             <Text textStyle="body-md" color="fg.muted">{link.desc}</Text>
           </Card.Root>
-        ))}
-      </SimpleGrid>
+            </StaggerContainer.Item>
+          ))}
+        </SimpleGrid>
+      </StaggerContainer>
     </Box>
   )
 }
@@ -93,14 +104,14 @@ function getQuickLinks(rol) {
       { label: 'Portal Padres', path: '/parent', icon: 'family_history', desc: 'Vista como padre' },
     ],
     docente: [
-      { label: 'Registrar Inasistencias', path: '/absences/register', icon: 'event_busy', desc: 'Cargar ausencias del día' },
       { label: 'Cargar Notas', path: '/grades/entry', icon: 'edit_note', desc: 'Ingresar calificaciones' },
       { label: 'Mis Tareas', path: '/tasks', icon: 'assignment', desc: 'Gestionar trabajos prácticos' },
+      { label: 'Mensajería', path: '/inbox', icon: 'chat', desc: 'Comunicarte con padres' },
     ],
     tutor: [
       { label: 'Mis Hijos', path: '/parent', icon: 'family_history', desc: 'Resumen académico' },
-      { label: 'Calificaciones', path: '/grades/overview', icon: 'grade', desc: 'Ver notas' },
       { label: 'Mensajería', path: '/inbox', icon: 'chat', desc: 'Contactar a la escuela' },
+      { label: 'Certificados', path: '/certificates', icon: 'description', desc: 'Subir certificados' },
     ],
     preceptor: [
       { label: 'Inasistencias', path: '/absences/register', icon: 'event_busy', desc: 'Registrar ausencias' },

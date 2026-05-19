@@ -12,6 +12,7 @@ module.exports = {
       { email: 'docente2@escuela.com', password_hash: await bcrypt.hash('docente123', 10), rol: 'docente', whatsapp_number: null, created_at: new Date(), updated_at: new Date() },
       { email: 'tutor1@email.com', password_hash: await bcrypt.hash('tutor123', 10), rol: 'tutor', whatsapp_number: '+541111111111', created_at: new Date(), updated_at: new Date() },
       { email: 'tutor2@email.com', password_hash: await bcrypt.hash('tutor123', 10), rol: 'tutor', whatsapp_number: '+542222222222', created_at: new Date(), updated_at: new Date() },
+      { email: 'preceptor@escuela.com', password_hash: await bcrypt.hash('preceptor123', 10), rol: 'preceptor', whatsapp_number: null, created_at: new Date(), updated_at: new Date() },
     ]);
   },
 

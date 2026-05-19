@@ -111,7 +111,8 @@ export async function getLowAverageStudents(req, res, next) {
 
 export async function getTeacherSubjects(req, res, next) {
   try {
-    const subjects = await GradeModel.getTeacherSubjects(req.user.id);
+    // Admin sees all subjects; docente sees only their assigned subjects
+    const subjects = await GradeModel.getTeacherSubjects(req.user.id, req.user.rol);
     return res.json({ data: subjects });
   } catch (error) {
     next(error);

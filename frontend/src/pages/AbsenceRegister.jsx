@@ -1,7 +1,10 @@
 import { useState, useMemo } from 'react'
-import { Box, Flex, Text, Button, VStack, SimpleGrid, Card, Badge, NativeSelect, Table, Checkbox, IconButton } from '@chakra-ui/react'
+import { Box, Flex, Text, Button, VStack, SimpleGrid, Card, Badge, Table, Checkbox, IconButton, Spinner } from '@chakra-ui/react'
 import { useNavigate } from 'react-router-dom'
-import api from '../services/api'
+import FeedbackBanner from '../components/molecules/FeedbackBanner'
+import EmptyState from '../components/molecules/EmptyState'
+import CourseSelector from '../components/molecules/CourseSelector'
+import { useCourses, useAbsences } from '../hooks'
 
 // Normaliza texto: quita acentos/diacríticos y pasa a minúsculas
 const normalize = (str) => (str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
@@ -10,14 +13,15 @@ export default function AbsenceRegister() {
   const navigate = useNavigate()
   const [cursoId, setCursoId] = useState('')
   const [fecha, setFecha] = useState(new Date().toISOString().split('T')[0])
-  const [students, setStudents] = useState([])
+  const { students, loading, error: absencesError, loadStudents, registerAbsences } = useAbsences()
   const [selected, setSelected] = useState([])
-  const [loading, setLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [feedback, setFeedback] = useState('')
-  const [sortBy, setSortBy] = useState('apellido') // 'apellido' | 'nombre' | 'dni'
+  const [sortBy, setSortBy] = useState('apellido')
   const [sortOrder, setSortOrder] = useState('asc')
   const [searchQuery, setSearchQuery] = useState('')
+  const [studentIdInput, setStudentIdInput] = useState('')
+  const { cursos, loading: cursosLoading } = useCourses()
 
   const toggleSort = (column) => {
     if (sortBy === column) {
@@ -29,7 +33,6 @@ export default function AbsenceRegister() {
   }
 
   const processedStudents = useMemo(() => {
-    // Search filter (insensitive a mayúsculas, acentos y diacríticos)
     const q = normalize(searchQuery)
     let filtered = students
     if (q) {
@@ -39,7 +42,6 @@ export default function AbsenceRegister() {
         normalize(s.dni).includes(q)
       )
     }
-    // Sort
     return [...filtered].sort((a, b) => {
       const field = sortBy === 'dni' ? 'dni' : sortBy === 'nombre' ? 'nombre' : 'apellido'
       const cmp = (a[field] || '').localeCompare(b[field] || '', 'es')
@@ -47,24 +49,11 @@ export default function AbsenceRegister() {
     })
   }, [students, sortBy, sortOrder, searchQuery])
 
-  const cursos = [
-    { id: 1, name: '1° A' },
-    { id: 2, name: '1° B' },
-  ]
-
-  const loadStudents = async () => {
+  const handleLoadStudents = async () => {
     if (!cursoId) return
-    setLoading(true)
     setFeedback('')
-    try {
-      const { data } = await api.get(`/absences/course/${cursoId}?fecha=${fecha}`)
-      setStudents(data.estudiantes || [])
-      setSelected([])
-    } catch {
-      setFeedback('Error al cargar alumnos')
-    } finally {
-      setLoading(false)
-    }
+    await loadStudents(cursoId, fecha)
+    setSelected([])
   }
 
   const toggleStudent = (id) => {
@@ -75,19 +64,15 @@ export default function AbsenceRegister() {
 
   const submit = async () => {
     if (!cursoId || selected.length === 0) {
-      setFeedback('Seleccioná un curso y al menos un alumno')
+      setFeedback('Seleccion\u00e1 un curso y al menos un alumno')
       return
     }
     setSubmitting(true)
     setFeedback('')
     try {
-      const { data } = await api.post('/absences/register', {
-        estudiante_ids: selected,
-        fecha,
-        curso_id: parseInt(cursoId),
-      })
+      const { data } = await registerAbsences({ estudiante_ids: selected, fecha, curso_id: parseInt(cursoId) })
       setFeedback(`✅ ${data.registradas} inasistencia(s) registrada(s)`)
-      loadStudents()
+      handleLoadStudents()
     } catch (err) {
       setFeedback(`❌ ${err.response?.data?.message || 'Error al registrar'}`)
     } finally {
@@ -103,28 +88,44 @@ export default function AbsenceRegister() {
           <Text textStyle="heading-xl" color="fg">Registro de Inasistencias</Text>
           <Text textStyle="body-md" color="fg.muted">Seleccioná el curso y marcá los alumnos ausentes</Text>
         </Box>
-        <Button
-          className="gradient-btn"
-          css={{
-            background: 'linear-gradient(135deg, {colors.primary-container}, {colors.secondary-container})',
-            color: 'white',
-            borderRadius: 'full',
-            px: 6,
-            py: 2,
-            fontWeight: 'semibold',
-            _hover: { transform: 'scale(1.02)', boxShadow: 'warm-glow' },
-            _active: { transform: 'scale(0.98)' },
-          }}
-          onClick={() => navigate('/absences/student/1')}
-        >
-          Ver Historial
-        </Button>
+        <Flex gap={2} align="flex-end">
+          <Box w="140px">
+            <Text textStyle="label-md" color="fg.muted" mb={1}>ID Estudiante</Text>
+            <Box
+              as="input"
+              type="number"
+              min={1}
+              placeholder="Ej: 1"
+              value={studentIdInput}
+              onChange={(e) => setStudentIdInput(e.target.value)}
+              w="full"
+              p={2}
+              borderRadius="full"
+              border="1px solid"
+              borderColor="border.default"
+              bg="surface-container-low"
+              textAlign="center"
+              _focus={{ outline: 'none', ring: 2, ringColor: 'primary-container' }}
+              onKeyDown={(e) => e.key === 'Enter' && studentIdInput && navigate(`/absences/student/${studentIdInput}`)}
+            />
+          </Box>
+          <Button
+            borderRadius="full"
+            bg="primary"
+            color="white"
+            _hover={{ bg: 'primary-container' }}
+            onClick={() => studentIdInput && navigate(`/absences/student/${studentIdInput}`)}
+            disabled={!studentIdInput}
+          >
+            Ver Historial
+          </Button>
+        </Flex>
       </Flex>
 
-      {/* Feedback */}
-      {feedback && (
-        <Box mb={4} p={3} borderRadius="full" bg={feedback.startsWith('✅') ? 'success-container' : feedback.startsWith('❌') ? 'error-container' : 'surface-container'} color={feedback.startsWith('✅') ? 'on-success-container' : feedback.startsWith('❌') ? 'on-error-container' : 'fg'} textStyle="body-md" fontWeight="medium">
-          {feedback}
+      <FeedbackBanner feedback={feedback} />
+      {absencesError && (
+        <Box mb={4} p={3} borderRadius="md" bg="error-container" color="on-error-container">
+          <Text fontSize="sm">{absencesError}</Text>
         </Box>
       )}
 
@@ -132,20 +133,12 @@ export default function AbsenceRegister() {
       <Card.Root bg="bg.card" borderRadius="xl" shadow="card" mb={6}>
         <Card.Body p={6}>
           <SimpleGrid columns={{ base: 1, md: 3 }} gap={4}>
-            <Box>
-              <Text textStyle="label-md" color="fg.muted" mb={1}>Curso</Text>
-              <NativeSelect.Root size="lg">
-                <NativeSelect.Field
-                  placeholder="Seleccionar curso"
-                  value={cursoId}
-                  onChange={(e) => setCursoId(e.target.value)}
-                >
-                  {cursos.map(c => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </NativeSelect.Field>
-              </NativeSelect.Root>
-            </Box>
+            <CourseSelector
+              cursos={cursos}
+              loading={cursosLoading}
+              value={cursoId}
+              onChange={setCursoId}
+            />
             <Box>
               <Text textStyle="label-md" color="fg.muted" mb={1}>Fecha</Text>
               <Box
@@ -170,7 +163,7 @@ export default function AbsenceRegister() {
                 bg="primary"
                 color="white"
                 _hover={{ bg: 'primary-container' }}
-                onClick={loadStudents}
+                onClick={handleLoadStudents}
                 loading={loading}
               >
                 Cargar Alumnos
@@ -217,10 +210,11 @@ export default function AbsenceRegister() {
               transition="all 0.2s ease-out"
               _focus={{
                 bg: 'surface-container-lowest',
-                boxShadow: '0 0 0 2px #ab3500',
-                borderColor: '#ab3500',
+                ring: 2,
+                ringColor: 'primary',
+                borderColor: 'primary',
               }}
-              sx={{ '&::placeholder': { color: '#594139', opacity: 0.6 } }}
+              sx={{ '&::placeholder': { color: 'fg.muted', opacity: 0.6 } }}
             />
           </Box>
         </Box>
@@ -332,18 +326,13 @@ export default function AbsenceRegister() {
       )}
 
       {!loading && processedStudents.length === 0 && cursoId && (
-        <Card.Root bg="bg.card" borderRadius="xl" shadow="card" p={8}>
-          <VStack gap={3}>
-            <Text textStyle="heading-md" color="fg.muted">
-              {searchQuery ? 'Sin resultados' : 'Sin datos'}
-            </Text>
-            <Text textStyle="body-md" color="fg.muted">
-              {searchQuery
-                ? `No se encontraron alumnos que coincidan con "${searchQuery}".`
-                : 'No hay alumnos cargados para esta fecha.'}
-            </Text>
-          </VStack>
-        </Card.Root>
+        <EmptyState
+          heading={searchQuery ? 'Sin resultados' : 'Sin datos'}
+          message={searchQuery
+            ? `No se encontraron alumnos que coincidan con "${searchQuery}".`
+            : 'No hay alumnos cargados para esta fecha.'
+          }
+        />
       )}
     </Box>
   )

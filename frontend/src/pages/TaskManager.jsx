@@ -1,44 +1,48 @@
 import { useState } from 'react'
-import { Box, Flex, Text, Button, SimpleGrid, Card, Badge, VStack, NativeSelect, Dialog, Input, Separator } from '@chakra-ui/react'
+import { Box, Flex, Text, Button, SimpleGrid, Card, Badge, VStack, NativeSelect, Dialog, Input } from '@chakra-ui/react'
 import { useNavigate } from 'react-router-dom'
+import FeedbackBanner from '../components/molecules/FeedbackBanner'
+import LoadingSpinner from '../components/molecules/LoadingSpinner'
+import EmptyState from '../components/molecules/EmptyState'
+import { useTasks, useSubjects } from '../hooks'
+import api from '../services/api'
+import StaggerContainer from '../components/StaggerContainer'
 
 export default function TaskManager() {
   const navigate = useNavigate()
+  const { materias, loading: loadingMaterias } = useSubjects()
+  const { tasks, loading: tasksLoading, error: tasksError, refetch: refetchTasks } = useTasks()
   const [feedback, setFeedback] = useState('')
-  const [tasks, setTasks] = useState([
-    { id: 1, titulo: 'TP N°1: Fracciones', materia: 'Matemática', fecha_entrega: '2026-06-15', estado: 'activa', entregados: 8, total: 15 },
-    { id: 2, titulo: 'Análisis de texto', materia: 'Lengua', fecha_entrega: '2026-06-20', estado: 'activa', entregados: 5, total: 15 },
-    { id: 3, titulo: 'TP N°2: Ecuaciones', materia: 'Matemática', fecha_entrega: '2026-06-10', estado: 'vencida', entregados: 12, total: 15 },
-  ])
   const [open, setOpen] = useState(false)
-  const [newTask, setNewTask] = useState({ titulo: '', materia_id: '', fecha_entrega: '' })
+  const [newTask, setNewTask] = useState({ nombre: '', materia_id: '', descripcion: '', fecha_asignacion: '', fecha_entrega: '' })
+  const [creating, setCreating] = useState(false)
 
-  const materias = [
-    { id: 1, name: 'Matemática' },
-    { id: 2, name: 'Lengua' },
-    { id: 3, name: 'Ciencias' },
-    { id: 4, name: 'Historia' },
-  ]
-
-  const createTask = () => {
-    if (!newTask.titulo || !newTask.materia_id || !newTask.fecha_entrega) {
-      setFeedback('⚠️ Completá todos los campos')
+  const createTask = async () => {
+    if (!newTask.nombre || !newTask.materia_id || !newTask.fecha_asignacion || !newTask.fecha_entrega) {
+      setFeedback('⚠️ Completá todos los campos requeridos')
       return
     }
-    const materia = materias.find(m => m.id === parseInt(newTask.materia_id))
-    setTasks([{
-      id: Date.now(),
-      titulo: newTask.titulo,
-      materia: materia?.name || '',
-      fecha_entrega: newTask.fecha_entrega,
-      estado: 'activa',
-      entregados: 0,
-      total: 15,
-    }, ...tasks])
-    setOpen(false)
-    setNewTask({ titulo: '', materia_id: '', fecha_entrega: '' })
-    setFeedback('✅ Tarea creada exitosamente')
+    setCreating(true)
+    try {
+      const { data } = await api.post('/tasks', {
+        materia_id: parseInt(newTask.materia_id),
+        nombre: newTask.nombre,
+        descripcion: newTask.descripcion,
+        fecha_asignacion: newTask.fecha_asignacion,
+        fecha_entrega: newTask.fecha_entrega,
+      })
+      refetchTasks()
+      setOpen(false)
+      setNewTask({ nombre: '', materia_id: '', descripcion: '', fecha_asignacion: '', fecha_entrega: '' })
+      setFeedback('✅ Tarea creada exitosamente')
+    } catch (err) {
+      setFeedback(`❌ ${err.response?.data?.message || 'Error al crear tarea'}`)
+    } finally {
+      setCreating(false)
+    }
   }
+
+  if (tasksLoading || loadingMaterias) return <LoadingSpinner />
 
   return (
     <Box maxW="container-max" mx="auto">
@@ -64,60 +68,65 @@ export default function TaskManager() {
         </Button>
       </Flex>
 
+      {feedback && (
+        <FeedbackBanner feedback={feedback} />
+      )}
+      {tasksError && (
+        <Box mb={4} p={3} borderRadius="md" bg="error-container" color="on-error-container">
+          <Text fontSize="sm">{tasksError}</Text>
+        </Box>
+      )}
+
       {/* Task list */}
-      <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} gap={4}>
-        {tasks.map((task) => (
-          <Card.Root
-            key={task.id}
-            bg="bg.card"
-            borderRadius="xl"
-            shadow="card"
-            p={6}
-            cursor="pointer"
-            _hover={{ shadow: 'card-hover', transform: 'translateY(-2px)', transition: 'all 0.2s' }}
-            onClick={() => navigate(`/tasks/${task.id}/tracking`)}
-          >
-            <Flex justify="space-between" align="flex-start" mb={3}>
-              <Badge
-                colorPalette={task.estado === 'activa' ? 'blue' : 'orange'}
-                borderRadius="full"
-                px={2}
+      {tasks.length > 0 ? (
+        <StaggerContainer>
+          <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} gap={4}>
+            {tasks.map((task) => {
+              const vencida = new Date(task.fecha_entrega) < new Date()
+              return (
+                <StaggerContainer.Item key={task.id}>
+                  <Card.Root
+                key={task.id}
+                bg="bg.card"
+                borderRadius="xl"
+                shadow="card"
+                p={6}
+                cursor="pointer"
+                _hover={{ shadow: 'card-hover', transform: 'translateY(-2px)', transition: 'all 0.2s' }}
+                onClick={() => navigate(`/tasks/${task.id}/tracking`)}
               >
-                {task.estado === 'activa' ? 'Activa' : 'Vencida'}
-              </Badge>
-              <Text textStyle="label-md" color="fg.muted">
-                {new Date(task.fecha_entrega).toLocaleDateString('es-AR')}
-              </Text>
-            </Flex>
-            <Text fontWeight="semibold" color="fg" mb={1}>{task.titulo}</Text>
-            <Text textStyle="body-md" color="fg.muted" mb={4}>{task.materia}</Text>
-            <Flex justify="space-between" align="center">
-              <Text textStyle="label-md" color="fg.muted">
-                {task.entregados}/{task.total} entregados
-              </Text>
-              <Box
-                w="60px"
-                h="4px"
-                borderRadius="full"
-                bg="surface-container"
-                overflow="hidden"
-              >
-                <Box
-                  h="full"
-                  borderRadius="full"
-                  bg={task.entregados / task.total > 0.7 ? 'success' : 'primary-container'}
-                  w={`${(task.entregados / task.total) * 100}%`}
-                  transition="width 0.3s"
-                />
-              </Box>
-            </Flex>
-          </Card.Root>
-        ))}
-      </SimpleGrid>
+                <Flex justify="space-between" align="flex-start" mb={3}>
+                  <Badge
+                    colorPalette={vencida ? 'orange' : 'blue'}
+                    borderRadius="full"
+                    px={2}
+                  >
+                    {vencida ? 'Vencida' : 'Activa'}
+                  </Badge>
+                  <Text textStyle="label-md" color="fg.muted">
+                    {new Date(task.fecha_entrega).toLocaleDateString('es-AR')}
+                  </Text>
+                </Flex>
+                <Text fontWeight="semibold" color="fg" mb={1}>{task.nombre}</Text>
+                <Text textStyle="body-md" color="fg.muted" mb={4}>{task.materia}</Text>
+                {task.descripcion && (
+                  <Text textStyle="body-md" color="fg.muted" mb={4} noOfLines={2}>
+                    {task.descripcion}
+                  </Text>
+                )}
+              </Card.Root>
+                </StaggerContainer.Item>
+              )
+            })}
+          </SimpleGrid>
+        </StaggerContainer>
+      ) : (
+        <EmptyState heading="Sin tareas" message="No hay tareas creadas aún. ¡Creá la primera!" />
+      )}
 
       {/* Create task dialog */}
       <Dialog.Root open={open} onOpenChange={(e) => setOpen(e.open)}>
-        <Dialog.Backdrop bg="rgba(0,0,0,0.4)" />
+        <Dialog.Backdrop css={{ background: 'rgba(0, 0, 0, 0.4)' }} />
         <Dialog.Positioner>
           <Dialog.Content borderRadius="xl" p={0} bg="surface-container-lowest">
             <Dialog.Header p={6} borderBottom="1px solid" borderColor="border.default">
@@ -126,11 +135,11 @@ export default function TaskManager() {
             <Dialog.Body p={6}>
               <VStack gap={4}>
                 <Box w="full">
-                  <Text textStyle="label-md" color="fg.muted" mb={1}>Título</Text>
+                  <Text textStyle="label-md" color="fg.muted" mb={1}>Título *</Text>
                   <Input
                     placeholder="Ej: TP N°3: Geometría"
-                    value={newTask.titulo}
-                    onChange={(e) => setNewTask({ ...newTask, titulo: e.target.value })}
+                    value={newTask.nombre}
+                    onChange={(e) => setNewTask({ ...newTask, nombre: e.target.value })}
                     borderRadius="full"
                     borderColor="border.default"
                     bg="bg"
@@ -138,7 +147,7 @@ export default function TaskManager() {
                   />
                 </Box>
                 <Box w="full">
-                  <Text textStyle="label-md" color="fg.muted" mb={1}>Materia</Text>
+                  <Text textStyle="label-md" color="fg.muted" mb={1}>Materia *</Text>
                   <NativeSelect.Root>
                     <NativeSelect.Field
                       placeholder="Seleccionar materia"
@@ -146,13 +155,37 @@ export default function TaskManager() {
                       onChange={(e) => setNewTask({ ...newTask, materia_id: e.target.value })}
                     >
                       {materias.map(m => (
-                        <option key={m.id} value={m.id}>{m.name}</option>
+                        <option key={m.id} value={m.id}>{m.nombre}</option>
                       ))}
                     </NativeSelect.Field>
                   </NativeSelect.Root>
                 </Box>
                 <Box w="full">
-                  <Text textStyle="label-md" color="fg.muted" mb={1}>Fecha de entrega</Text>
+                  <Text textStyle="label-md" color="fg.muted" mb={1}>Descripción</Text>
+                  <Input
+                    placeholder="Opcional: detalle de la tarea"
+                    value={newTask.descripcion}
+                    onChange={(e) => setNewTask({ ...newTask, descripcion: e.target.value })}
+                    borderRadius="full"
+                    borderColor="border.default"
+                    bg="bg"
+                    _focus={{ ring: 2, ringColor: 'primary-container' }}
+                  />
+                </Box>
+                <Box w="full">
+                  <Text textStyle="label-md" color="fg.muted" mb={1}>Fecha de asignación *</Text>
+                  <Input
+                    type="date"
+                    value={newTask.fecha_asignacion}
+                    onChange={(e) => setNewTask({ ...newTask, fecha_asignacion: e.target.value })}
+                    borderRadius="full"
+                    borderColor="border.default"
+                    bg="bg"
+                    _focus={{ ring: 2, ringColor: 'primary-container' }}
+                  />
+                </Box>
+                <Box w="full">
+                  <Text textStyle="label-md" color="fg.muted" mb={1}>Fecha de entrega *</Text>
                   <Input
                     type="date"
                     value={newTask.fecha_entrega}
@@ -175,6 +208,7 @@ export default function TaskManager() {
                 color="white"
                 _hover={{ bg: 'primary-container' }}
                 onClick={createTask}
+                loading={creating}
               >
                 Crear Tarea
               </Button>

@@ -76,6 +76,17 @@ app.use((err, req, res, next) => {
   next(err);
 });
 
+// GET /api/courses — List all courses (authenticated)
+import { authenticate } from './modules/auth/auth.middleware.js';
+app.get('/api/courses', authenticate, async (req, res, next) => {
+  try {
+    const courses = await models.Curso.findAll({ order: [['anio', 'ASC'], ['division', 'ASC']] });
+    res.json({ cursos: courses.map(c => ({ id: c.id, name: c.nombre })) });
+  } catch (error) {
+    next(error);
+  }
+});
+
 app.get('/api/models', (req, res) => {
   const modelList = Object.keys(models).filter(k => k !== 'sequelize');
   res.json({ models: modelList, count: modelList.length });

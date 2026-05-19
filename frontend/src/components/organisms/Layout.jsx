@@ -1,5 +1,5 @@
 import { Box, Flex, Text, Button, IconButton } from '@chakra-ui/react'
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from '../../context/AuthContext'
 import Sidebar from './Sidebar'
 
 export default function Layout({ children }) {
