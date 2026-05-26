@@ -93,7 +93,7 @@ Antes de proponer cualquier change, leé los archivos relevantes para el dominio
 ### FASE 1 — Núcleo del Sistema
 
 - [x] C-02 `core-models` — CRITICO — depende de C-01 ✅ 2026-05-26
-- [ ] C-03 `auth-system` — CRITICO — depende de C-02
+- [x] C-03 `auth-system` — CRITICO — depende de C-02 ✅ 2026-05-26
 - [ ] C-04 `admin-panel` — CRITICO — depende de C-03
 
 ### FASE 2 — Gestión Académica

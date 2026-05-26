@@ -128,7 +128,7 @@ Incluye el agente de notificaciones (diferenciador del proyecto). Sin él, el si
   - `knowledge-base/08_arquitectura_propuesta.md` §Repository Pattern, §Transaction Atomicity
 
 ### [C-03] `auth-system`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` completado — 2026-05-26
 - **Scope**:
   - Módulo backend `modules/auth/`: routes, controller, service
   - `POST /api/v1/auth/login` — autenticación con email+password, bcrypt verify, JWT (HS256, 8h exp)
