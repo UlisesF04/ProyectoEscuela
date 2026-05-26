@@ -12,6 +12,8 @@
 - **Frontend**: React 18.x/19.x — Vite — Chakra UI 2.x/v3
 - **Estado global**: Context API + useReducer
 - **Base de datos**: PostgreSQL 15.x — ORM: Sequelize 6.x
+  - Base de datos local: `proyecto_escuela` (usuario: `postgres`, contraseña: `root`)
+  - Configuración en `backend/.env` con las variables `DB_NAME`, `DB_USER`, `DB_PASSWORD`
 - **Auth**: JWT (HS256) + bcrypt (12 rounds)
 - **Infraestructura**: Vercel (frontend SPA) + Railway (backend + BD + agente Worker)
 - **CI/CD**: GitHub Actions (tests + lint + build automáticos)
@@ -58,23 +60,23 @@ Antes de proponer cualquier change, leé los archivos relevantes para el dominio
 - **Comando**: "buscá skills para [dominio]"
 
 ### Skills de Frontend
-<!-- SECCIÓN EDITABLE — Agregá aquí las skills de frontend que instales en el proyecto -->
-<!-- Ejemplo:
+
 ### emil-kowalski / animations
-- **Repo**: Ya instalado en el proyecto
+- **Repo**: npx skills add emilkowalski/skill
 - **Trigger**: cuando implementés animaciones o transiciones en el frontend.
 - **Regla**: Siempre leé esta skill antes de escribir cualquier código de animación.
 
 ### taste-ui
-- **Repo**: Ya instalado en el proyecto
+- **Repo**: npx skills add Leonxlnx/taste-skill
 - **Trigger**: al construir componentes de UI nuevos.
 - **Regla**: Aplicar las guías de taste antes de proponer markup o estilos.
 
 ### impeccable
-- **Repo**: Ya instalado en el proyecto
+- **Repo**: npx skills add pbakaus/impeccable
 - **Trigger**: en cualquier change que toque el frontend.
 - **Regla**: Pasá el checklist de impeccable antes de marcar una tarea de UI como done.
--->
+
+> En caso no estar instaladas avisar al usuario o que las instale manualmente con los comandos.
 
 ---
 
@@ -86,11 +88,11 @@ Antes de proponer cualquier change, leé los archivos relevantes para el dominio
 
 ### FASE 0 — Cimientos
 
-- [ ] C-01 `foundation-setup` — CRITICO — sin dependencias
+- [x] C-01 `foundation-setup` — CRITICO — sin dependencias ✅ 2026-05-26
 
 ### FASE 1 — Núcleo del Sistema
 
-- [ ] C-02 `core-models` — CRITICO — depende de C-01
+- [x] C-02 `core-models` — CRITICO — depende de C-01 ✅ 2026-05-26
 - [ ] C-03 `auth-system` — CRITICO — depende de C-02
 - [ ] C-04 `admin-panel` — CRITICO — depende de C-03
 
@@ -178,6 +180,13 @@ Estas reglas no se negocian. Si algo contradice una de estas reglas, reportalo y
 - Ante cualquier change que toque la UI, **verificá si hay skills de frontend instaladas**
   (ver Sección 3) y leélas antes de escribir markup, estilos o animaciones.
 - Las guías de las skills tienen prioridad sobre tu criterio estético default.
+
+### Replicación del proyecto
+- Antes de asumir la configuración de base de datos, **siempre preguntá al usuario**
+  el nombre de la base de datos y la contraseña cuando estés frente a un nuevo entorno
+  o una réplica del proyecto. No asumas `proyecto_escuela` / `root` por defecto.
+- La configuración local actual vive en `backend/.env` y no debe versionarse.
+- El template con valores de ejemplo está en `backend/.env.example`.
 
 ---
 

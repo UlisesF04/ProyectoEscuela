@@ -1,9 +1,26 @@
 import React from 'react';
-import Login from './pages/Login';
+import { Routes, Route } from 'react-router-dom';
+import { Box, Text } from '@chakra-ui/react';
 
 function App() {
   return (
-    <Login />
+    <Box minH="100vh">
+      <Routes>
+        <Route
+          path="/"
+          element={
+            <Box textAlign="center" py={20}>
+              <Text fontSize="4xl" fontWeight="bold">
+                Gestión Académica Escolar
+              </Text>
+              <Text fontSize="lg" color="gray.600" mt={4}>
+                Plataforma de gestión académica y comunicación escolar
+              </Text>
+            </Box>
+          }
+        />
+      </Routes>
+    </Box>
   );
 }
 

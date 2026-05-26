@@ -1,65 +1,64 @@
-import express from 'express';
-import cors from 'cors';
-import dotenv from 'dotenv';
-import sequelize from './config/database.js';
-
-dotenv.config();
+const express = require('express');
+const cors = require('cors');
+const morgan = require('morgan');
+const rateLimit = require('express-rate-limit');
+const errorMiddleware = require('./middlewares/errorMiddleware');
 
 const app = express();
+const PORT = process.env.PORT || 5000;
 
+// ─── Middlewares globales ───────────────────────────────────────
+
+// CORS
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  credentials: true,
+}));
+
+// Body parser
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cors());
 
-const connectDB = async () => {
-  try {
-    await sequelize.authenticate();
-  } catch (error) {
-    console.error(`Error: ${error.message}`);
-    process.exit(1);
-  }
-};
+// HTTP request logger
+app.use(morgan('dev'));
 
-await connectDB();
+// Rate limiting global: 100 requests / 15 min
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    status: 'error',
+    message: 'Demasiadas solicitudes. Intente nuevamente en 15 minutos.',
+  },
+});
+app.use(globalLimiter);
 
-app.get('/', (req, res) => {
-  res.json({
-    message: 'ProyectoEscuela API is running...',
-    status: 'active',
-  });
+// ─── Rutas ──────────────────────────────────────────────────────
+
+// Health check
+app.get('/api/v1/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-app.get('/health', (req, res) => {
-  res.json({
-    status: 'ok',
-    database: sequelize.authenticate() ? 'connected' : 'disconnected',
-  });
-});
-
-app.get('/message', (req, res) => {
-  res.json({
-    message: 'Connected successfully',
-  });
-});
-
-app.use((err, req, res, next) => {
-  console.error(`Error: ${err.message}`);
-  res.status(500).json({
-    message: 'Internal Server Error',
-  });
-});
-
+// 404 handler
 app.use((req, res) => {
-  res.status(404).json({ message: 'Route not found' });
+  res.status(404).json({
+    status: 'error',
+    message: `Ruta ${req.originalUrl} no encontrada`,
+  });
 });
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+// Error handler
+app.use(errorMiddleware);
 
-process.on('SIGINT', async () => {
-  await sequelize.close();
-  console.log('Server stopped');
-  process.exit(0);
-});
+// ─── Inicio del servidor ────────────────────────────────────────
+
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Servidor iniciado en puerto ${PORT}`);
+  });
+}
+
+module.exports = app;

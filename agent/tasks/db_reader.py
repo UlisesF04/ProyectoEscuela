@@ -1,2 +1,1 @@
-# db_reader.py
-# Script base para leer inasistencias usando pandas y conexión a MongoDB.
+"""Database reader: consulta PostgreSQL para obtener datos de alertas."""

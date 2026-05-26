@@ -20,8 +20,8 @@
 ## Árbol de dependencias
 
 ```
-C-01 foundation-setup
- └── C-02 core-models
+C-01 foundation-setup (done)
+ └── C-02 core-models (done)
       └── C-03 auth-system
            └── C-04 admin-panel
                 ├── C-05 attendance-module ──────┐
@@ -83,7 +83,7 @@ Incluye el agente de notificaciones (diferenciador del proyecto). Sin él, el si
 > Base del monorepo: estructura de directorios, dependencias, configuración de BD, esqueleto de los 3 componentes.
 
 ### [C-01] `foundation-setup`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` completado — 2026-05-26
 - **Scope**:
   - Scaffolding de monorepo: `frontend/`, `backend/`, `agent/`, `openspec/`, `docs/`
   - `backend/package.json` con Express 4, Sequelize 6, jsonwebtoken, bcrypt, express-validator, express-rate-limit, cors, morgan
@@ -111,7 +111,7 @@ Incluye el agente de notificaciones (diferenciador del proyecto). Sin él, el si
 > Modelos de datos, autenticación y panel administrativo. Sin esto nada más funciona.
 
 ### [C-02] `core-models`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` completado — 2026-05-26
 - **Scope**:
   - Modelos Sequelize: `User`, `Student`, `Course`, `Subject`, `TeacherSubject`, `ParentStudent` con todas las columnas del modelo de datos
   - Asociaciones: `User.hasMany(TeacherSubject)`, `Student.belongsTo(Course)`, etc.
