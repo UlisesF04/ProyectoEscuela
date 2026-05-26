@@ -1,0 +1,695 @@
+================================================================================
+DOCUMENTO 3 — HISTORIAS DE USUARIO Y REGLAS DE NEGOCIO
+Proyecto: Optimización de la Gestión Académica y Comunicación Escolar
+Versión: 1.0 | Estado: Borrador fundacional
+================================================================================
+
+
+────────────────────────────────────────────────────────────────────────────────
+1. TABLA DE ACTORES
+────────────────────────────────────────────────────────────────────────────────
+
+  ┌─────────────────┬────────────────────────────────────────────────────────────┐
+  │ Actor           │ Descripción resumida                                       │
+  ├─────────────────┼────────────────────────────────────────────────────────────┤
+  │ Administrador   │ Control total del sistema. Gestiona usuarios, cursos,      │
+  │                 │ materias, vínculos padre-alumno y licencias docentes.       │
+  ├─────────────────┼────────────────────────────────────────────────────────────┤
+  │ Preceptor       │ Registra y justifica inasistencias. Consulta datos         │
+  │                 │ completos de todos los alumnos y sus tutores.               │
+  ├─────────────────┼────────────────────────────────────────────────────────────┤
+  │ Docente         │ Carga calificaciones y tareas de sus materias asignadas.   │
+  │                 │ Consulta asistencias. Gestiona sus propias licencias.       │
+  ├─────────────────┼────────────────────────────────────────────────────────────┤
+  │ Padre / Tutor   │ Consulta calificaciones, asistencias y tareas de sus       │
+  │                 │ hijos vinculados. Sube certificados. Recibe alertas WA.     │
+  ├─────────────────┼────────────────────────────────────────────────────────────┤
+  │ Bot Automatizado│ Proceso CRON que evalúa condiciones críticas y envía        │
+  │                 │ notificaciones WhatsApp vía Twilio. Sin interfaz visual.    │
+  └─────────────────┴────────────────────────────────────────────────────────────┘
+
+
+────────────────────────────────────────────────────────────────────────────────
+2. REGLAS DE NEGOCIO
+────────────────────────────────────────────────────────────────────────────────
+
+DOMINIO: AUTENTICACIÓN Y ACCESO
+
+  RN-01  Cada usuario debe tener exactamente un rol: admin, preceptor, docente
+         o padre. No se permiten roles múltiples.
+
+  RN-02  Un usuario con is_active = false no puede autenticarse en el sistema,
+         aunque proporcione credenciales correctas.
+
+  RN-03  Un padre solo puede acceder a los datos de los alumnos que tenga
+         explícitamente vinculados en la tabla parent_student. El acceso a
+         datos de otros alumnos debe ser denegado con HTTP 403.
+
+  RN-04  Un docente solo puede cargar, editar o eliminar calificaciones y tareas
+         de las materias que tenga asignadas en la tabla teacher_subject.
+         Intentar operar sobre materias no asignadas devuelve HTTP 403.
+
+DOMINIO: ASISTENCIAS
+
+  RN-05  Solo puede existir un registro de asistencia por alumno por fecha
+         (unicidad en la combinación student_id + date). Intentar crear un
+         segundo registro para el mismo par devuelve HTTP 409.
+
+  RN-06  Solo un preceptor o administrador puede registrar o modificar el estado
+         de una inasistencia. Los docentes y padres tienen acceso de solo lectura.
+
+  RN-07  Una inasistencia justificada no puede revertirse a no justificada.
+         La justificación es una operación de solo ida.
+
+  RN-08  La carga de un certificado de justificación admite únicamente archivos
+         de tipo image/jpeg, image/png o application/pdf, con un tamaño máximo
+         de 5 MB. Archivos que no cumplan estas condiciones deben ser rechazados
+         antes de ser procesados.
+
+  RN-09  El sistema debe mantener y exponer un resumen de asistencia por alumno
+         que incluya: total de días registrados, total de ausencias, ausencias
+         justificadas y ausencias no justificadas.
+
+DOMINIO: CALIFICACIONES
+
+  RN-10  Una calificación debe tener un valor numérico entre 1,00 y 10,00
+         (inclusive). Valores fuera de este rango son rechazados por validación.
+
+  RN-11  Cada calificación debe estar asociada a un período académico válido:
+         1er_trimestre, 2do_trimestre, 3er_trimestre o recuperatorio.
+
+  RN-12  El docente que creó una calificación es el único que puede editarla o
+         eliminarla, a excepción del administrador que tiene permiso universal.
+
+DOMINIO: TAREAS
+
+  RN-13  Una tarea solo puede ser creada por el docente asignado a la materia
+         correspondiente. La fecha de vencimiento (due_date) no puede ser
+         anterior a la fecha de creación.
+
+  RN-14  El sistema crea automáticamente un registro task_submission con estado
+         'pendiente' para cada alumno del curso al momento de crear una tarea.
+         Este proceso debe ejecutarse de forma atómica (todo o nada).
+
+  RN-15  El estado de una entrega solo puede avanzar según la máquina de estados
+         definida: pendiente → entregada | pendiente → tarde.
+         No se permite retroceder de entregada a pendiente.
+
+DOMINIO: NOTIFICACIONES
+
+  RN-16  El agente automatizado no enviará una notificación del mismo tipo para
+         el mismo alumno más de una vez por día, para evitar spam sobre el mismo
+         evento.
+
+  RN-17  Cada notificación enviada (exitosa o fallida) debe quedar registrada en
+         la tabla notification_logs para auditoría del administrador.
+
+  RN-18  El umbral de inasistencias que activa la alerta AUSENCIAS_CRITICAS es
+         configurable por el administrador (valor por defecto: 10 ausencias no
+         justificadas en el ciclo).
+
+DOMINIO: LICENCIAS DOCENTES
+
+  RN-19  Solo el administrador puede aprobar o rechazar una licencia. El docente
+         puede solicitarla pero no puede modificar su estado.
+
+  RN-20  La fecha de fin de una licencia no puede ser anterior a la fecha de
+         inicio. El sistema debe calcular automáticamente los días_used al
+         crear el registro.
+
+
+────────────────────────────────────────────────────────────────────────────────
+3. HISTORIAS DE USUARIO
+────────────────────────────────────────────────────────────────────────────────
+
+══════════════════════════════════════════════════
+ÉPICA 1: AUTENTICACIÓN Y GESTIÓN DE SESIÓN
+══════════════════════════════════════════════════
+
+────────────────────────────────────────────────────────────────────────────────
+ID            : US-001
+Título        : Inicio de sesión
+Historia      : Como usuario del sistema (cualquier rol), quiero iniciar sesión
+                con mi email y contraseña, para acceder a las funcionalidades
+                correspondientes a mi rol.
+Prioridad     : Alta
+Dependencias  : Ninguna
+Criterios de aceptación:
+  GIVEN un usuario con credenciales válidas y cuenta activa
+  WHEN envía email y contraseña al formulario de login
+  THEN recibe un JWT válido y es redirigido al dashboard de su rol
+
+  GIVEN un usuario con credenciales incorrectas
+  WHEN envía email o contraseña erróneos
+  THEN recibe un mensaje de error "Credenciales inválidas" y no obtiene token
+
+  GIVEN un usuario con cuenta desactivada (is_active: false)
+  WHEN intenta iniciar sesión con credenciales correctas
+  THEN recibe un mensaje de error y no puede acceder al sistema
+
+Notas técnicas: POST /api/v1/auth/login. JWT almacenado en memoria (Context API)
+                o localStorage según decisión del equipo. Tabla: users.
+────────────────────────────────────────────────────────────────────────────────
+
+────────────────────────────────────────────────────────────────────────────────
+ID            : US-002
+Título        : Cierre de sesión
+Historia      : Como usuario autenticado, quiero cerrar mi sesión de forma
+                explícita, para proteger mi información en dispositivos
+                compartidos.
+Prioridad     : Alta
+Dependencias  : US-001
+Criterios de aceptación:
+  GIVEN un usuario autenticado
+  WHEN hace clic en "Cerrar sesión"
+  THEN el token es eliminado del estado cliente y es redirigido al login
+
+  GIVEN un usuario que cerró sesión
+  WHEN intenta acceder a una ruta protegida con el token anterior
+  THEN es redirigido al login (token inválido o eliminado del cliente)
+
+Notas técnicas: POST /api/v1/auth/logout. El token se invalida del lado cliente.
+────────────────────────────────────────────────────────────────────────────────
+
+════════════════════════════════════════════════════
+ÉPICA 2: GESTIÓN DE USUARIOS Y CONFIGURACIÓN (ADMIN)
+════════════════════════════════════════════════════
+
+────────────────────────────────────────────────────────────────────────────────
+ID            : US-003
+Título        : Crear usuario
+Historia      : Como administrador, quiero crear nuevas cuentas de usuario con
+                su rol correspondiente, para que docentes, preceptores y padres
+                puedan acceder al sistema.
+Prioridad     : Alta
+Dependencias  : US-001
+Criterios de aceptación:
+  GIVEN el administrador completa el formulario con datos válidos y un rol
+  WHEN confirma la creación
+  THEN el usuario se crea con la contraseña hasheada y aparece en el listado
+
+  GIVEN el administrador intenta crear un usuario con un email ya existente
+  WHEN confirma la creación
+  THEN recibe un error "El email ya está registrado" y no se crea el usuario
+
+Notas técnicas: POST /api/v1/users. Tabla: users. bcrypt para hash de contraseña.
+────────────────────────────────────────────────────────────────────────────────
+
+────────────────────────────────────────────────────────────────────────────────
+ID            : US-004
+Título        : Vincular padre con alumno
+Historia      : Como administrador, quiero vincular un padre o tutor a su hijo,
+                para que el padre pueda ver únicamente la información de ese
+                alumno.
+Prioridad     : Alta
+Dependencias  : US-003
+Criterios de aceptación:
+  GIVEN el administrador selecciona un usuario con rol padre y un alumno
+  WHEN crea el vínculo con tipo de relación (madre/padre/tutor)
+  THEN el padre puede ver los datos académicos de ese alumno al iniciar sesión
+
+  GIVEN el administrador intenta crear un vínculo ya existente
+  WHEN confirma la operación
+  THEN recibe un error de duplicado y el vínculo no se duplica
+
+Notas técnicas: POST /api/v1/students/:id/parents. Tabla: parent_student. (RN-03)
+────────────────────────────────────────────────────────────────────────────────
+
+────────────────────────────────────────────────────────────────────────────────
+ID            : US-005
+Título        : Crear cursos y materias
+Historia      : Como administrador, quiero crear cursos y sus materias asociadas,
+                para poder organizar el alumnado y asignar docentes.
+Prioridad     : Alta
+Dependencias  : US-001
+Criterios de aceptación:
+  GIVEN el administrador ingresa nombre, año y división del curso
+  WHEN confirma la creación
+  THEN el curso aparece disponible para asignar alumnos y materias
+
+  GIVEN el administrador crea una materia y selecciona un curso
+  WHEN confirma la creación
+  THEN la materia queda asociada al curso y disponible para asignar docentes
+
+Notas técnicas: POST /api/v1/courses y POST /api/v1/courses/:id/subjects.
+                Tablas: courses, subjects.
+────────────────────────────────────────────────────────────────────────────────
+
+════════════════════════════════════════════════
+ÉPICA 3: GESTIÓN DE ASISTENCIAS (PRECEPTOR)
+════════════════════════════════════════════════
+
+────────────────────────────────────────────────────────────────────────────────
+ID            : US-006
+Título        : Registrar asistencia diaria
+Historia      : Como preceptor, quiero registrar el estado de asistencia de cada
+                alumno para una fecha determinada, para mantener un historial
+                preciso de la regularidad del alumnado.
+Prioridad     : Alta
+Dependencias  : US-005
+Criterios de aceptación:
+  GIVEN el preceptor selecciona un alumno y una fecha
+  WHEN registra el estado (presente / ausente / tarde)
+  THEN el registro queda guardado y visible en el historial del alumno
+
+  GIVEN ya existe un registro de asistencia para ese alumno en esa fecha
+  WHEN el preceptor intenta crear otro
+  THEN recibe un error y se le ofrece la opción de editar el existente
+
+Notas técnicas: POST /api/v1/attendances. Tabla: attendances. (RN-05, RN-06)
+────────────────────────────────────────────────────────────────────────────────
+
+────────────────────────────────────────────────────────────────────────────────
+ID            : US-007
+Título        : Justificar inasistencia con certificado
+Historia      : Como preceptor, quiero justificar una inasistencia y adjuntar
+                el certificado presentado por la familia, para que quede
+                documentado formalmente en el sistema.
+Prioridad     : Alta
+Dependencias  : US-006
+Criterios de aceptación:
+  GIVEN el preceptor localiza una ausencia no justificada
+  WHEN sube un certificado válido (JPG/PNG/PDF ≤ 5MB) y confirma la justificación
+  THEN el estado cambia a justificada y el certificado queda accesible
+
+  GIVEN el preceptor intenta subir un archivo de tipo no permitido o mayor a 5MB
+  WHEN intenta confirmar la carga
+  THEN recibe un error descriptivo y la inasistencia no se modifica
+
+  GIVEN una inasistencia ya justificada
+  WHEN el preceptor intenta revertirla a no justificada
+  THEN el sistema rechaza la operación (RN-07)
+
+Notas técnicas: PUT /api/v1/attendances/:id/justify + POST /api/v1/certificates/upload.
+                Tablas: attendances, almacenamiento cloud. (RN-07, RN-08)
+────────────────────────────────────────────────────────────────────────────────
+
+────────────────────────────────────────────────────────────────────────────────
+ID            : US-008
+Título        : Consultar historial de asistencias de un alumno
+Historia      : Como preceptor, quiero consultar el historial completo de
+                asistencias de cualquier alumno con resumen de totales, para
+                hacer un seguimiento de su regularidad.
+Prioridad     : Alta
+Dependencias  : US-006
+Criterios de aceptación:
+  GIVEN el preceptor selecciona un alumno
+  WHEN accede a su historial de asistencias
+  THEN visualiza el detalle por fecha con estado y el resumen (total ausencias,
+       justificadas, no justificadas)
+
+  GIVEN el preceptor aplica filtros de rango de fechas o estado
+  WHEN confirma el filtro
+  THEN el listado se actualiza reflejando solo los registros que coinciden
+
+Notas técnicas: GET /api/v1/students/:id/attendances?from=&to=&status=.
+                Tabla: attendances. (RN-09)
+────────────────────────────────────────────────────────────────────────────────
+
+════════════════════════════════════════════════
+ÉPICA 4: CALIFICACIONES (DOCENTE)
+════════════════════════════════════════════════
+
+────────────────────────────────────────────────────────────────────────────────
+ID            : US-009
+Título        : Cargar calificación
+Historia      : Como docente, quiero cargar la calificación de un alumno en mi
+                materia para un período determinado, para mantener el registro
+                académico actualizado.
+Prioridad     : Alta
+Dependencias  : US-005, US-003
+Criterios de aceptación:
+  GIVEN el docente selecciona un alumno, una materia asignada y un período
+  WHEN ingresa una nota entre 1 y 10 y confirma
+  THEN la calificación queda guardada y es visible para el alumno/padre
+
+  GIVEN el docente intenta cargar una nota en una materia no asignada
+  WHEN envía la solicitud
+  THEN recibe HTTP 403 "No tenés asignada esta materia" (RN-04)
+
+  GIVEN el docente ingresa un valor fuera del rango 1-10
+  WHEN intenta guardar
+  THEN recibe un error de validación y la nota no se persiste (RN-10)
+
+Notas técnicas: POST /api/v1/grades. Tablas: grades, teacher_subject. (RN-04, RN-10, RN-11)
+────────────────────────────────────────────────────────────────────────────────
+
+────────────────────────────────────────────────────────────────────────────────
+ID            : US-010
+Título        : Editar o eliminar calificación
+Historia      : Como docente, quiero poder corregir o eliminar una calificación
+                que cargué previamente, para rectificar errores de carga.
+Prioridad     : Media
+Dependencias  : US-009
+Criterios de aceptación:
+  GIVEN el docente accede a una calificación que él mismo creó
+  WHEN modifica el valor o la elimina
+  THEN el cambio se refleja de forma inmediata en el historial del alumno
+
+  GIVEN un docente intenta editar una calificación cargada por otro docente
+  WHEN envía la solicitud
+  THEN recibe HTTP 403 (RN-12)
+
+Notas técnicas: PUT /api/v1/grades/:id y DELETE /api/v1/grades/:id. (RN-12)
+────────────────────────────────────────────────────────────────────────────────
+
+════════════════════════════════════════════════
+ÉPICA 5: TAREAS Y ENTREGAS (DOCENTE)
+════════════════════════════════════════════════
+
+────────────────────────────────────────────────────────────────────────────────
+ID            : US-011
+Título        : Crear tarea para un curso
+Historia      : Como docente, quiero crear una tarea para mi materia con fecha
+                de vencimiento, para que quede registrada y los padres puedan
+                hacer seguimiento.
+Prioridad     : Alta
+Dependencias  : US-005
+Criterios de aceptación:
+  GIVEN el docente completa título, descripción, materia y fecha de vencimiento
+  WHEN confirma la creación
+  THEN la tarea queda registrada y se generan submissions en estado 'pendiente'
+       para todos los alumnos del curso de forma atómica (RN-14)
+
+  GIVEN el docente intenta crear una tarea con due_date anterior a la fecha actual
+  WHEN confirma la creación
+  THEN recibe un error de validación (RN-13)
+
+Notas técnicas: POST /api/v1/tasks. Tablas: tasks, task_submissions.
+                Operación atómica con transacción Sequelize. (RN-13, RN-14)
+────────────────────────────────────────────────────────────────────────────────
+
+────────────────────────────────────────────────────────────────────────────────
+ID            : US-012
+Título        : Registrar entrega de tarea
+Historia      : Como docente, quiero registrar si un alumno entregó una tarea
+                a tiempo o tarde, para tener un seguimiento de las entregas.
+Prioridad     : Media
+Dependencias  : US-011
+Criterios de aceptación:
+  GIVEN el docente accede al listado de submissions de una tarea
+  WHEN marca la entrega de un alumno como 'entregada' o 'tarde'
+  THEN el estado se actualiza y es visible para el padre del alumno
+
+  GIVEN una entrega ya marcada como 'entregada'
+  WHEN el docente intenta revertirla a 'pendiente'
+  THEN el sistema rechaza la operación (RN-15)
+
+Notas técnicas: PUT /api/v1/tasks/:taskId/submissions/:studentId. (RN-15)
+────────────────────────────────────────────────────────────────────────────────
+
+════════════════════════════════════════════════
+ÉPICA 6: CONSULTA PARENTAL (PADRE / TUTOR)
+════════════════════════════════════════════════
+
+────────────────────────────────────────────────────────────────────────────────
+ID            : US-013
+Título        : Ver calificaciones de mi hijo
+Historia      : Como padre, quiero ver todas las calificaciones de mi hijo
+                organizadas por materia y período, para hacer seguimiento de
+                su rendimiento académico.
+Prioridad     : Alta
+Dependencias  : US-004, US-009
+Criterios de aceptación:
+  GIVEN el padre inicia sesión y tiene un hijo vinculado
+  WHEN accede a la sección de calificaciones de su hijo
+  THEN visualiza las notas ordenadas por materia y período, con promedio por materia
+
+  GIVEN un padre intenta acceder a los datos de un alumno no vinculado a él
+  WHEN realiza la solicitud
+  THEN recibe HTTP 403 y no ve ningún dato de ese alumno (RN-03)
+
+Notas técnicas: GET /api/v1/students/:id/grades. (RN-03)
+────────────────────────────────────────────────────────────────────────────────
+
+────────────────────────────────────────────────────────────────────────────────
+ID            : US-014
+Título        : Ver asistencias de mi hijo
+Historia      : Como padre, quiero ver el historial de asistencias de mi hijo
+                con el resumen de faltas justificadas y no justificadas, para
+                saber si está en riesgo de perder la regularidad.
+Prioridad     : Alta
+Dependencias  : US-004, US-006
+Criterios de aceptación:
+  GIVEN el padre accede a la sección de asistencias de su hijo
+  WHEN visualiza el historial
+  THEN ve el listado por fecha con estado (ausente/presente/tarde y si está
+       justificado), más el resumen con totales
+
+Notas técnicas: GET /api/v1/students/:id/attendances. (RN-03, RN-09)
+────────────────────────────────────────────────────────────────────────────────
+
+────────────────────────────────────────────────────────────────────────────────
+ID            : US-015
+Título        : Ver tareas pendientes de mi hijo
+Historia      : Como padre, quiero ver las tareas asignadas a mi hijo y su
+                estado de entrega, para acompañar el cumplimiento de sus
+                compromisos académicos.
+Prioridad     : Alta
+Dependencias  : US-004, US-011
+Criterios de aceptación:
+  GIVEN el padre accede a la sección de tareas de su hijo
+  WHEN visualiza el listado
+  THEN ve cada tarea con su materia, fecha de vencimiento y estado
+       (pendiente / entregada / tarde)
+
+  GIVEN el padre filtra por estado 'pendiente'
+  WHEN aplica el filtro
+  THEN solo se muestran tareas aún no entregadas
+
+Notas técnicas: GET /api/v1/students/:id/tasks?status=pendiente. (RN-03)
+────────────────────────────────────────────────────────────────────────────────
+
+────────────────────────────────────────────────────────────────────────────────
+ID            : US-016
+Título        : Subir certificado de inasistencia
+Historia      : Como padre, quiero subir un certificado que justifique la
+                inasistencia de mi hijo, para iniciar el proceso de justificación
+                ante la institución.
+Prioridad     : Media
+Dependencias  : US-004, US-006
+Criterios de aceptación:
+  GIVEN el padre localiza una ausencia no justificada de su hijo
+  WHEN sube un archivo válido (JPG/PNG/PDF ≤ 5MB)
+  THEN el certificado queda disponible para que el preceptor lo revise y justifique
+
+  GIVEN el padre sube un archivo inválido (tipo no permitido o muy pesado)
+  WHEN intenta confirmar la carga
+  THEN recibe un error descriptivo y la operación no se completa (RN-08)
+
+Notas técnicas: POST /api/v1/certificates/upload. Tablas: attendances + storage cloud.
+────────────────────────────────────────────────────────────────────────────────
+
+════════════════════════════════════════════════
+ÉPICA 7: NOTIFICACIONES AUTOMÁTICAS (BOT)
+════════════════════════════════════════════════
+
+────────────────────────────────────────────────────────────────────────────────
+ID            : US-017
+Título        : Recibir alerta de inasistencias críticas
+Historia      : Como padre, quiero recibir una notificación por WhatsApp cuando
+                mi hijo acumule un número crítico de faltas, para poder
+                intervenir a tiempo.
+Prioridad     : Alta
+Dependencias  : US-006, US-004
+Criterios de aceptación:
+  GIVEN un alumno alcanza el umbral de inasistencias configurado
+  WHEN el agente ejecuta su ciclo diario
+  THEN el padre del alumno recibe un mensaje WhatsApp con el conteo de faltas
+
+  GIVEN la misma condición crítica persiste al día siguiente sin cambios
+  WHEN el agente ejecuta nuevamente
+  THEN no se envía una segunda notificación del mismo tipo en el mismo día (RN-16)
+
+  GIVEN el agente intentó enviar una notificación pero Twilio devolvió error
+  WHEN se produce el fallo
+  THEN el evento queda registrado en notification_logs con estado 'fallido' (RN-17)
+
+Notas técnicas: Agente Python + Twilio. Tabla: notification_logs. (RN-16, RN-17, RN-18)
+────────────────────────────────────────────────────────────────────────────────
+
+────────────────────────────────────────────────────────────────────────────────
+ID            : US-018
+Título        : Recibir alerta de calificación baja
+Historia      : Como padre, quiero recibir una notificación por WhatsApp cuando
+                mi hijo obtenga una calificación reprobatoria, para estar
+                informado sin necesidad de entrar al sistema.
+Prioridad     : Alta
+Dependencias  : US-009, US-004
+Criterios de aceptación:
+  GIVEN se registra una calificación < 4 para un alumno
+  WHEN el agente ejecuta su ciclo diario
+  THEN el padre recibe una notificación con el nombre de la materia y la nota
+
+Notas técnicas: Agente Python evalúa grades con value < 4 registradas el día anterior.
+────────────────────────────────────────────────────────────────────────────────
+
+────────────────────────────────────────────────────────────────────────────────
+ID            : US-019
+Título        : Recibir alerta de tarea próxima a vencer
+Historia      : Como padre, quiero recibir una notificación cuando una tarea de
+                mi hijo esté próxima a vencer y aún no haya sido entregada, para
+                recordárselo con anticipación.
+Prioridad     : Media
+Dependencias  : US-011, US-004
+Criterios de aceptación:
+  GIVEN una tarea vence en ≤ 2 días y el alumno no registra entrega
+  WHEN el agente ejecuta su ciclo
+  THEN el padre recibe una notificación con el título de la tarea y la fecha límite
+
+Notas técnicas: Agente Python. Tablas: tasks, task_submissions.
+────────────────────────────────────────────────────────────────────────────────
+
+════════════════════════════════════════════════
+ÉPICA 8: LICENCIAS DOCENTES
+════════════════════════════════════════════════
+
+────────────────────────────────────────────────────────────────────────────────
+ID            : US-020
+Título        : Solicitar licencia
+Historia      : Como docente, quiero registrar una solicitud de licencia con
+                fechas y tipo, para que el administrador pueda revisarla y
+                aprobarla.
+Prioridad     : Media
+Dependencias  : US-001
+Criterios de aceptación:
+  GIVEN el docente completa tipo, fecha de inicio y fecha de fin
+  WHEN confirma la solicitud
+  THEN la licencia queda en estado 'pendiente' y el administrador la puede ver
+
+  GIVEN el docente ingresa una fecha de fin anterior a la de inicio
+  WHEN confirma la solicitud
+  THEN recibe un error de validación (RN-20)
+
+Notas técnicas: POST /api/v1/teacher-leaves. Tabla: teacher_leaves. (RN-20)
+────────────────────────────────────────────────────────────────────────────────
+
+────────────────────────────────────────────────────────────────────────────────
+ID            : US-021
+Título        : Aprobar o rechazar licencia
+Historia      : Como administrador, quiero aprobar o rechazar las solicitudes de
+                licencia de los docentes, para gestionar la disponibilidad del
+                plantel.
+Prioridad     : Media
+Dependencias  : US-020
+Criterios de aceptación:
+  GIVEN una licencia en estado 'pendiente'
+  WHEN el administrador cambia su estado a 'aprobada' o 'rechazada'
+  THEN el estado se actualiza y el docente puede consultarlo en su panel
+
+Notas técnicas: PUT /api/v1/teacher-leaves/:id/status. (RN-19)
+────────────────────────────────────────────────────────────────────────────────
+
+────────────────────────────────────────────────────────────────────────────────
+ID            : US-022
+Título        : Consultar mis licencias
+Historia      : Como docente, quiero consultar mis licencias solicitadas y
+                aprobadas con el resumen de días utilizados, para saber cuántos
+                días me quedan disponibles.
+Prioridad     : Baja
+Dependencias  : US-020
+Criterios de aceptación:
+  GIVEN el docente accede a su panel de licencias
+  WHEN visualiza el listado
+  THEN ve el historial de todas sus solicitudes con estado y el resumen de días
+
+Notas técnicas: GET /api/v1/teacher-leaves/me. Tabla: teacher_leaves.
+────────────────────────────────────────────────────────────────────────────────
+
+
+────────────────────────────────────────────────────────────────────────────────
+4. RESUMEN POR ÉPICA
+────────────────────────────────────────────────────────────────────────────────
+
+  ┌─────┬─────────────────────────────────────┬───────────────┬──────────────────┐
+  │ Épi │ Nombre                              │ Historias     │ Prioridad épica  │
+  ├─────┼─────────────────────────────────────┼───────────────┼──────────────────┤
+  │  1  │ Autenticación y sesión              │ US-001, 002   │ Crítica (base)   │
+  │  2  │ Gestión de usuarios/config (Admin)  │ US-003..005   │ Crítica (base)   │
+  │  3  │ Gestión de asistencias (Preceptor)  │ US-006..008   │ Alta             │
+  │  4  │ Calificaciones (Docente)            │ US-009, 010   │ Alta             │
+  │  5  │ Tareas y entregas (Docente)         │ US-011, 012   │ Alta             │
+  │  6  │ Consulta parental (Padre)           │ US-013..016   │ Alta             │
+  │  7  │ Notificaciones automáticas (Bot)    │ US-017..019   │ Alta             │
+  │  8  │ Licencias docentes                  │ US-020..022   │ Media            │
+  └─────┴─────────────────────────────────────┴───────────────┴──────────────────┘
+
+
+────────────────────────────────────────────────────────────────────────────────
+5. PLAN DE SPRINTS — ORDEN DE IMPLEMENTACIÓN RECOMENDADO
+────────────────────────────────────────────────────────────────────────────────
+
+SPRINT 1 — FUNDAMENTOS Y AUTENTICACIÓN
+  Objetivo   : Tener el proyecto inicializado, la base de datos corriendo,
+               y el sistema de login/roles operativo de punta a punta.
+  Historias  : US-001, US-002
+  Tareas clave:
+    - Inicializar monorepo (GitHub): /frontend, /backend, /agent
+    - Configurar PostgreSQL en Railway, Sequelize y migraciones base
+    - Crear modelos: users, courses, subjects
+    - Implementar POST /auth/login y GET /auth/me con JWT
+    - Implementar middlewares authMiddleware y roleMiddleware
+    - Frontend: pantalla de login, AuthContext, ProtectedRoute por rol
+    - Configurar CORS, rate limiting y variables de entorno
+
+SPRINT 2 — CONFIGURACIÓN DE LA INSTITUCIÓN (ADMIN)
+  Objetivo   : El administrador puede dar de alta toda la estructura
+               institucional y vincular actores.
+  Historias  : US-003, US-004, US-005
+  Tareas clave:
+    - Modelos y migraciones: students, parent_student, teacher_subject
+    - CRUD de usuarios (admin)
+    - CRUD de cursos y materias
+    - Asignación docente ↔ materia y padre ↔ alumno
+    - Frontend: panel de administración (usuarios, cursos, alumnos)
+
+SPRINT 3 — ASISTENCIAS
+  Objetivo   : El preceptor puede registrar, consultar y justificar asistencias.
+               El padre puede ver el historial de su hijo.
+  Historias  : US-006, US-007, US-008, US-014
+  Tareas clave:
+    - Modelo y migración: attendances
+    - Endpoints de asistencias (POST, PUT, GET, justify)
+    - Subida de certificados (POST /certificates/upload + storage cloud)
+    - Frontend: vista de asistencias para preceptor y para padre
+    - Validación de unicidad student_id + date (RN-05)
+
+SPRINT 4 — CALIFICACIONES Y TAREAS
+  Objetivo   : El docente puede cargar notas y crear tareas. El padre
+               y el preceptor pueden consultarlos.
+  Historias  : US-009, US-010, US-011, US-012, US-013, US-015
+  Tareas clave:
+    - Modelos y migraciones: grades, tasks, task_submissions
+    - Endpoints de calificaciones y tareas
+    - Creación atómica de task_submissions al crear tarea (RN-14)
+    - Máquinas de estado de task_submission y grades
+    - Frontend: vistas de notas y tareas para docente y padre
+
+SPRINT 5 — AGENTE AUTOMATIZADO Y NOTIFICACIONES
+  Objetivo   : El agente Python detecta condiciones críticas y notifica
+               por WhatsApp. Los logs quedan registrados.
+  Historias  : US-017, US-018, US-019
+  Tareas clave:
+    - Modelo y migración: notification_logs
+    - Agente Python: conexión a PostgreSQL, evaluación de alertas
+    - Integración Twilio (WhatsApp sandbox y luego producción)
+    - CRON o Schedule con ejecución diaria
+    - Despliegue del agente como worker en Railway
+    - Endpoint interno POST /notifications/trigger con API Key
+
+SPRINT 6 — LICENCIAS DOCENTES Y CIERRE MVP
+  Objetivo   : Completar el módulo de licencias, pulir la UI y desplegar
+               el sistema completo en producción.
+  Historias  : US-020, US-021, US-022, US-016
+  Tareas clave:
+    - Modelo y migración: teacher_leaves
+    - Endpoints de licencias y flujo de aprobación
+    - Frontend: panel de licencias (docente y admin)
+    - Subida de certificados por padre (US-016)
+    - QA general, ajustes de UX, README final
+    - Despliegue producción: Vercel (frontend) + Railway (backend + BD + agente)
+
+
+================================================================================
+FIN DEL DOCUMENTO 3
+================================================================================

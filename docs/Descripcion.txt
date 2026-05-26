@@ -1,0 +1,346 @@
+================================================================================
+DOCUMENTO 1 — DESCRIPCIÓN GENERAL DEL PROYECTO
+Proyecto: Optimización de la Gestión Académica y Comunicación Escolar
+Versión: 1.0 | Estado: Borrador fundacional
+Integrantes: Moreno Ezequiel, Rovelli Adriano, Fernández Ulises, Trejo Juan Manuel
+================================================================================
+
+
+────────────────────────────────────────────────────────────────────────────────
+1. VISIÓN GENERAL DEL SISTEMA
+────────────────────────────────────────────────────────────────────────────────
+
+El sistema propuesto constituye una plataforma web integral orientada a la gestión
+académica y disciplinaria de instituciones de educación secundaria, con el objetivo
+central de transformar el modelo de comunicación escolar de un esquema pasivo y
+reactivo hacia uno activo, preventivo y en tiempo real. La solución aborda la brecha
+de información existente entre docentes, personal no académico, familias y
+estudiantes, consolidando en un único entorno digital todos los datos relevantes
+sobre asistencia, calificaciones, tareas y compromisos escolares.
+
+La plataforma se articula en dos componentes principales que operan de forma
+complementaria: una aplicación web centralizada con perfiles de acceso diferenciados
+según el rol de cada actor, y un agente automatizado de notificaciones que utiliza
+WhatsApp como canal de alerta para comunicar eventos críticos sin que el usuario
+deba ingresar proactivamente al sistema. Este enfoque dual garantiza que la
+información llegue a quien la necesita en el momento oportuno, reduciendo
+significativamente el riesgo de sorpresas al cierre de períodos académicos.
+
+En su etapa inicial (MVP), el sistema cubre los módulos de autenticación y gestión de
+usuarios, registro y consulta de asistencias con soporte para justificaciones,
+carga y visualización de calificaciones por materia y período, seguimiento de tareas
+y entregas, y el bot de notificaciones automáticas vía WhatsApp. Las funcionalidades
+de tablero analítico y comunicación interna entre actores quedan planificadas para
+fases posteriores del desarrollo, una vez consolidadas las bases operativas del
+sistema.
+
+
+────────────────────────────────────────────────────────────────────────────────
+2. ACTORES PRINCIPALES
+────────────────────────────────────────────────────────────────────────────────
+
+ACTOR 1 — ADMINISTRADOR
+  Descripción   : Representa al personal directivo o técnico-administrativo de la
+                  institución. Tiene visibilidad y control total sobre el sistema.
+  Permisos      :
+    - Crear, editar y desactivar cuentas de todos los roles (docentes, preceptores,
+      padres, alumnos).
+    - Acceder a todos los registros académicos y disciplinarios de cualquier alumno.
+    - Configurar parámetros del sistema (ciclos lectivos, cursos, materias, umbrales
+      de alerta).
+    - Consultar el estado de licencias y permisos del personal docente.
+    - Asignar docentes a materias y cursos.
+    - Asignar padres/tutores a alumnos.
+    - Ver logs de actividad del sistema.
+  Restricciones : Ninguna dentro del sistema.
+
+ACTOR 2 — PRECEPTOR
+  Descripción   : Personal no académico encargado del seguimiento de la regularidad
+                  y el comportamiento del alumnado. Opera como nexo operativo entre
+                  la institución y las familias en materia de asistencia.
+  Permisos      :
+    - Ver todos los alumnos del sistema y sus datos académicos completos (notas,
+      asistencias, tareas).
+    - Consultar qué padres/tutores están vinculados a cada alumno.
+    - Registrar y modificar inasistencias de alumnos.
+    - Justificar inasistencias mediante carga de certificados físicos o digitales
+      presentados por las familias.
+    - Ver el historial completo de asistencia de cualquier alumno.
+    - Recibir alertas automáticas ante acumulación crítica de faltas.
+  Restricciones : No puede cargar ni modificar calificaciones ni tareas. No puede
+                  gestionar cuentas de usuario.
+
+ACTOR 3 — DOCENTE
+  Descripción   : Personal académico responsable de una o varias materias asignadas
+                  a uno o más cursos.
+  Permisos      :
+    - Ver el listado de alumnos de los cursos y materias que tiene asignados.
+    - Cargar, editar y eliminar calificaciones de sus alumnos en sus materias.
+    - Ver el historial de notas de sus alumnos por materia y período.
+    - Crear, editar y eliminar tareas o actividades para sus cursos.
+    - Ver el estado de entrega de tareas por alumno (entregó / no entregó).
+    - Consultar las inasistencias acumuladas de sus alumnos (solo lectura).
+    - Consultar su propio registro de licencias y permisos restantes.
+  Restricciones : Solo puede ver y operar sobre los cursos y materias que tiene
+                  asignados. No puede justificar inasistencias ni gestionar cuentas.
+
+ACTOR 4 — PADRE / TUTOR
+  Descripción   : Responsable legal del alumno. Accede al sistema para monitorear
+                  el desempeño académico y la regularidad de su/s hijo/s.
+  Permisos      :
+    - Ver las calificaciones de su/s hijo/s por materia, período y trimestre.
+    - Ver el historial completo de asistencias de su/s hijo/s (incluyendo estado:
+      justificada / no justificada).
+    - Ver las tareas asignadas a su/s hijo/s y el estado de entrega.
+    - Recibir notificaciones automáticas vía WhatsApp ante eventos críticos.
+    - Subir certificados digitales para justificación de inasistencias.
+  Restricciones : Solo puede ver información de sus propios hijos vinculados. No
+                  puede modificar ningún dato académico ni disciplinario.
+
+ACTOR 5 — BOT AUTOMATIZADO (actor no humano)
+  Descripción   : Proceso automático que se ejecuta periódicamente (CRON/Schedule)
+                  y evalúa el estado académico y de asistencia del alumnado para
+                  disparar notificaciones proactivas vía WhatsApp (Twilio).
+  Responsabilidades :
+    - Detectar acumulación de inasistencias que supere umbrales configurados.
+    - Detectar calificaciones por debajo del mínimo aprobatorio.
+    - Detectar tareas no entregadas próximas al vencimiento.
+    - Detectar riesgo inminente de pérdida de regularidad.
+    - Detectar vencimiento próximo de licencias docentes.
+    - Enviar mensajes de alerta al número de WhatsApp registrado del padre/tutor
+      o docente correspondiente.
+
+
+────────────────────────────────────────────────────────────────────────────────
+3. OBJETIVOS DEL SISTEMA
+────────────────────────────────────────────────────────────────────────────────
+
+OBJ-01  Centralizar en una única plataforma web toda la información académica y
+        disciplinaria del alumnado (calificaciones, asistencias, tareas).
+
+OBJ-02  Proveer acceso diferenciado y seguro según el rol de cada actor, garantizando
+        que cada usuario vea únicamente la información que le corresponde.
+
+OBJ-03  Transformar el modelo de comunicación escolar de pasivo a activo mediante
+        notificaciones automáticas ante eventos académicos y disciplinarios críticos.
+
+OBJ-04  Permitir a los padres y tutores un monitoreo en tiempo real del desempeño y
+        la regularidad de sus hijos, reduciendo la desinformación.
+
+OBJ-05  Facilitar la gestión operativa del preceptor, centralizando el registro y
+        justificación de inasistencias con soporte documental.
+
+OBJ-06  Proveer al docente herramientas ágiles para la carga de calificaciones y el
+        seguimiento de entregas de tareas de sus cursos asignados.
+
+OBJ-07  Registrar y hacer consultable el estado de licencias y permisos del personal
+        docente, accesible para el propio docente y el administrador.
+
+OBJ-08  Sentar las bases técnicas y de datos para la incorporación futura de un
+        tablero analítico de evolución del estudiante y un módulo de comunicación
+        interna entre actores.
+
+
+────────────────────────────────────────────────────────────────────────────────
+4. STACK TECNOLÓGICO
+────────────────────────────────────────────────────────────────────────────────
+
+FRONTEND
+  Framework       : React.js 18.x
+  Justificación   : Ecosistema maduro, componentes reutilizables, amplia comunidad.
+                    Ideal para interfaces con múltiples vistas diferenciadas por rol.
+  UI Library      : Chakra UI 2.x
+  Justificación   : Sistema de diseño accesible, responsivo y altamente configurable.
+                    Reduce el tiempo de desarrollo de interfaces limpias y usables.
+  Routing         : React Router v6
+  Justificación   : Enrutamiento declarativo del lado del cliente, soporte nativo
+                    para rutas protegidas por rol.
+  Estado global   : Context API + useReducer
+  Justificación   : Suficiente para la escala del MVP sin la complejidad de Redux.
+                    Gestiona el estado de autenticación y el perfil del usuario activo.
+  Build tool      : Vite
+  Justificación   : Tiempo de arranque y HMR significativamente más rápido que
+                    Create React App. Configuración mínima para proyectos medianos.
+  Despliegue      : Vercel
+  Justificación   : CI/CD automático desde GitHub, dominios gratuitos, edge network.
+
+BACKEND
+  Runtime         : Node.js 20.x LTS
+  Justificación   : Mismo lenguaje que el frontend (JavaScript), reduciendo la
+                    curva de aprendizaje del equipo. Alto rendimiento para I/O.
+  Framework       : Express.js 4.x
+  Justificación   : Minimalista y flexible. Permite estructurar la API REST en capas
+                    claras sin imponer convenciones rígidas.
+  ORM             : Sequelize 6.x
+  Justificación   : Abstracción robusta sobre PostgreSQL con soporte para
+                    migraciones, asociaciones complejas y validaciones a nivel modelo.
+  Autenticación   : JSON Web Tokens (JWT) + bcrypt
+  Justificación   : Autenticación stateless adecuada para APIs REST. bcrypt para
+                    hashing seguro de contraseñas.
+  Despliegue      : Railway o Render
+  Justificación   : Despliegue simplificado de aplicaciones Node.js con soporte
+                    nativo para PostgreSQL y variables de entorno.
+
+BASE DE DATOS
+  Motor           : PostgreSQL 15.x
+  Justificación   : Base de datos relacional robusta, ideal para el modelo de datos
+                    del sistema (relaciones entre alumnos, cursos, materias, notas).
+                    Soporte completo de transacciones ACID para operaciones críticas.
+  Hosting         : Railway o Render (instancia PostgreSQL administrada)
+
+AGENTE AUTOMATIZADO
+  Lenguaje        : Python 3.11.x
+  Justificación   : Ecosistema maduro para procesamiento de datos y automatización.
+  Librerías       : Pandas (procesamiento y evaluación de datos académicos),
+                    Schedule o APScheduler (ejecución programada CRON-like),
+                    Twilio SDK for Python (envío de mensajes WhatsApp).
+  Integración     : El agente consulta la base de datos PostgreSQL directamente
+                    o vía endpoints internos del backend Node.js para evaluar
+                    condiciones de alerta y disparar notificaciones.
+  Despliegue      : Railway (proceso worker independiente) o GitHub Actions
+                    (ejecución programada vía cron workflow).
+
+INFRAESTRUCTURA Y CONTROL DE VERSIONES
+  Repositorio     : GitHub (monorepo con carpetas /frontend, /backend, /agent)
+  CI/CD           : GitHub Actions para tests automáticos y despliegue continuo.
+  Variables de entorno : .env por entorno (development, production), nunca
+                         versionadas en el repositorio.
+
+
+────────────────────────────────────────────────────────────────────────────────
+5. ARQUITECTURA DEL SISTEMA
+────────────────────────────────────────────────────────────────────────────────
+
+VISIÓN GENERAL
+
+  [Navegador Web]
+       │  HTTPS
+       ▼
+  [Frontend — React/Vite/Vercel]
+       │  REST (JSON) + JWT en header
+       ▼
+  [Backend — Node.js/Express/Railway]
+       │  Sequelize ORM
+       ▼
+  [Base de Datos — PostgreSQL/Railway]
+       ▲
+       │  Consulta directa o via API interna
+  [Agente Python — Schedule/Twilio]
+       │  WhatsApp API (Twilio)
+       ▼
+  [Padres y Docentes — WhatsApp]
+
+ARQUITECTURA DEL BACKEND (CAPAS)
+
+  Capa 1 — Router (Express Router)
+    Responsabilidad : Definir las rutas HTTP y delegar al controlador.
+                      Aplicar middlewares de autenticación y autorización por rol.
+
+  Capa 2 — Controller
+    Responsabilidad : Recibir la request, extraer y validar parámetros/body,
+                      llamar al servicio correspondiente y formatear la response.
+
+  Capa 3 — Service
+    Responsabilidad : Contener la lógica de negocio. Orquestar llamadas a
+                      repositorios. Lanzar errores de dominio cuando se violan
+                      reglas de negocio.
+
+  Capa 4 — Repository
+    Responsabilidad : Abstraer el acceso a la base de datos. Toda consulta
+                      Sequelize vive aquí. El service nunca llama a Sequelize
+                      directamente.
+
+  Capa 5 — Model (Sequelize)
+    Responsabilidad : Definir la estructura de la entidad, tipos de datos,
+                      validaciones a nivel ORM y asociaciones entre modelos.
+
+  Capa transversal — Middlewares
+    - authMiddleware      : Valida JWT y adjunta el usuario decodificado a req.user.
+    - roleMiddleware      : Verifica que el rol de req.user tenga permiso para
+                            el recurso solicitado.
+    - errorMiddleware     : Captura errores y devuelve respuestas estructuradas.
+    - validationMiddleware: Valida el body/params con esquemas (express-validator
+                            o Joi).
+
+ARQUITECTURA DEL FRONTEND (CAPAS)
+
+  pages/          : Componentes de página (una por vista principal).
+  components/     : Componentes reutilizables de UI (tablas, formularios, cards).
+  context/        : AuthContext (usuario activo, token, rol) y otros contextos globales.
+  hooks/          : Custom hooks para llamadas a la API y lógica de UI reutilizable.
+  services/       : Módulos de comunicación con el backend (axios instances, endpoints).
+  routes/         : Definición de rutas protegidas por rol con React Router.
+  utils/          : Funciones auxiliares (formateo de fechas, cálculo de promedios).
+
+
+────────────────────────────────────────────────────────────────────────────────
+6. PATRONES DE DISEÑO APLICADOS
+────────────────────────────────────────────────────────────────────────────────
+
+Repository Pattern
+  Aplicado en    : Capa Repository del backend.
+  Justificación  : Desacopla la lógica de negocio del ORM. Facilita el testing
+                   unitario mediante mocks del repositorio.
+
+Service Layer Pattern
+  Aplicado en    : Capa Service del backend.
+  Justificación  : Centraliza la lógica de negocio, evitando que los controladores
+                   o los modelos se vuelvan fat controllers/fat models.
+
+Middleware Chain (Chain of Responsibility)
+  Aplicado en    : Pipeline de middlewares de Express.
+  Justificación  : Permite componer comportamientos transversales (auth, roles,
+                   validación, errores) de forma modular y reutilizable.
+
+Context + Provider Pattern
+  Aplicado en    : Frontend (AuthContext, React Context API).
+  Justificación  : Gestión de estado global sin dependencias externas. El contexto
+                   de autenticación es consumido por cualquier componente que lo
+                   necesite sin prop drilling.
+
+Guard / Protected Route Pattern
+  Aplicado en    : Frontend (React Router + roleMiddleware).
+  Justificación  : Protege rutas en el cliente según el rol del usuario autenticado,
+                   evitando accesos visuales no autorizados.
+
+Observer / Event-Driven (Agente Python)
+  Aplicado en    : Agente automatizado de notificaciones.
+  Justificación  : El agente evalúa periódicamente condiciones (eventos) y reacciona
+                   disparando notificaciones. Desacoplado del flujo principal de la app.
+
+
+────────────────────────────────────────────────────────────────────────────────
+7. CRITERIOS DE EVALUACIÓN / DEFINITION OF DONE
+────────────────────────────────────────────────────────────────────────────────
+
+Una funcionalidad se considera "done" cuando cumple la totalidad de los siguientes
+criterios:
+
+  DOD-01  El endpoint del backend responde correctamente a los casos de uso
+          nominales y de error, con los códigos HTTP adecuados.
+
+  DOD-02  La autenticación y autorización por rol están aplicadas y verificadas:
+          un usuario sin el rol correcto recibe HTTP 401 o 403.
+
+  DOD-03  Los datos persisten correctamente en PostgreSQL y la migración
+          Sequelize correspondiente existe y fue ejecutada.
+
+  DOD-04  El frontend consume el endpoint y refleja los datos en la UI sin
+          errores de consola.
+
+  DOD-05  Las rutas protegidas del frontend redirigen correctamente a usuarios
+          sin el rol requerido.
+
+  DOD-06  El código fue revisado por al menos un integrante distinto al autor
+          (code review en GitHub Pull Request).
+
+  DOD-07  Las variables de entorno sensibles no están hardcodeadas en el código
+          fuente ni versionadas en el repositorio.
+
+  DOD-08  La funcionalidad fue probada manualmente en un entorno de staging
+          antes de mergearse a la rama principal.
+
+
+================================================================================
+FIN DEL DOCUMENTO 1
+================================================================================

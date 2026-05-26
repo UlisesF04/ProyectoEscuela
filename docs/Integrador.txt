@@ -1,0 +1,686 @@
+================================================================================
+DOCUMENTO 2 — ESPECIFICACIÓN TÉCNICA INTEGRADORA
+Proyecto: Optimización de la Gestión Académica y Comunicación Escolar
+Versión: 1.0 | Estado: Borrador fundacional
+================================================================================
+
+
+────────────────────────────────────────────────────────────────────────────────
+1. ENTIDADES DEL DOMINIO — ERD CONCEPTUAL
+────────────────────────────────────────────────────────────────────────────────
+
+A continuación se describen todas las entidades, sus atributos y sus relaciones.
+
+──────────────────────────────
+ENTIDAD: users
+──────────────────────────────
+  id              SERIAL PRIMARY KEY
+  email           VARCHAR(255) NOT NULL UNIQUE
+  password_hash   VARCHAR(255) NOT NULL
+  role            ENUM('admin','preceptor','docente','padre') NOT NULL
+  first_name      VARCHAR(100) NOT NULL
+  last_name       VARCHAR(100) NOT NULL
+  phone_whatsapp  VARCHAR(20)               -- para notificaciones Twilio
+  is_active       BOOLEAN DEFAULT true
+  created_at      TIMESTAMP DEFAULT NOW()
+  updated_at      TIMESTAMP DEFAULT NOW()
+
+──────────────────────────────
+ENTIDAD: students
+──────────────────────────────
+  id              SERIAL PRIMARY KEY
+  first_name      VARCHAR(100) NOT NULL
+  last_name       VARCHAR(100) NOT NULL
+  dni             VARCHAR(20) UNIQUE
+  birth_date      DATE
+  course_id       INTEGER FK → courses(id)
+  is_active       BOOLEAN DEFAULT true
+  created_at      TIMESTAMP DEFAULT NOW()
+  updated_at      TIMESTAMP DEFAULT NOW()
+
+──────────────────────────────
+ENTIDAD: parent_student  (tabla de unión N:M)
+──────────────────────────────
+  id              SERIAL PRIMARY KEY
+  user_id         INTEGER FK → users(id)     -- rol: padre
+  student_id      INTEGER FK → students(id)
+  relationship    VARCHAR(50)                -- 'madre','padre','tutor', etc.
+  UNIQUE(user_id, student_id)
+
+──────────────────────────────
+ENTIDAD: courses
+──────────────────────────────
+  id              SERIAL PRIMARY KEY
+  name            VARCHAR(100) NOT NULL      -- ej: "3° A"
+  year            INTEGER NOT NULL           -- ciclo lectivo
+  division        VARCHAR(10)
+  level           VARCHAR(50)                -- ej: "Secundaria"
+  created_at      TIMESTAMP DEFAULT NOW()
+
+──────────────────────────────
+ENTIDAD: subjects
+──────────────────────────────
+  id              SERIAL PRIMARY KEY
+  name            VARCHAR(100) NOT NULL      -- ej: "Matemática"
+  course_id       INTEGER FK → courses(id)
+  created_at      TIMESTAMP DEFAULT NOW()
+
+──────────────────────────────
+ENTIDAD: teacher_subject  (tabla de unión N:M)
+──────────────────────────────
+  id              SERIAL PRIMARY KEY
+  user_id         INTEGER FK → users(id)     -- rol: docente
+  subject_id      INTEGER FK → subjects(id)
+  UNIQUE(user_id, subject_id)
+
+──────────────────────────────
+ENTIDAD: grades
+──────────────────────────────
+  id              SERIAL PRIMARY KEY
+  student_id      INTEGER FK → students(id)
+  subject_id      INTEGER FK → subjects(id)
+  teacher_id      INTEGER FK → users(id)
+  value           DECIMAL(4,2) NOT NULL      -- ej: 7.50
+  period          ENUM('1er_trimestre','2do_trimestre','3er_trimestre','recuperatorio')
+  grade_date      DATE NOT NULL
+  notes           TEXT                       -- observaciones opcionales
+  created_at      TIMESTAMP DEFAULT NOW()
+  updated_at      TIMESTAMP DEFAULT NOW()
+
+──────────────────────────────
+ENTIDAD: attendances
+──────────────────────────────
+  id              SERIAL PRIMARY KEY
+  student_id      INTEGER FK → students(id)
+  date            DATE NOT NULL
+  status          ENUM('presente','ausente','tarde') NOT NULL
+  is_justified    BOOLEAN DEFAULT false
+  justification_note TEXT
+  certificate_url VARCHAR(500)               -- URL del certificado subido
+  registered_by   INTEGER FK → users(id)    -- preceptor que registró
+  created_at      TIMESTAMP DEFAULT NOW()
+  updated_at      TIMESTAMP DEFAULT NOW()
+  UNIQUE(student_id, date)
+
+──────────────────────────────
+ENTIDAD: tasks
+──────────────────────────────
+  id              SERIAL PRIMARY KEY
+  title           VARCHAR(255) NOT NULL
+  description     TEXT
+  subject_id      INTEGER FK → subjects(id)
+  teacher_id      INTEGER FK → users(id)
+  due_date        DATE NOT NULL
+  created_at      TIMESTAMP DEFAULT NOW()
+  updated_at      TIMESTAMP DEFAULT NOW()
+
+──────────────────────────────
+ENTIDAD: task_submissions
+──────────────────────────────
+  id              SERIAL PRIMARY KEY
+  task_id         INTEGER FK → tasks(id)
+  student_id      INTEGER FK → students(id)
+  status          ENUM('pendiente','entregada','tarde') DEFAULT 'pendiente'
+  submitted_at    TIMESTAMP
+  notes           TEXT
+  created_at      TIMESTAMP DEFAULT NOW()
+  updated_at      TIMESTAMP DEFAULT NOW()
+  UNIQUE(task_id, student_id)
+
+──────────────────────────────
+ENTIDAD: teacher_leaves  (licencias docentes)
+──────────────────────────────
+  id              SERIAL PRIMARY KEY
+  user_id         INTEGER FK → users(id)     -- rol: docente
+  leave_type      VARCHAR(100)               -- ej: "Enfermedad","Personal","Gremial"
+  start_date      DATE NOT NULL
+  end_date        DATE NOT NULL
+  days_used       INTEGER NOT NULL
+  status          ENUM('pendiente','aprobada','rechazada') DEFAULT 'pendiente'
+  approved_by     INTEGER FK → users(id)    -- admin que aprobó
+  notes           TEXT
+  created_at      TIMESTAMP DEFAULT NOW()
+  updated_at      TIMESTAMP DEFAULT NOW()
+
+──────────────────────────────
+ENTIDAD: notification_logs  (auditoría del agente)
+──────────────────────────────
+  id              SERIAL PRIMARY KEY
+  recipient_id    INTEGER FK → users(id)
+  student_id      INTEGER FK → students(id)
+  type            VARCHAR(100)               -- ej: "AUSENCIAS_CRITICAS"
+  message         TEXT
+  channel         VARCHAR(50) DEFAULT 'whatsapp'
+  status          ENUM('enviado','fallido') NOT NULL
+  sent_at         TIMESTAMP DEFAULT NOW()
+
+
+────────────────────────────────────────────────────────────────────────────────
+2. RELACIONES ENTRE ENTIDADES
+────────────────────────────────────────────────────────────────────────────────
+
+  users             ||--o{ teacher_subject    : "docente enseña materias"
+  users             ||--o{ parent_student     : "padre tiene hijos vinculados"
+  users             ||--o{ teacher_leaves     : "docente tiene licencias"
+  users             ||--o{ attendances        : "preceptor registra asistencias"
+  users             ||--o{ grades             : "docente carga calificaciones"
+  users             ||--o{ tasks              : "docente crea tareas"
+  students          ||--o{ parent_student     : "alumno tiene tutores"
+  students          ||--o{ attendances        : "alumno tiene asistencias"
+  students          ||--o{ grades             : "alumno tiene calificaciones"
+  students          ||--o{ task_submissions   : "alumno entrega tareas"
+  students          }o--|| courses            : "alumno pertenece a curso"
+  courses           ||--o{ subjects           : "curso tiene materias"
+  subjects          ||--o{ teacher_subject    : "materia tiene docentes"
+  subjects          ||--o{ grades             : "materia tiene calificaciones"
+  subjects          ||--o{ tasks              : "materia tiene tareas"
+  tasks             ||--o{ task_submissions   : "tarea tiene entregas"
+
+
+────────────────────────────────────────────────────────────────────────────────
+3. DIAGRAMA DE ARQUITECTURA EN CAPAS (BACKEND)
+────────────────────────────────────────────────────────────────────────────────
+
+  ┌─────────────────────────────────────────────────────────┐
+  │                    HTTP Request                         │
+  └────────────────────────┬────────────────────────────────┘
+                           │
+  ┌────────────────────────▼────────────────────────────────┐
+  │              MIDDLEWARES TRANSVERSALES                  │
+  │  authMiddleware → roleMiddleware → validationMiddleware │
+  └────────────────────────┬────────────────────────────────┘
+                           │
+  ┌────────────────────────▼────────────────────────────────┐
+  │                   ROUTER (Express)                      │
+  │        /api/v1/auth  /api/v1/students  /api/v1/...      │
+  └────────────────────────┬────────────────────────────────┘
+                           │
+  ┌────────────────────────▼────────────────────────────────┐
+  │                   CONTROLLER                            │
+  │    Extrae params/body → llama Service → formatea res    │
+  └────────────────────────┬────────────────────────────────┘
+                           │
+  ┌────────────────────────▼────────────────────────────────┐
+  │                    SERVICE                              │
+  │     Lógica de negocio → orquesta Repositories          │
+  └────────────────────────┬────────────────────────────────┘
+                           │
+  ┌────────────────────────▼────────────────────────────────┐
+  │                  REPOSITORY                             │
+  │     Toda interacción con Sequelize vive aquí            │
+  └────────────────────────┬────────────────────────────────┘
+                           │
+  ┌────────────────────────▼────────────────────────────────┐
+  │                MODEL (Sequelize)                        │
+  │     Definición de tabla, validaciones, asociaciones     │
+  └────────────────────────┬────────────────────────────────┘
+                           │
+  ┌────────────────────────▼────────────────────────────────┐
+  │              PostgreSQL Database                        │
+  └─────────────────────────────────────────────────────────┘
+
+
+────────────────────────────────────────────────────────────────────────────────
+4. ESPECIFICACIÓN DE ENDPOINTS REST
+────────────────────────────────────────────────────────────────────────────────
+
+BASE URL: /api/v1
+Autenticación: Bearer Token (JWT) en header Authorization para todos los endpoints
+               marcados con [AUTH]. El token contiene: id, role, email.
+
+──────────────────────────────────────────────────────────────
+MÓDULO: AUTH
+──────────────────────────────────────────────────────────────
+
+POST /auth/login
+  Auth requerida : No
+  Body           : { email: string, password: string }
+  Response 200   : { token: string, user: { id, role, first_name, last_name } }
+  Response 401   : { error: "Credenciales inválidas" }
+
+POST /auth/logout
+  Auth requerida : [AUTH]
+  Body           : (vacío — el token se invalida del lado cliente)
+  Response 200   : { message: "Sesión cerrada" }
+
+GET /auth/me
+  Auth requerida : [AUTH]
+  Response 200   : { id, email, role, first_name, last_name, phone_whatsapp }
+
+──────────────────────────────────────────────────────────────
+MÓDULO: USERS (administrador)
+──────────────────────────────────────────────────────────────
+
+GET /users
+  Auth requerida : [AUTH] rol: admin
+  Query params   : ?role=docente|padre|preceptor&page=1&limit=20
+  Response 200   : { data: [User], total, page, limit }
+
+POST /users
+  Auth requerida : [AUTH] rol: admin
+  Body           : { email, password, role, first_name, last_name, phone_whatsapp }
+  Response 201   : { user: User }
+  Response 409   : { error: "El email ya está registrado" }
+
+GET /users/:id
+  Auth requerida : [AUTH] rol: admin
+  Response 200   : { user: User }
+  Response 404   : { error: "Usuario no encontrado" }
+
+PUT /users/:id
+  Auth requerida : [AUTH] rol: admin
+  Body           : (campos a actualizar, password opcional)
+  Response 200   : { user: User }
+
+DELETE /users/:id  (soft delete — is_active: false)
+  Auth requerida : [AUTH] rol: admin
+  Response 200   : { message: "Usuario desactivado" }
+
+──────────────────────────────────────────────────────────────
+MÓDULO: STUDENTS
+──────────────────────────────────────────────────────────────
+
+GET /students
+  Auth requerida : [AUTH] rol: admin | preceptor | docente
+  Query params   : ?course_id=&page=1&limit=20
+  Nota           : Docente solo ve alumnos de sus cursos asignados.
+  Response 200   : { data: [Student], total, page, limit }
+
+POST /students
+  Auth requerida : [AUTH] rol: admin
+  Body           : { first_name, last_name, dni, birth_date, course_id }
+  Response 201   : { student: Student }
+
+GET /students/:id
+  Auth requerida : [AUTH] rol: admin | preceptor | docente | padre
+  Nota           : Padre solo puede acceder a sus hijos vinculados.
+  Response 200   : { student: Student, course: Course }
+
+PUT /students/:id
+  Auth requerida : [AUTH] rol: admin
+  Body           : (campos a actualizar)
+  Response 200   : { student: Student }
+
+POST /students/:id/parents
+  Auth requerida : [AUTH] rol: admin
+  Body           : { user_id: number, relationship: string }
+  Response 201   : { message: "Vínculo creado" }
+
+DELETE /students/:id/parents/:userId
+  Auth requerida : [AUTH] rol: admin
+  Response 200   : { message: "Vínculo eliminado" }
+
+──────────────────────────────────────────────────────────────
+MÓDULO: COURSES & SUBJECTS
+──────────────────────────────────────────────────────────────
+
+GET /courses
+  Auth requerida : [AUTH] rol: admin | preceptor | docente
+  Response 200   : { data: [Course] }
+
+POST /courses
+  Auth requerida : [AUTH] rol: admin
+  Body           : { name, year, division, level }
+  Response 201   : { course: Course }
+
+GET /courses/:id/subjects
+  Auth requerida : [AUTH] rol: admin | docente | preceptor
+  Response 200   : { data: [Subject] }
+
+POST /courses/:id/subjects
+  Auth requerida : [AUTH] rol: admin
+  Body           : { name }
+  Response 201   : { subject: Subject }
+
+POST /subjects/:id/teachers
+  Auth requerida : [AUTH] rol: admin
+  Body           : { user_id: number }
+  Response 201   : { message: "Docente asignado a materia" }
+
+──────────────────────────────────────────────────────────────
+MÓDULO: GRADES (calificaciones)
+──────────────────────────────────────────────────────────────
+
+GET /students/:id/grades
+  Auth requerida : [AUTH] rol: admin | preceptor | docente | padre
+  Query params   : ?subject_id=&period=
+  Nota           : Docente solo ve notas de sus materias. Padre solo ve las de sus hijos.
+  Response 200   : { data: [Grade] }
+
+POST /grades
+  Auth requerida : [AUTH] rol: docente
+  Body           : { student_id, subject_id, value, period, grade_date, notes }
+  Response 201   : { grade: Grade }
+  Response 403   : { error: "No tenés asignada esta materia" }
+
+PUT /grades/:id
+  Auth requerida : [AUTH] rol: docente
+  Body           : { value, notes }
+  Response 200   : { grade: Grade }
+
+DELETE /grades/:id
+  Auth requerida : [AUTH] rol: docente | admin
+  Response 200   : { message: "Calificación eliminada" }
+
+──────────────────────────────────────────────────────────────
+MÓDULO: ATTENDANCES (asistencias)
+──────────────────────────────────────────────────────────────
+
+GET /students/:id/attendances
+  Auth requerida : [AUTH] rol: admin | preceptor | docente | padre
+  Query params   : ?from=YYYY-MM-DD&to=YYYY-MM-DD&status=ausente
+  Response 200   : { data: [Attendance], summary: { total, ausentes, justificadas } }
+
+POST /attendances
+  Auth requerida : [AUTH] rol: preceptor | admin
+  Body           : { student_id, date, status }
+  Response 201   : { attendance: Attendance }
+  Response 409   : { error: "Ya existe un registro para ese alumno en esa fecha" }
+
+PUT /attendances/:id
+  Auth requerida : [AUTH] rol: preceptor | admin
+  Body           : { status, is_justified, justification_note, certificate_url }
+  Response 200   : { attendance: Attendance }
+
+POST /attendances/:id/justify
+  Auth requerida : [AUTH] rol: preceptor | admin
+  Body           : { justification_note, certificate_url }
+  Response 200   : { attendance: Attendance }
+
+──────────────────────────────────────────────────────────────
+MÓDULO: TASKS (tareas)
+──────────────────────────────────────────────────────────────
+
+GET /subjects/:id/tasks
+  Auth requerida : [AUTH] rol: admin | docente | preceptor | padre
+  Response 200   : { data: [Task] }
+
+POST /tasks
+  Auth requerida : [AUTH] rol: docente
+  Body           : { title, description, subject_id, due_date }
+  Response 201   : { task: Task }
+
+PUT /tasks/:id
+  Auth requerida : [AUTH] rol: docente
+  Body           : { title, description, due_date }
+  Response 200   : { task: Task }
+
+DELETE /tasks/:id
+  Auth requerida : [AUTH] rol: docente | admin
+  Response 200   : { message: "Tarea eliminada" }
+
+GET /tasks/:id/submissions
+  Auth requerida : [AUTH] rol: docente | admin | preceptor
+  Response 200   : { data: [TaskSubmission] }
+
+PUT /tasks/:taskId/submissions/:studentId
+  Auth requerida : [AUTH] rol: docente | preceptor
+  Body           : { status: 'entregada'|'tarde', notes }
+  Response 200   : { submission: TaskSubmission }
+
+GET /students/:id/tasks
+  Auth requerida : [AUTH] rol: padre | admin | preceptor
+  Query params   : ?status=pendiente
+  Response 200   : { data: [Task con submission status] }
+
+──────────────────────────────────────────────────────────────
+MÓDULO: TEACHER LEAVES (licencias docentes)
+──────────────────────────────────────────────────────────────
+
+GET /teacher-leaves
+  Auth requerida : [AUTH] rol: admin
+  Query params   : ?user_id=&status=
+  Response 200   : { data: [TeacherLeave] }
+
+GET /teacher-leaves/me
+  Auth requerida : [AUTH] rol: docente
+  Response 200   : { data: [TeacherLeave], summary: { total_used, remaining } }
+
+POST /teacher-leaves
+  Auth requerida : [AUTH] rol: docente | admin
+  Body           : { leave_type, start_date, end_date, notes }
+  Response 201   : { leave: TeacherLeave }
+
+PUT /teacher-leaves/:id/status
+  Auth requerida : [AUTH] rol: admin
+  Body           : { status: 'aprobada'|'rechazada' }
+  Response 200   : { leave: TeacherLeave }
+
+──────────────────────────────────────────────────────────────
+MÓDULO: CERTIFICATES (subida de documentos)
+──────────────────────────────────────────────────────────────
+
+POST /certificates/upload
+  Auth requerida : [AUTH] rol: padre | preceptor | admin
+  Body           : multipart/form-data { file: File, attendance_id: number }
+  Response 201   : { certificate_url: string }
+  Nota           : El archivo se sube a almacenamiento cloud (Cloudinary o Railway
+                   Volume). La URL resultante se asocia al registro de asistencia.
+
+──────────────────────────────────────────────────────────────
+MÓDULO: NOTIFICATIONS (agente — uso interno)
+──────────────────────────────────────────────────────────────
+
+GET /notifications/logs
+  Auth requerida : [AUTH] rol: admin
+  Query params   : ?student_id=&type=&from=&to=
+  Response 200   : { data: [NotificationLog] }
+
+POST /notifications/trigger  (endpoint interno, no expuesto al frontend)
+  Auth requerida : API Key de servicio (X-Service-Key header)
+  Body           : { type, student_id, recipient_id, message }
+  Response 201   : { log: NotificationLog }
+
+
+────────────────────────────────────────────────────────────────────────────────
+5. MÁQUINAS DE ESTADO
+────────────────────────────────────────────────────────────────────────────────
+
+ESTADO DE UNA INASISTENCIA (attendances.status + is_justified)
+  ┌──────────────┐   preceptor registra   ┌──────────────┐
+  │   (ninguno)  │ ─────────────────────► │   ausente    │
+  └──────────────┘                        └──────┬───────┘
+                                                 │ preceptor justifica
+                                                 ▼
+                                          ┌──────────────┐
+                                          │  justificada │
+                                          └──────────────┘
+  Nota: "ausente" → "justificada" es el único camino posible.
+        No se puede revertir una justificación una vez aplicada.
+
+ESTADO DE UNA ENTREGA DE TAREA (task_submissions.status)
+  ┌───────────┐  docente registra entrega  ┌───────────┐
+  │ pendiente │ ─────────────────────────► │ entregada │
+  └─────┬─────┘                            └───────────┘
+        │ docente registra entrega tardía
+        ▼
+  ┌───────────┐
+  │   tarde   │
+  └───────────┘
+
+ESTADO DE UNA LICENCIA DOCENTE (teacher_leaves.status)
+  ┌───────────┐  admin aprueba  ┌──────────┐
+  │ pendiente │ ──────────────► │ aprobada │
+  └─────┬─────┘                 └──────────┘
+        │ admin rechaza
+        ▼
+  ┌───────────┐
+  │ rechazada │
+  └───────────┘
+
+
+────────────────────────────────────────────────────────────────────────────────
+6. PATRONES DE DISEÑO — EJEMPLOS DE REFERENCIA
+────────────────────────────────────────────────────────────────────────────────
+
+── Repository Pattern ──────────────────────────────────────────────────────────
+
+  // src/repositories/gradeRepository.js
+  const { Grade } = require('../models');
+
+  const gradeRepository = {
+    async findByStudent(studentId, filters = {}) {
+      return Grade.findAll({
+        where: { student_id: studentId, ...filters },
+        order: [['grade_date', 'DESC']]
+      });
+    },
+    async create(data) {
+      return Grade.create(data);
+    },
+    async update(id, data) {
+      const [count, rows] = await Grade.update(data, {
+        where: { id }, returning: true
+      });
+      return rows[0];
+    }
+  };
+  module.exports = gradeRepository;
+
+── Service Layer Pattern ───────────────────────────────────────────────────────
+
+  // src/services/gradeService.js
+  const gradeRepository = require('../repositories/gradeRepository');
+  const teacherSubjectRepository = require('../repositories/teacherSubjectRepository');
+  const AppError = require('../utils/AppError');
+
+  const gradeService = {
+    async createGrade(teacherId, gradeData) {
+      const isAssigned = await teacherSubjectRepository.exists(
+        teacherId, gradeData.subject_id
+      );
+      if (!isAssigned) {
+        throw new AppError('No tenés asignada esta materia', 403);
+      }
+      return gradeRepository.create({ ...gradeData, teacher_id: teacherId });
+    }
+  };
+  module.exports = gradeService;
+
+── Protected Route (Frontend) ──────────────────────────────────────────────────
+
+  // src/routes/ProtectedRoute.jsx
+  import { useContext } from 'react';
+  import { Navigate } from 'react-router-dom';
+  import { AuthContext } from '../context/AuthContext';
+
+  const ProtectedRoute = ({ children, allowedRoles }) => {
+    const { user } = useContext(AuthContext);
+    if (!user) return <Navigate to="/login" />;
+    if (!allowedRoles.includes(user.role)) return <Navigate to="/unauthorized" />;
+    return children;
+  };
+  export default ProtectedRoute;
+
+
+────────────────────────────────────────────────────────────────────────────────
+7. CONFIGURACIÓN DE SEGURIDAD
+────────────────────────────────────────────────────────────────────────────────
+
+JWT
+  - Algoritmo       : HS256
+  - Expiración      : 8h (sesión de jornada escolar)
+  - Payload         : { id, role, email, iat, exp }
+  - Secreto         : variable de entorno JWT_SECRET (mínimo 32 caracteres)
+  - Refresh         : No implementado en MVP. Considerar para fase 2.
+
+CORS
+  - Origen permitido : dominio del frontend en producción (Vercel URL)
+  - Métodos          : GET, POST, PUT, DELETE, OPTIONS
+  - Headers          : Content-Type, Authorization
+
+RATE LIMITING
+  - Librería         : express-rate-limit
+  - Límite global    : 100 requests / 15 min por IP
+  - Límite /auth/login: 10 intentos / 15 min por IP (prevención de fuerza bruta)
+
+HASHING DE CONTRASEÑAS
+  - Librería  : bcrypt
+  - Rounds    : 12
+
+VALIDACIÓN DE INPUTS
+  - Librería  : express-validator o Joi
+  - Aplicar en: todos los endpoints POST y PUT antes de llegar al controller
+
+VARIABLES DE ENTORNO (nunca en el repositorio)
+  DATABASE_URL      PostgreSQL connection string
+  JWT_SECRET        Clave secreta para firmar tokens
+  TWILIO_ACCOUNT_SID
+  TWILIO_AUTH_TOKEN
+  TWILIO_WHATSAPP_FROM
+  CLOUDINARY_URL    (si se usa para almacenamiento de certificados)
+  SERVICE_API_KEY   Clave para el endpoint interno del agente Python
+
+SUBIDA DE ARCHIVOS (certificados)
+  - Solo se aceptan archivos de tipo: image/jpeg, image/png, application/pdf
+  - Tamaño máximo   : 5 MB por archivo
+  - Los archivos se almacenan en un servicio de storage externo (Cloudinary
+    o Railway Volume), nunca en el servidor de la aplicación.
+
+
+────────────────────────────────────────────────────────────────────────────────
+8. LÓGICA DEL AGENTE AUTOMATIZADO (Python)
+────────────────────────────────────────────────────────────────────────────────
+
+El agente se ejecuta periódicamente (una vez por día, al finalizar la jornada
+escolar) y realiza las siguientes evaluaciones contra la base de datos:
+
+  ALERTA 1 — AUSENCIAS_CRITICAS
+    Condición : El alumno acumuló ≥ X inasistencias no justificadas en el ciclo
+                (X es configurable, valor por defecto: 10).
+    Destinatario: Padre/tutor del alumno.
+    Mensaje   : "Su hijo/a [nombre] acumula [N] inasistencias no justificadas.
+                Comuníquese con la institución."
+
+  ALERTA 2 — RIESGO_REGULARIDAD
+    Condición : El alumno tiene ≥ 20% de inasistencias sobre el total de clases
+                dictadas en el trimestre activo.
+    Destinatario: Padre/tutor del alumno.
+
+  ALERTA 3 — CALIFICACION_BAJA
+    Condición : Se registró una calificación < 4 (reprobado) para un alumno.
+    Destinatario: Padre/tutor del alumno.
+
+  ALERTA 4 — TAREA_PENDIENTE
+    Condición : Una tarea vence en ≤ 2 días y el alumno no registra entrega.
+    Destinatario: Padre/tutor del alumno.
+
+  ALERTA 5 — LICENCIA_DOCENTE_VENCIMIENTO
+    Condición : Una licencia docente aprobada vence en ≤ 3 días.
+    Destinatario: Docente afectado y administrador.
+
+  Para cada alerta disparada, el agente registra un log en la tabla
+  notification_logs con el estado del envío (enviado/fallido).
+
+
+────────────────────────────────────────────────────────────────────────────────
+9. CRITERIOS DE ENTREGA TÉCNICA
+────────────────────────────────────────────────────────────────────────────────
+
+  CE-01  El repositorio en GitHub contiene las carpetas /frontend, /backend
+         y /agent claramente separadas.
+
+  CE-02  El backend expone todos los endpoints especificados en la sección 4,
+         con autenticación y autorización por rol operativas.
+
+  CE-03  Las migraciones Sequelize están incluidas en el repositorio y pueden
+         ejecutarse con un único comando (npx sequelize-cli db:migrate).
+
+  CE-04  El frontend implementa routing protegido por rol y consume los
+         endpoints del backend sin hardcodear la URL base.
+
+  CE-05  El agente Python ejecuta al menos las alertas AUSENCIAS_CRITICAS y
+         CALIFICACION_BAJA de forma demostrable.
+
+  CE-06  Existe un archivo README.md con instrucciones de instalación local,
+         variables de entorno necesarias y comandos de ejecución.
+
+  CE-07  No existen credenciales, tokens ni API keys hardcodeados en el código.
+
+  CE-08  La aplicación está desplegada y accesible en una URL pública
+         (Vercel + Railway/Render).
+
+
+================================================================================
+FIN DEL DOCUMENTO 2
+================================================================================
