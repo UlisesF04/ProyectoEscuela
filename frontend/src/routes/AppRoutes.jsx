@@ -1,8 +1,9 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { Box, Heading, Text } from '@chakra-ui/react';
+import { Box, Heading, Text, VStack } from '@chakra-ui/react';
 import { useAuth } from '../context/AuthContext';
 import Login from '../pages/Login';
 import ProtectedRoute from './ProtectedRoute';
+import DashboardHeader from '../components/DashboardHeader';
 
 function DashboardRedirect({ user }) {
   const roleMap = {
@@ -16,9 +17,12 @@ function DashboardRedirect({ user }) {
 
 function DashboardPlaceholder({ title }) {
   return (
-    <Box p={8}>
-      <Heading>{title}</Heading>
-      <Text>Bienvenido al sistema de gestión académica</Text>
+    <Box minH="100vh" display="flex" flexDirection="column">
+      <DashboardHeader />
+      <VStack p={8} align="flex-start" spacing={4}>
+        <Heading>{title}</Heading>
+        <Text>Bienvenido al sistema de gestión académica</Text>
+      </VStack>
     </Box>
   );
 }

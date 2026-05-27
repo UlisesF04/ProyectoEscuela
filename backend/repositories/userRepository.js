@@ -22,6 +22,16 @@ const userRepository = {
     if (!user) return null;
     return user.update(data);
   },
+
+  async delete(id) {
+    const user = await User.findByPk(id);
+    if (!user) return null;
+    return user.destroy();
+  },
+
+  async findByRole(role) {
+    return User.findAll({ where: { role } });
+  },
 };
 
 module.exports = userRepository;

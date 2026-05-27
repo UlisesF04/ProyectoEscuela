@@ -4,6 +4,7 @@ const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const errorMiddleware = require('./middlewares/errorMiddleware');
 const authRoutes = require('./modules/auth/auth.routes');
+const usersRoutes = require('./modules/users/users.routes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -45,6 +46,9 @@ app.get('/api/v1/health', (req, res) => {
 
 // Auth routes
 app.use('/api/v1/auth', authRoutes);
+
+// Users routes (admin management)
+app.use('/api/v1/users', usersRoutes);
 
 // 404 handler
 app.use((req, res) => {
