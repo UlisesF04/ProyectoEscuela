@@ -83,7 +83,7 @@ curl -X POST http://localhost:5050/api/v1/users \
 }
 ```
 
-**⚠️ Note the `id` (5 in this example) — you'll use it for update and delete tests!**
+**⚠️ Note the `id` (5 in this example) — you'll use it for update and deactivation tests!**
 
 ---
 
@@ -381,14 +381,14 @@ curl -X PUT http://localhost:5050/api/v1/users/5 \
 
 ---
 
-## Test 8: Delete User
+## Test 8: Deactivate User (Soft Delete)
 
 ### Endpoint
 ```
 DELETE http://localhost:5050/api/v1/users/:id
 ```
 
-### Request (Delete user with ID 5)
+### Request (Deactivate user with ID 5)
 ```bash
 curl -X DELETE http://localhost:5050/api/v1/users/5 \
   -H "Authorization: Bearer YOUR_ADMIN_TOKEN_HERE"
@@ -398,23 +398,41 @@ curl -X DELETE http://localhost:5050/api/v1/users/5 \
 ```json
 {
   "status": "success",
-  "message": "Usuario eliminado exitosamente"
+  "message": "Usuario desactivado exitosamente"
 }
 ```
 
-### Verify Deletion
-Try to get the deleted user:
+### Verify Deactivation
+Try to get the deactivated user — it still exists but won't appear in active user lists:
 ```bash
 curl -X GET http://localhost:5050/api/v1/users/5 \
   -H "Authorization: Bearer YOUR_ADMIN_TOKEN_HERE"
 ```
 
-Response (404 Not Found):
+Response (200 OK — user exists but `is_active` is `false`):
 ```json
 {
-  "status": "error",
-  "message": "Usuario no encontrado"
+  "status": "success",
+  "data": {
+    "id": 5,
+    "email": "carlos.nuevo@escuela.edu",
+    "first_name": "Carlos Eduardo",
+    "last_name": "García Rodríguez",
+    "role": "docente",
+    "is_active": false,
+    ...
+  }
 }
+```
+
+### Reactivate the User
+```bash
+curl -X PUT http://localhost:5050/api/v1/users/5 \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_ADMIN_TOKEN_HERE" \
+  -d '{
+    "is_active": true
+  }'
 ```
 
 ---
@@ -566,7 +584,7 @@ Response (400):
 
 ---
 
-### 7. Trying to Delete Admin User
+### 7. Trying to Deactivate Admin User
 ```bash
 curl -X DELETE http://localhost:5050/api/v1/users/1 \
   -H "Authorization: Bearer YOUR_ADMIN_TOKEN_HERE"
@@ -576,7 +594,7 @@ Response (400):
 ```json
 {
   "status": "error",
-  "message": "No se pueden eliminar usuarios con rol de administrador"
+  "message": "No se pueden desactivar usuarios con rol de administrador"
 }
 ```
 
@@ -610,8 +628,8 @@ Follow this sequence to test the complete flow:
 6. ✅ **Get User by ID** → Verify teacher details
 7. ✅ **Get Teachers Only** → Filter by role
 8. ✅ **Update Teacher** → Change name/phone
-9. ✅ **Delete Teacher** → Remove from system
-10. ✅ **Verify Deletion** → Confirm user is gone
+9. ✅ **Deactivate Teacher** → Soft delete (is_active = false)
+10. ✅ **Verify Deactivation** → Confirm is_active is false
 
 ---
 
@@ -680,7 +698,7 @@ Import these endpoints into Postman:
           }
         },
         {
-          "name": "Delete User",
+          "name": "Deactivate User",
           "request": {
             "method": "DELETE",
             "url": "{{base_url}}/api/v1/users/{{user_id}}",
@@ -719,7 +737,7 @@ user_id=5
 | Get User by ID | GET | `/api/v1/users/:id` | ✅ |
 | Get by Role | GET | `/api/v1/users/role/:role` | ✅ |
 | Update User | PUT | `/api/v1/users/:id` | ✅ |
-| Delete User | DELETE | `/api/v1/users/:id` | ✅ |
+| Deactivate User | DELETE | `/api/v1/users/:id` | ✅ |
 
 ---
 

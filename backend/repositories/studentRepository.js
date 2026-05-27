@@ -22,6 +22,22 @@ const studentRepository = {
     if (!student) return null;
     return student.update(data);
   },
+
+  async deactivate(id) {
+    const student = await Student.findByPk(id);
+    if (!student) return null;
+    return student.update({ is_active: false });
+  },
+
+  async findByDni(dni) {
+    return Student.findOne({ where: { dni } });
+  },
+
+  async destroy(id) {
+    const student = await Student.findByPk(id);
+    if (!student) return null;
+    return student.destroy({ force: true });
+  },
 };
 
 module.exports = studentRepository;

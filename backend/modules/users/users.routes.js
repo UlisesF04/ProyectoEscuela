@@ -104,13 +104,22 @@ router.put(
   usersController.updateUser
 );
 
-// Delete user
+// Deactivate user (soft delete)
 router.delete(
   '/:id',
   authMiddleware,
   roleMiddleware('admin'),
   validationMiddleware(userIdValidation),
-  usersController.deleteUser
+  usersController.deactivateUser
+);
+
+// Permanently delete user (hard delete — requires prior deactivation)
+router.delete(
+  '/:id/permanent',
+  authMiddleware,
+  roleMiddleware('admin'),
+  validationMiddleware(userIdValidation),
+  usersController.permanentDeleteUser
 );
 
 // Get multiple users by IDs

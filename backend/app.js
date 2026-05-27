@@ -5,6 +5,9 @@ const rateLimit = require('express-rate-limit');
 const errorMiddleware = require('./middlewares/errorMiddleware');
 const authRoutes = require('./modules/auth/auth.routes');
 const usersRoutes = require('./modules/users/users.routes');
+const coursesRoutes = require('./modules/courses/courses.routes');
+const studentsRoutes = require('./modules/students/students.routes');
+const subjectsRoutes = require('./modules/subjects/subjects.routes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -49,6 +52,15 @@ app.use('/api/v1/auth', authRoutes);
 
 // Users routes (admin management)
 app.use('/api/v1/users', usersRoutes);
+
+// Courses routes (admin management)
+app.use('/api/v1/courses', coursesRoutes);
+
+// Students routes (admin management)
+app.use('/api/v1/students', studentsRoutes);
+
+// Subjects routes (admin management)
+app.use('/api/v1/subjects', subjectsRoutes);
 
 // 404 handler
 app.use((req, res) => {

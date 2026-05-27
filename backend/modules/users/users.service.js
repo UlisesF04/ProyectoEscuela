@@ -1,5 +1,6 @@
 const bcrypt = require('bcrypt');
 const userRepository = require('../../repositories/userRepository');
+const { ParentStudent, TeacherSubject } = require('../../models');
 const AppError = require('../../utils/AppError');
 
 const VALID_ROLES = ['docente', 'preceptor', 'padre'];
@@ -60,7 +61,7 @@ const usersService = {
       );
     }
 
-    const users = await userRepository.findByRole(role);
+    const users = await userRepository.findAll({ role, is_active: true });
 
     // Remove password_hash from all users
     return users.map((user) => {
@@ -123,11 +124,39 @@ const usersService = {
   },
 
   /**
-   * Delete a user by ID
+   * Deactivate a user by ID (soft delete)
    * @param {Number} userId - The user ID
    * @returns {void}
    */
-  async deleteUser(userId) {
+  async deactivateUser(userId) {
+    const user = await userRepository.findById(userId);
+
+    if (!user) {
+      throw new AppError('Usuario no encontrado', 404);
+    }
+
+    // Prevent admin users from being deactivated
+    if (user.role === 'admin') {
+      throw new AppError('No se pueden desactivar usuarios con rol de administrador', 400);
+    }
+
+    // Prevent already deactivated users
+    if (!user.is_active) {
+      throw new AppError('El usuario ya está desactivado', 409);
+    }
+
+    await userRepository.deactivate(userId);
+  },
+
+  /**
+   * Permanently delete a user (hard delete).
+   * Only allowed if the user is already deactivated (is_active = false).
+   * Cleans up parent_student and teacher_subject references before deletion.
+   * Admin users can never be permanently deleted.
+   * @param {Number} userId - The user ID
+   * @returns {void}
+   */
+  async permanentDeleteUser(userId) {
     const user = await userRepository.findById(userId);
 
     if (!user) {
@@ -139,15 +168,26 @@ const usersService = {
       throw new AppError('No se pueden eliminar usuarios con rol de administrador', 400);
     }
 
-    await userRepository.delete(userId);
+    // Require soft-delete first (safety measure)
+    if (user.is_active) {
+      throw new AppError('Debe desactivar el usuario antes de eliminarlo definitivamente', 400);
+    }
+
+    // Cleanup FK references
+    await ParentStudent.destroy({ where: { user_id: userId }, force: true });
+    await TeacherSubject.destroy({ where: { user_id: userId }, force: true });
+
+    await userRepository.destroy(userId);
   },
 
   /**
-   * Get all users (excluding admins for safety)
-   * @returns {Array} List of all non-admin users
+   * Get all users (excluding admins). Includes both active and inactive.
+   * @returns {Array} List of non-admin users
    */
   async getAllUsers() {
-    const users = await userRepository.findAll({ role: { [require('sequelize').Op.ne]: 'admin' } });
+    const users = await userRepository.findAll({
+      role: { [require('sequelize').Op.ne]: 'admin' },
+    });
 
     // Remove password_hash from all users
     return users.map((user) => {

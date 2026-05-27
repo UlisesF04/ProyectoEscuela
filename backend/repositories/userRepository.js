@@ -23,14 +23,20 @@ const userRepository = {
     return user.update(data);
   },
 
-  async delete(id) {
+  async deactivate(id) {
     const user = await User.findByPk(id);
     if (!user) return null;
-    return user.destroy();
+    return user.update({ is_active: false });
   },
 
   async findByRole(role) {
     return User.findAll({ where: { role } });
+  },
+
+  async destroy(id) {
+    const user = await User.findByPk(id);
+    if (!user) return null;
+    return user.destroy({ force: true });
   },
 };
 

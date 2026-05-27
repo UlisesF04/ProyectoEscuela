@@ -187,10 +187,10 @@ Update user information (partial update allowed).
 
 ---
 
-### Delete User
+### Deactivate User (Soft Delete)
 **DELETE** `/api/v1/users/:id`
 
-Delete a user permanently.
+Deactivate a user (soft delete — sets `is_active = false`). The record is preserved in the database but excluded from all active queries.
 
 **Parameters:**
 - `id`: User ID (integer)
@@ -199,13 +199,14 @@ Delete a user permanently.
 ```json
 {
   "status": "success",
-  "message": "Usuario eliminado exitosamente"
+  "message": "Usuario desactivado exitosamente"
 }
 ```
 
 **Important Notes:**
-- Cannot delete users with `admin` role
-- Deletion is permanent
+- Cannot deactivate users with `admin` role
+- Deactivated users can be reactivated via `PUT /api/v1/users/:id` with `{ "is_active": true }`
+- Reactivation preserves all original data and associations
 
 ---
 
@@ -294,7 +295,7 @@ Retrieve multiple users by their IDs in one request.
 3. **Password Never Returned**: API never returns password hashes
 4. **Email Uniqueness**: Emails are unique and validated
 5. **Role Immutability**: User roles cannot be changed after creation
-6. **Admin Protection**: Admin users cannot be deleted
+6. **Admin Protection**: Admin users cannot be deactivated
 7. **Input Validation**: All inputs are validated with express-validator
 
 ---

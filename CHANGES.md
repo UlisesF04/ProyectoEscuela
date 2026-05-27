@@ -150,13 +150,13 @@ Incluye el agente de notificaciones (diferenciador del proyecto). Sin él, el si
   - `knowledge-base/03_actores_y_roles.md` §Matriz RBAC
 
 ### [C-04] `admin-panel`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` completado — 2026-05-27
 - **Scope**:
-  - Módulo backend `modules/users/`: CRUD de usuarios con soft-delete (is_active)
+  - Módulo backend `modules/users/`: CRUD de usuarios con soft-delete (is_active) — ✅ IMPLEMENTADO
   - Módulo backend `modules/courses/`: CRUD de cursos y materias, asignación de materias a cursos
   - Módulo backend `modules/students/`: CRUD de alumnos, vinculación padre-alumno (`parent_student`)
   - Módulo backend `modules/subjects/`: asignación docente a materia (`teacher_subject`)
-  - `POST /api/v1/users`, `GET /api/v1/users` con filtro por rol, `PUT /api/v1/users/:id`, `DELETE /api/v1/users/:id` (soft)
+  - `POST /api/v1/users`, `GET /api/v1/users` con filtro por rol, `PUT /api/v1/users/:id`, `DELETE /api/v1/users/:id` (soft) — ✅ IMPLEMENTADO
   - `POST /api/v1/courses`, `GET /api/v1/courses`
   - `POST /api/v1/courses/:id/subjects`, `GET /api/v1/courses/:id/subjects`
   - `POST /api/v1/subjects/:id/teachers`, `GET /api/v1/subjects/:id/teachers`

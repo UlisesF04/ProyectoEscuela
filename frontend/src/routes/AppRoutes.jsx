@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import Login from '../pages/Login';
 import ProtectedRoute from './ProtectedRoute';
 import DashboardHeader from '../components/DashboardHeader';
+import AdminDashboard from '../pages/AdminDashboard';
 
 function DashboardRedirect({ user }) {
   const roleMap = {
@@ -41,7 +42,7 @@ export default function AppRoutes() {
         path="/admin"
         element={
           <ProtectedRoute requiredRoles={['admin']}>
-            <DashboardPlaceholder title="Panel de Administración" />
+            <AdminDashboard />
           </ProtectedRoute>
         }
       />

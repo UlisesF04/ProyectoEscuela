@@ -2,7 +2,7 @@
 
 > Contrato de comportamiento del agente para este repositorio.
 > Toda instrucción aquí tiene prioridad sobre el comportamiento default del agente.
-> Última actualización: 2026-05-26
+> Última actualización: 2026-05-27
 
 ---
 
@@ -94,7 +94,7 @@ Antes de proponer cualquier change, leé los archivos relevantes para el dominio
 
 - [x] C-02 `core-models` — CRITICO — depende de C-01 ✅ 2026-05-26
 - [x] C-03 `auth-system` — CRITICO — depende de C-02 ✅ 2026-05-26
-- [ ] C-04 `admin-panel` — CRITICO — depende de C-03
+- [x] C-04 `admin-panel` — CRITICO — depende de C-03 ✅ 2026-05-27
 
 ### FASE 2 — Gestión Académica
 
@@ -176,10 +176,14 @@ Estas reglas no se negocian. Si algo contradice una de estas reglas, reportalo y
   indicá cuál recomendás y por qué.
 - No escribas código hasta que el usuario apruebe el plan.
 
-### Skills de frontend
-- Ante cualquier change que toque la UI, **verificá si hay skills de frontend instaladas**
-  (ver Sección 3) y leélas antes de escribir markup, estilos o animaciones.
-- Las guías de las skills tienen prioridad sobre tu criterio estético default.
+### Skills de frontend (OBLIGATORIO — NO NEGOCIABLE)
+- 🔴 **Toda tarea de frontend DEBE cargar las skills instaladas ANTES de escribir código markup, estilos o animaciones.**
+- Las skills obligatorias a cargar son: `emil-design-eng`, `design-taste-frontend`, `impeccable`
+- Además de las obligatorias, revisar si hay skills adicionales instaladas en `.agents/skills/` que apliquen al tipo de UI (ej: `high-end-visual-design`, `minimalist-ui`, `industrial-brutalist-ui`)
+- El checklist de `impeccable` debe pasarse antes de marcar una tarea de UI como completada
+- Si una skill falla al cargar o no está instalada, reportarlo al usuario y no avanzar
+- No se aceptan excepciones: ni "es un componente chico", ni "es un modal simple", ni "es solo un fix rápido"
+- **Violar esta regla = shipping slop. No se negocia.**
 
 ### Replicación del proyecto
 - Antes de asumir la configuración de base de datos, **siempre preguntá al usuario**

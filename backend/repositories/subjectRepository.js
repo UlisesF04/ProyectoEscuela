@@ -16,6 +16,18 @@ const subjectRepository = {
   async create(data) {
     return Subject.create(data);
   },
+
+  async update(id, data) {
+    const subject = await Subject.findByPk(id);
+    if (!subject) return null;
+    return subject.update(data);
+  },
+
+  async destroy(id) {
+    const subject = await Subject.findByPk(id);
+    if (!subject) return null;
+    return subject.destroy();
+  },
 };
 
 module.exports = subjectRepository;

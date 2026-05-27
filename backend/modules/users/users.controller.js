@@ -87,16 +87,33 @@ const usersController = {
   },
 
   /**
-   * Delete a user
+   * Deactivate a user (soft delete)
    * DELETE /api/v1/users/:id
    */
-  async deleteUser(req, res, next) {
+  async deactivateUser(req, res, next) {
     try {
       const { id } = req.params;
-      await usersService.deleteUser(id);
+      await usersService.deactivateUser(id);
       res.status(200).json({
         status: 'success',
-        message: 'Usuario eliminado exitosamente',
+        message: 'Usuario desactivado exitosamente',
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
+   * Permanently delete a user (hard delete)
+   * DELETE /api/v1/users/:id/permanent
+   */
+  async permanentDeleteUser(req, res, next) {
+    try {
+      const { id } = req.params;
+      await usersService.permanentDeleteUser(id);
+      res.status(200).json({
+        status: 'success',
+        message: 'Usuario eliminado definitivamente',
       });
     } catch (error) {
       next(error);
