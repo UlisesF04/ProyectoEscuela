@@ -5,14 +5,17 @@ const Course = require('./Course');
 const Subject = require('./Subject');
 const TeacherSubject = require('./TeacherSubject');
 const ParentStudent = require('./ParentStudent');
+const Attendance = require('./Attendance');
 
 // ─── User associations ─────────────────────────────────────────
 User.hasMany(TeacherSubject, { foreignKey: 'user_id' });
 User.hasMany(ParentStudent, { foreignKey: 'user_id' });
+User.hasMany(Attendance, { foreignKey: 'registered_by', as: 'registrar' });
 
 // ─── Student associations ──────────────────────────────────────
 Student.belongsTo(Course, { foreignKey: 'course_id' });
 Student.hasMany(ParentStudent, { foreignKey: 'student_id' });
+Student.hasMany(Attendance, { foreignKey: 'student_id' });
 
 // ─── Course associations ───────────────────────────────────────
 Course.hasMany(Subject, { foreignKey: 'course_id' });
@@ -30,6 +33,10 @@ TeacherSubject.belongsTo(Subject, { foreignKey: 'subject_id' });
 ParentStudent.belongsTo(User, { foreignKey: 'user_id' });
 ParentStudent.belongsTo(Student, { foreignKey: 'student_id' });
 
+// ─── Attendance associations ───────────────────────────────────
+Attendance.belongsTo(Student, { foreignKey: 'student_id' });
+Attendance.belongsTo(User, { foreignKey: 'registered_by', as: 'registrar' });
+
 module.exports = {
   sequelize,
   User,
@@ -38,4 +45,5 @@ module.exports = {
   Subject,
   TeacherSubject,
   ParentStudent,
+  Attendance,
 };

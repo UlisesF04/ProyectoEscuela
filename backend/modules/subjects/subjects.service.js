@@ -5,6 +5,28 @@ const { Subject, Course, User, TeacherSubject } = require('../../models');
 const AppError = require('../../utils/AppError');
 
 const subjectsService = {
+  async getMySubjects(userId) {
+    const assignments = await TeacherSubject.findAll({
+      where: { user_id: userId },
+      include: [
+        {
+          model: Subject,
+          as: 'Subject',
+          include: [{ model: Course, as: 'Course' }],
+        },
+      ],
+    });
+
+    return assignments.map(a => ({
+      id: a.Subject.id,
+      name: a.Subject.name,
+      course_id: a.Subject.course_id,
+      course: a.Subject.Course
+        ? { id: a.Subject.Course.id, name: a.Subject.Course.name, year: a.Subject.Course.year, division: a.Subject.Course.division }
+        : null,
+    }));
+  },
+
   async getSubjectById(id) {
     const subject = await Subject.findByPk(id, {
       include: [{ model: Course, as: 'Course' }],

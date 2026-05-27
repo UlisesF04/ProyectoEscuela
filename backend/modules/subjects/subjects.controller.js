@@ -1,6 +1,18 @@
 const subjectsService = require('./subjects.service');
 
 const subjectsController = {
+  async getMySubjects(req, res, next) {
+    try {
+      const subjects = await subjectsService.getMySubjects(req.user.id);
+      res.status(200).json({
+        status: 'success',
+        data: subjects,
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
   async getSubjectById(req, res, next) {
     try {
       const { id } = req.params;

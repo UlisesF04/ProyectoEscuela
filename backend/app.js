@@ -8,6 +8,7 @@ const usersRoutes = require('./modules/users/users.routes');
 const coursesRoutes = require('./modules/courses/courses.routes');
 const studentsRoutes = require('./modules/students/students.routes');
 const subjectsRoutes = require('./modules/subjects/subjects.routes');
+const attendancesRoutes = require('./modules/attendances/attendances.routes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -61,6 +62,9 @@ app.use('/api/v1/students', studentsRoutes);
 
 // Subjects routes (admin management)
 app.use('/api/v1/subjects', subjectsRoutes);
+
+// Attendances routes (preceptor/admin management)
+app.use('/api/v1/attendances', attendancesRoutes);
 
 // 404 handler
 app.use((req, res) => {

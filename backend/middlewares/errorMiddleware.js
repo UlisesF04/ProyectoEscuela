@@ -14,6 +14,20 @@ const errorMiddleware = (err, req, res, next) => {
     });
   }
 
+  // Handle Multer errors (file upload)
+  if (err.name === 'MulterError') {
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({
+        status: 'error',
+        message: 'El archivo no debe superar los 5MB',
+      });
+    }
+    return res.status(400).json({
+      status: 'error',
+      message: 'Error al subir el archivo',
+    });
+  }
+
   // Handle Sequelize validation errors
   if (err.name === 'SequelizeValidationError' || err.name === 'SequelizeUniqueConstraintError') {
     return res.status(400).json({

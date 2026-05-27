@@ -59,7 +59,7 @@ router.post(
 router.get(
   '/',
   authMiddleware,
-  roleMiddleware('admin'),
+  roleMiddleware('admin', 'preceptor'),
   coursesController.getAllCourses
 );
 

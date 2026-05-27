@@ -46,7 +46,7 @@ C-12 devops-deployment es independiente y puede correr en paralelo desde GATE 2.
   → C-12 devops-deployment                 [Agente B — paralelo, sin dep]
 
 **GATE 3**: C-04 ✓ — Admin panel operativo ← **PRIMER FORK**
-  → C-05 attendance-module                 [Agente A — Backend Core]
+  → C-05 attendance-module ✓              [Agente A — Backend Core]
   → C-06 grades-module                     [Agente B — Backend Aux]
   → C-07 tasks-module                      [Agente C — Frontend]
   → C-09 teacher-leaves-module             [Agente B — si C-06 ✓]
@@ -182,7 +182,7 @@ Incluye el agente de notificaciones (diferenciador del proyecto). Sin él, el si
 > Asistencias, calificaciones y tareas. El corazón operativo del sistema.
 
 ### [C-05] `attendance-module`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` completado — 2026-05-27
 - **Scope**:
   - Módulo backend `modules/attendances/`: CRUD asistencias + justificación + subida de certificados
   - Modelo Sequelize `Attendance` con índices UNIQUE(student_id, date)

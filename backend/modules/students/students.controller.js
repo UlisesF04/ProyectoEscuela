@@ -16,7 +16,10 @@ const studentsController = {
 
   async getAllStudents(req, res, next) {
     try {
-      const students = await studentsService.getAllStudents();
+      const { course_id } = req.query;
+      const filters = {};
+      if (course_id) filters.course_id = parseInt(course_id, 10);
+      const students = await studentsService.getAllStudents(filters);
       res.status(200).json({
         status: 'success',
         data: students,

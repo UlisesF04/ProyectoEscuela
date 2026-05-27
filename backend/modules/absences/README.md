@@ -1,1 +1,0 @@
-Módulo de gestión de inasistencias en el backend.

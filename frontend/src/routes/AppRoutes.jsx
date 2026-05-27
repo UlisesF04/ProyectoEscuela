@@ -5,6 +5,8 @@ import Login from '../pages/Login';
 import ProtectedRoute from './ProtectedRoute';
 import DashboardHeader from '../components/DashboardHeader';
 import AdminDashboard from '../pages/AdminDashboard';
+import PreceptorDashboard from '../pages/PreceptorDashboard';
+import DocenteDashboard from '../pages/DocenteDashboard';
 
 function DashboardRedirect({ user }) {
   const roleMap = {
@@ -49,8 +51,8 @@ export default function AppRoutes() {
       <Route
         path="/preceptor"
         element={
-          <ProtectedRoute requiredRoles={['preceptor']}>
-            <DashboardPlaceholder title="Panel de Preceptor" />
+          <ProtectedRoute requiredRoles={['preceptor', 'admin']}>
+            <PreceptorDashboard />
           </ProtectedRoute>
         }
       />
@@ -58,7 +60,7 @@ export default function AppRoutes() {
         path="/docente"
         element={
           <ProtectedRoute requiredRoles={['docente']}>
-            <DashboardPlaceholder title="Panel de Docente" />
+            <DocenteDashboard />
           </ProtectedRoute>
         }
       />

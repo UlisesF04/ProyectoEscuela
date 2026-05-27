@@ -27,8 +27,14 @@ const studentsService = {
     return student;
   },
 
-  async getAllStudents() {
+  async getAllStudents(filters = {}) {
+    const where = {};
+    if (filters.course_id) {
+      where.course_id = filters.course_id;
+    }
+
     const students = await Student.findAll({
+      where,
       include: [{ model: Course, as: 'Course' }],
     });
 

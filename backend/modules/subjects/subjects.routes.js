@@ -18,6 +18,14 @@ const idValidation = [
     .isInt({ min: 1 }).withMessage('El ID debe ser un número entero positivo'),
 ];
 
+// Get subjects assigned to the authenticated teacher
+router.get(
+  '/my',
+  authMiddleware,
+  roleMiddleware('docente'),
+  subjectsController.getMySubjects
+);
+
 router.get(
   '/:id',
   authMiddleware,
