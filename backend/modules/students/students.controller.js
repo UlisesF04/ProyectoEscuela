@@ -108,6 +108,18 @@ const studentsController = {
       next(error);
     }
   },
+
+  async getMyChildren(req, res, next) {
+    try {
+      const children = await studentsService.getMyChildren(req.user.id);
+      res.status(200).json({
+        status: 'success',
+        data: children,
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
 };
 
 module.exports = studentsController;

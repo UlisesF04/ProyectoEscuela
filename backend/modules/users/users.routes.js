@@ -58,13 +58,13 @@ const roleParamValidation = [
     .isIn(['docente', 'preceptor', 'padre']).withMessage('El rol debe ser: docente, preceptor o padre'),
 ];
 
-// ─── Routes (all protected with auth + admin role) ───────────────
+// ─── Routes ─────────────────────────────────────────────────────
 
-// Create a new user
+// Create a new user (admin creates any, preceptor creates padre/docente)
 router.post(
   '/',
   authMiddleware,
-  roleMiddleware('admin'),
+  roleMiddleware('admin', 'preceptor'),
   validationMiddleware(createUserValidations),
   usersController.createUser
 );
@@ -81,7 +81,7 @@ router.get(
 router.get(
   '/role/:role',
   authMiddleware,
-  roleMiddleware('admin'),
+  roleMiddleware('admin', 'preceptor'),
   validationMiddleware(roleParamValidation),
   usersController.getUsersByRole
 );

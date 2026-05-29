@@ -13,6 +13,18 @@ const subjectsController = {
     }
   },
 
+  async getMyCoursesWithStudents(req, res, next) {
+    try {
+      const courses = await subjectsService.getMyCoursesWithStudents(req.user.id);
+      res.status(200).json({
+        status: 'success',
+        data: courses,
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
   async getSubjectById(req, res, next) {
     try {
       const { id } = req.params;
@@ -48,6 +60,20 @@ const subjectsController = {
         status: 'success',
         message: 'Docente asignado exitosamente',
         data: assignment,
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async removeTeacher(req, res, next) {
+    try {
+      const { id } = req.params;
+      const { user_id } = req.body;
+      await subjectsService.removeTeacher(id, user_id);
+      res.status(200).json({
+        status: 'success',
+        message: 'Docente removido exitosamente',
       });
     } catch (error) {
       next(error);

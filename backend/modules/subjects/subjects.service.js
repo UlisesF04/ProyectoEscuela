@@ -1,7 +1,7 @@
 const subjectRepository = require('../../repositories/subjectRepository');
 const teacherSubjectRepository = require('../../repositories/teacherSubjectRepository');
 const userRepository = require('../../repositories/userRepository');
-const { Subject, Course, User, TeacherSubject } = require('../../models');
+const { Subject, Course, User, TeacherSubject, Student } = require('../../models');
 const AppError = require('../../utils/AppError');
 
 const subjectsService = {
@@ -25,6 +25,57 @@ const subjectsService = {
         ? { id: a.Subject.Course.id, name: a.Subject.Course.name, year: a.Subject.Course.year, division: a.Subject.Course.division }
         : null,
     }));
+  },
+
+  async getMyCoursesWithStudents(userId) {
+    const assignments = await TeacherSubject.findAll({
+      where: { user_id: userId },
+      include: [
+        {
+          model: Subject,
+          as: 'Subject',
+          include: [{ model: Course, as: 'Course' }],
+        },
+      ],
+    });
+
+    const coursesMap = {};
+
+    assignments.forEach(a => {
+      const course = a.Subject.Course;
+      if (!course) return;
+
+      const courseId = course.id;
+      if (!coursesMap[courseId]) {
+        coursesMap[courseId] = {
+          id: course.id,
+          name: course.name,
+          year: course.year,
+          division: course.division,
+          subjects: [],
+        };
+      }
+      coursesMap[courseId].subjects.push({
+        id: a.Subject.id,
+        name: a.Subject.name,
+      });
+    });
+
+    const result = Object.values(coursesMap);
+
+    for (const course of result) {
+      const students = await Student.findAll({
+        where: { course_id: course.id, is_active: true },
+      });
+      course.students = students.map(s => ({
+        id: s.id,
+        first_name: s.first_name,
+        last_name: s.last_name,
+        dni: s.dni,
+      }));
+    }
+
+    return result;
   },
 
   async getSubjectById(id) {
@@ -93,6 +144,21 @@ const subjectsService = {
     });
 
     return assignment;
+  },
+
+  async removeTeacher(subjectId, userId) {
+    const subject = await subjectRepository.findById(subjectId);
+    if (!subject) {
+      throw new AppError('Materia no encontrada', 404);
+    }
+
+    const assignments = await teacherSubjectRepository.findBySubject(subjectId);
+    const assignment = assignments.find(a => a.user_id === parseInt(userId, 10));
+    if (!assignment) {
+      throw new AppError('El docente no está asignado a esta materia', 404);
+    }
+
+    await teacherSubjectRepository.delete(assignment.id);
   },
 };
 

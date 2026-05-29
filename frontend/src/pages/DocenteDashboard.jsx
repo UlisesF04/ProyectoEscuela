@@ -1,18 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   Box,
-  Select,
-  Input,
-  FormControl,
-  FormLabel,
-  Heading,
-  Text,
-  useToast,
-  Stat,
-  StatLabel,
-  StatNumber,
-  StatGroup,
-  SimpleGrid,
+  Button,
+  VStack,
+  HStack,
+  Badge,
   Table,
   Thead,
   Tbody,
@@ -20,447 +12,470 @@ import {
   Th,
   Td,
   TableContainer,
-  Badge,
-  Skeleton,
-  Stack,
-  VStack,
+  Select,
+  Textarea,
+  FormControl,
+  FormLabel,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalCloseButton,
+  useDisclosure,
+  useToast,
+  Heading,
+  Spinner,
+  Center,
+  Text,
+  Card,
+  CardHeader,
+  CardBody,
+  NumberInput,
+  NumberInputField,
+  NumberInputStepper,
+  NumberIncrementStepper,
+  NumberDecrementStepper,
+  Flex,
+  Tag,
+  TagLabel,
 } from '@chakra-ui/react';
-import DashboardHeader from '../components/DashboardHeader';
-import { attendanceService } from '../services/attendanceService';
-import { adminService } from '../services/adminService';
-import api from '../services/api';
+import { FiBookOpen, FiUser, FiStar, FiCheckCircle } from 'react-icons/fi';
+import DashboardLayout from '../components/DashboardLayout';
+import { teacherService } from '../services/teacherService';
+import { gradesService } from '../services/gradesService';
+import { useAuth } from '../context/AuthContext';
 
-const statusColors = {
-  presente: 'green',
-  ausente: 'red',
-  tarde: 'orange',
+const gradeTypeLabels = {
+  examen: 'Examen',
+  trabajo: 'Trabajo',
+  tarea: 'Tarea',
+  oral: 'Oral',
+  otro: 'Otro',
 };
 
-const statusLabels = {
-  presente: 'Presente',
-  ausente: 'Ausente',
-  tarde: 'Tarde',
-};
+// ─── Profile Section ─────────────────────────────────────────────────
 
-function todayString() {
-  const d = new Date();
-  return d.toISOString().split('T')[0];
+function ProfileSection() {
+  const { user } = useAuth();
+
+  if (!user) {
+    return (
+      <Center h="50vh">
+        <Spinner size="xl" />
+      </Center>
+    );
+  }
+
+  const fields = [
+    { label: 'Nombre', value: user.first_name },
+    { label: 'Apellido', value: user.last_name },
+    { label: 'Email', value: user.email },
+    { label: 'Rol', value: user.role === 'docente' ? 'Docente' : user.role },
+    { label: 'Teléfono', value: user.phone || '—' },
+  ];
+
+  return (
+    <Box maxW="600px">
+      <Heading size="lg" mb={6}>Mi Perfil</Heading>
+      <Card variant="outline">
+        <CardBody>
+          <VStack spacing={3} align="stretch">
+            {fields.map((f) => (
+              <HStack
+                key={f.label}
+                justify="space-between"
+                p={3}
+                bg="gray.50"
+                borderRadius="md"
+              >
+                <Text fontWeight="semibold" fontSize="sm" color="gray.600">
+                  {f.label}
+                </Text>
+                <Text fontSize="sm">{f.value}</Text>
+              </HStack>
+            ))}
+          </VStack>
+        </CardBody>
+      </Card>
+    </Box>
+  );
 }
 
-export default function DocenteDashboard() {
-  const toast = useToast();
+// ─── Courses Section ─────────────────────────────────────────────────
 
+function CoursesSection() {
+  const toast = useToast();
   const showToast = useCallback((status, title, description) => {
     toast({ title, description, status, duration: 3000, isClosable: true, position: 'top-right' });
   }, [toast]);
 
-  // ─── Subjects (materias del docente) ──────────────────────────
-  const [subjects, setSubjects] = useState([]);
-  const [subjectsLoading, setSubjectsLoading] = useState(false);
+  const [courses, setCourses] = useState([]);
+  const [coursesLoading, setCoursesLoading] = useState(false);
+  const [selectedCourseId, setSelectedCourseId] = useState('');
   const [selectedSubjectId, setSelectedSubjectId] = useState('');
 
-  // ─── Students ─────────────────────────────────────────────────
-  const [students, setStudents] = useState([]);
-  const [studentsLoading, setStudentsLoading] = useState(false);
-  const [selectedStudentId, setSelectedStudentId] = useState('');
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [gradeForm, setGradeForm] = useState({
+    student_id: '',
+    subject_id: '',
+    grade: 0,
+    type: 'tarea',
+    description: '',
+  });
+  const [gradingStudent, setGradingStudent] = useState(null);
+  const [gradeSubmitting, setGradeSubmitting] = useState(false);
 
-  // ─── History ──────────────────────────────────────────────────
-  const [history, setHistory] = useState([]);
-  const [summary, setSummary] = useState(null);
-  const [historyLoading, setHistoryLoading] = useState(false);
+  const selectedCourse = courses.find(c => String(c.id) === String(selectedCourseId));
 
-  // ─── Date range ───────────────────────────────────────────────
-  const [fromDate, setFromDate] = useState('');
-  const [toDate, setToDate] = useState(todayString);
-
-  // ─── Fetch subjects (my materias) ─────────────────────────────
-  const fetchSubjects = useCallback(async () => {
-    setSubjectsLoading(true);
+  const fetchCourses = useCallback(async () => {
+    setCoursesLoading(true);
     try {
-      const { data: res } = await api.get('/subjects/my');
-      setSubjects(res.data || []);
+      const data = await teacherService.getMyCourses();
+      setCourses(data || []);
+      if (data && data.length > 0 && !selectedCourseId) {
+        setSelectedCourseId(String(data[0].id));
+      }
     } catch (err) {
-      showToast('error', 'Error', err.response?.data?.message || 'No se pudieron cargar las materias');
-      setSubjects([]);
+      showToast('error', 'Error', err.response?.data?.message || 'No se pudieron cargar los cursos');
+      setCourses([]);
     } finally {
-      setSubjectsLoading(false);
+      setCoursesLoading(false);
     }
   }, [showToast]);
 
   useEffect(() => {
-    fetchSubjects();
-  }, [fetchSubjects]);
+    fetchCourses();
+  }, [fetchCourses]);
 
-  // ─── Fetch students when subject changes ──────────────────────
-  const fetchStudents = useCallback(async (subjectId) => {
-    if (!subjectId) {
-      setStudents([]);
-      setSelectedStudentId('');
-      return;
-    }
-    setStudentsLoading(true);
-    try {
-      // Get the course_id from the selected subject
-      const subject = subjects.find(s => s.id === parseInt(subjectId, 10));
-      if (!subject || !subject.course_id) {
-        setStudents([]);
-        setStudentsLoading(false);
-        return;
-      }
+  const handleCourseChange = (e) => {
+    setSelectedCourseId(e.target.value);
+    setSelectedSubjectId('');
+    setGradeForm(prev => ({ ...prev, subject_id: '' }));
+  };
 
-      const data = await adminService.getStudents();
-      const filtered = (data || []).filter(s => s.course_id === subject.course_id);
-      setStudents(filtered);
-    } catch (err) {
-      showToast('error', 'Error', err.response?.data?.message || 'No se pudieron cargar los alumnos');
-      setStudents([]);
-    } finally {
-      setStudentsLoading(false);
-    }
-  }, [subjects, showToast]);
-
-  useEffect(() => {
-    fetchStudents(selectedSubjectId);
-  }, [selectedSubjectId, fetchStudents]);
-
-  // ─── Fetch history when student changes ───────────────────────
-  const fetchHistory = useCallback(async () => {
-    if (!selectedStudentId) {
-      setHistory([]);
-      setSummary(null);
-      return;
-    }
-
-    setHistoryLoading(true);
-    try {
-      const params = {};
-      if (fromDate) params.from = fromDate;
-      if (toDate) params.to = toDate;
-
-      const result = await attendanceService.getStudentHistory(selectedStudentId, params);
-      setHistory(result.records || []);
-      setSummary(result.summary || null);
-    } catch (err) {
-      showToast('error', 'Error', err.response?.data?.message || 'Error al cargar el historial');
-      setHistory([]);
-      setSummary(null);
-    } finally {
-      setHistoryLoading(false);
-    }
-  }, [selectedStudentId, fromDate, toDate, showToast]);
-
-  useEffect(() => {
-    fetchHistory();
-  }, [fetchHistory]);
-
-  // ─── Subject change handler ───────────────────────────────────
   const handleSubjectChange = (e) => {
-    setSelectedSubjectId(e.target.value);
-    setSelectedStudentId('');
-    setHistory([]);
-    setSummary(null);
+    const sid = e.target.value;
+    setSelectedSubjectId(sid);
+    setGradeForm(prev => ({ ...prev, subject_id: sid }));
   };
 
-  // ─── Student change handler ───────────────────────────────────
-  const handleStudentChange = (e) => {
-    setSelectedStudentId(e.target.value);
+  const openGradeModal = (student) => {
+    setGradingStudent(student);
+    setGradeForm({
+      student_id: student.id,
+      subject_id: selectedSubjectId || '',
+      grade: 0,
+      type: 'tarea',
+      description: '',
+    });
+    onOpen();
   };
 
-  // ─── Render ───────────────────────────────────────────────────
+  const handleGradeChange = (field, value) => {
+    setGradeForm(prev => ({ ...prev, [field]: value }));
+  };
+
+  const submitGrade = async () => {
+    if (!gradeForm.student_id) {
+      showToast('warning', 'Atención', 'No se seleccionó un alumno');
+      return;
+    }
+    if (!gradeForm.subject_id) {
+      showToast('warning', 'Atención', 'No se seleccionó una materia');
+      return;
+    }
+
+    setGradeSubmitting(true);
+    try {
+      await gradesService.createGrade({
+        student_id: gradeForm.student_id,
+        subject_id: parseInt(gradeForm.subject_id, 10),
+        grade: parseFloat(gradeForm.grade),
+        type: gradeForm.type,
+        description: gradeForm.description,
+      });
+      showToast('success', 'Calificación guardada', 'La nota fue registrada correctamente');
+      onClose();
+    } catch (err) {
+      showToast('error', 'Error', err.response?.data?.message || 'No se pudo guardar la calificación');
+    } finally {
+      setGradeSubmitting(false);
+    }
+  };
+
+  // ─── Render ─────────────────────────────────────────────────
+
+  if (coursesLoading) {
+    return (
+      <Center h="50vh">
+        <Spinner size="xl" />
+      </Center>
+    );
+  }
+
+  if (courses.length === 0) {
+    return (
+      <Center h="50vh">
+        <VStack spacing={4}>
+          <Heading size="lg" color="gray.400">Mis Cursos</Heading>
+          <Text color="gray.500">No tenés cursos asignados.</Text>
+        </VStack>
+      </Center>
+    );
+  }
+
+  const students = selectedCourse?.students || [];
+
   return (
-    <Box minH="100vh" bg="gray.50">
-      <DashboardHeader />
+    <Box>
+      <Heading size="lg" mb={6}>Mis Cursos</Heading>
 
-      <Box maxW="1200px" mx="auto" p={6}>
-        <Heading size="lg" mb={6}>Panel de Docente</Heading>
+      {/* Course + Subject selectors */}
+      <HStack spacing={4} mb={8} align="flex-end">
+        <FormControl>
+          <FormLabel fontSize="sm" fontWeight="semibold" color="gray.700">
+            Curso
+          </FormLabel>
+          <Select
+            value={selectedCourseId}
+            onChange={handleCourseChange}
+            bg="white"
+            size="lg"
+          >
+            {courses.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}{c.year ? ` (${c.year})` : ''}{c.division ? ` · ${c.division}` : ''}
+              </option>
+            ))}
+          </Select>
+        </FormControl>
 
-        {/* ─── Filters ─────────────────────────────────────────── */}
-        <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4} mb={6}>
-          <FormControl>
-            <FormLabel fontSize="sm" fontWeight="semibold" color="gray.700">
-              Materia
-            </FormLabel>
-            <Select
-              value={selectedSubjectId}
-              onChange={handleSubjectChange}
-              placeholder="Seleccionar materia"
+        <FormControl>
+          <FormLabel fontSize="sm" fontWeight="semibold" color="gray.700">
+            Materia
+          </FormLabel>
+          <Select
+            value={selectedSubjectId}
+            onChange={handleSubjectChange}
+            bg="white"
+            size="lg"
+            placeholder={selectedCourse?.subjects?.length ? 'Seleccionar materia' : 'Sin materias'}
+            isDisabled={!selectedCourse || !selectedCourse.subjects?.length}
+          >
+            {(selectedCourse?.subjects || []).map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </Select>
+        </FormControl>
+      </HStack>
+
+      {selectedCourse && (
+        <>
+          {/* Course header */}
+          <Flex
+            justify="space-between"
+            align="center"
+            mb={6}
+            p={4}
+            bg="white"
+            borderRadius="lg"
+            border="1px solid"
+            borderColor="gray.200"
+          >
+            <Box>
+              <Heading size="md" mb={1}>
+                {selectedSubjectId
+                  ? (selectedCourse.subjects.find(s => String(s.id) === String(selectedSubjectId))?.name || 'Materia')
+                  : 'Seleccioná una materia'}
+              </Heading>
+              <Text fontSize="sm" color="gray.500">
+                {selectedCourse.name}{selectedCourse.year ? ` · ${selectedCourse.year}` : ''}
+                {selectedCourse.division ? ` · ${selectedCourse.division}` : ''}
+              </Text>
+            </Box>
+            <Tag colorScheme="blue" size="lg" borderRadius="full">
+              <TagLabel>{students.length} alumnos</TagLabel>
+            </Tag>
+          </Flex>
+
+          {/* Students table */}
+          {students.length === 0 ? (
+            <Box
+              textAlign="center"
+              py={16}
+              px={6}
+              border="1px dashed"
+              borderColor="gray.300"
+              borderRadius="lg"
               bg="white"
             >
-              {subjectsLoading ? (
-                <option disabled>Cargando materias...</option>
-              ) : (
-                subjects.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}{s.course ? ` — ${s.course.name} (${s.course.year})` : ''}
-                  </option>
-                ))
-              )}
-            </Select>
-          </FormControl>
-
-          <FormControl>
-            <FormLabel fontSize="sm" fontWeight="semibold" color="gray.700">
-              Alumno
-            </FormLabel>
-            <Select
-              value={selectedStudentId}
-              onChange={handleStudentChange}
-              placeholder={studentsLoading ? 'Cargando alumnos...' : 'Seleccionar alumno'}
+              <Text fontSize="lg" fontWeight="semibold" color="gray.700" mb={1}>
+                Sin alumnos en este curso
+              </Text>
+              <Text fontSize="sm" color="gray.500">
+                No hay alumnos inscriptos en esta materia.
+              </Text>
+            </Box>
+          ) : (
+            <TableContainer
+              borderRadius="lg"
+              border="1px solid"
+              borderColor="gray.200"
+              overflow="hidden"
               bg="white"
-              isDisabled={!selectedSubjectId || studentsLoading}
             >
-              {students.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.first_name} {s.last_name}{s.dni ? ` — DNI: ${s.dni}` : ''}
-                </option>
-              ))}
-            </Select>
-          </FormControl>
-        </SimpleGrid>
-
-        {/* Date range filters */}
-        {selectedStudentId && (
-          <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4} mb={6}>
-            <FormControl>
-              <FormLabel fontSize="sm" fontWeight="semibold" color="gray.700">
-                Desde
-              </FormLabel>
-              <Input
-                type="date"
-                value={fromDate}
-                onChange={(e) => setFromDate(e.target.value)}
-                bg="white"
-              />
-            </FormControl>
-            <FormControl>
-              <FormLabel fontSize="sm" fontWeight="semibold" color="gray.700">
-                Hasta
-              </FormLabel>
-              <Input
-                type="date"
-                value={toDate}
-                onChange={(e) => setToDate(e.target.value)}
-                bg="white"
-                max={todayString()}
-              />
-            </FormControl>
-          </SimpleGrid>
-        )}
-
-        {/* ─── Empty state: no subject selected ────────────────── */}
-        {!selectedSubjectId && (
-          <Box
-            textAlign="center"
-            py={16}
-            px={6}
-            border="1px dashed"
-            borderColor="gray.300"
-            borderRadius="lg"
-            bg="white"
-          >
-            <Text fontSize="lg" fontWeight="semibold" color="gray.700" mb={1}>
-              Seleccioná una materia para comenzar
-            </Text>
-            <Text fontSize="sm" color="gray.500">
-              Elegí una materia del selector superior para ver los alumnos y su historial de asistencias.
-            </Text>
-          </Box>
-        )}
-
-        {/* ─── Subject selected, no student selected ───────────── */}
-        {selectedSubjectId && !selectedStudentId && (
-          <Box
-            textAlign="center"
-            py={16}
-            px={6}
-            border="1px dashed"
-            borderColor="gray.300"
-            borderRadius="lg"
-            bg="white"
-          >
-            <Text fontSize="lg" fontWeight="semibold" color="gray.700" mb={1}>
-              Seleccioná un alumno para ver su historial
-            </Text>
-            <Text fontSize="sm" color="gray.500">
-              Elegí un alumno del selector superior para consultar sus registros de asistencia.
-            </Text>
-          </Box>
-        )}
-
-        {/* ─── Student selected: show summary + history ────────── */}
-        {selectedStudentId && (
-          <>
-            {/* Summary cards */}
-            {summary && (
-              <StatGroup mb={6} gap={4}>
-                <Stat
-                  bg="white"
-                  p={4}
-                  borderRadius="lg"
-                  border="1px solid"
-                  borderColor="gray.200"
-                >
-                  <StatLabel fontSize="xs" color="gray.500">Total registros</StatLabel>
-                  <StatNumber fontSize="2xl">{summary.total_days}</StatNumber>
-                </Stat>
-                <Stat
-                  bg="green.50"
-                  p={4}
-                  borderRadius="lg"
-                  border="1px solid"
-                  borderColor="green.200"
-                >
-                  <StatLabel fontSize="xs" color="green.700">Presentes</StatLabel>
-                  <StatNumber fontSize="2xl" color="green.600">
-                    {summary.total_days - summary.total_absences}
-                  </StatNumber>
-                </Stat>
-                <Stat
-                  bg="red.50"
-                  p={4}
-                  borderRadius="lg"
-                  border="1px solid"
-                  borderColor="red.200"
-                >
-                  <StatLabel fontSize="xs" color="red.700">Ausencias</StatLabel>
-                  <StatNumber fontSize="2xl" color="red.600">{summary.total_absences}</StatNumber>
-                </Stat>
-                <Stat
-                  bg="yellow.50"
-                  p={4}
-                  borderRadius="lg"
-                  border="1px solid"
-                  borderColor="yellow.200"
-                >
-                  <StatLabel fontSize="xs" color="yellow.700">Justificadas</StatLabel>
-                  <StatNumber fontSize="2xl" color="yellow.600">{summary.justified_absences}</StatNumber>
-                </Stat>
-                <Stat
-                  bg="orange.50"
-                  p={4}
-                  borderRadius="lg"
-                  border="1px solid"
-                  borderColor="orange.200"
-                >
-                  <StatLabel fontSize="xs" color="orange.700">Sin justificar</StatLabel>
-                  <StatNumber fontSize="2xl" color="orange.600">{summary.unjustified_absences}</StatNumber>
-                </Stat>
-              </StatGroup>
-            )}
-
-            {/* History table */}
-            {historyLoading ? (
-              <Stack spacing={3} role="status" aria-label="Cargando historial">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <Skeleton key={i} height="48px" borderRadius="md" speed={0.8}>
-                    <Box height="48px" />
-                  </Skeleton>
-                ))}
-              </Stack>
-            ) : history.length === 0 ? (
-              <Box
-                textAlign="center"
-                py={12}
-                px={6}
-                border="1px dashed"
-                borderColor="gray.300"
-                borderRadius="lg"
-                bg="white"
-              >
-                <Text fontSize="lg" fontWeight="semibold" color="gray.700" mb={1}>
-                  No hay registros de asistencia
-                </Text>
-                <Text fontSize="sm" color="gray.500">
-                  {fromDate || toDate
-                    ? 'No se encontraron asistencias en el rango de fechas seleccionado.'
-                    : 'Este alumno no tiene asistencias registradas.'}
-                </Text>
-              </Box>
-            ) : (
-              <TableContainer
-                borderRadius="lg"
-                border="1px solid"
-                borderColor="gray.200"
-                overflow="hidden"
-                bg="white"
-              >
-                <Table variant="striped" colorScheme="gray">
-                  <Thead bg="gray.100">
-                    <Tr>
-                      <Th fontSize="xs" textTransform="uppercase" letterSpacing="wider" color="gray.600" py={4}>
-                        Fecha
-                      </Th>
-                      <Th fontSize="xs" textTransform="uppercase" letterSpacing="wider" color="gray.600" py={4}>
-                        Estado
-                      </Th>
-                      <Th fontSize="xs" textTransform="uppercase" letterSpacing="wider" color="gray.600" py={4}>
-                        Justificada
-                      </Th>
-                      <Th fontSize="xs" textTransform="uppercase" letterSpacing="wider" color="gray.600" py={4}>
-                        Nota
-                      </Th>
+              <Table variant="simple">
+                <Thead bg="gray.100">
+                  <Tr>
+                    <Th
+                      fontSize="xs"
+                      textTransform="uppercase"
+                      letterSpacing="wider"
+                      color="gray.600"
+                      py={4}
+                    >
+                      Nombre
+                    </Th>
+                    <Th
+                      fontSize="xs"
+                      textTransform="uppercase"
+                      letterSpacing="wider"
+                      color="gray.600"
+                      py={4}
+                    >
+                      DNI
+                    </Th>
+                    <Th
+                      fontSize="xs"
+                      textTransform="uppercase"
+                      letterSpacing="wider"
+                      color="gray.600"
+                      py={4}
+                      w="200px"
+                    >
+                      Acción
+                    </Th>
+                  </Tr>
+                </Thead>
+                <Tbody>
+                  {students.map((student, idx) => (
+                    <Tr
+                      key={student.id}
+                      _hover={{ bg: 'gray.50', transition: 'background-color 160ms ease-out' }}
+                    >
+                      <Td py={4} fontSize="sm" fontWeight="medium">
+                        {student.first_name} {student.last_name}
+                      </Td>
+                      <Td py={4} fontSize="sm" color="gray.500">
+                        {student.dni || '—'}
+                      </Td>
+                      <Td py={4}>
+                        <Button
+                          size="sm"
+                          colorScheme="blue"
+                          leftIcon={<FiStar />}
+                          onClick={() => openGradeModal(student)}
+                          isDisabled={!selectedSubjectId}
+                        >
+                          Calificar
+                        </Button>
+                      </Td>
                     </Tr>
-                  </Thead>
-                  <Tbody>
-                    {history.map((record, idx) => (
-                      <Tr
-                        key={record.id}
-                        style={{ '--row-index': idx }}
-                        sx={{
-                          _hover: { bg: 'gray.100', transition: 'background-color 160ms ease-out' },
-                          _active: { bg: 'gray.200' },
-                          animation: 'fadeSlideIn 300ms ease-out both',
-                          animationDelay: 'calc(var(--row-index, 0) * 30ms)',
-                        }}
-                      >
-                        <Td py={3} fontSize="sm">
-                          {new Date(record.date).toLocaleDateString('es-AR', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric',
-                          })}
-                        </Td>
-                        <Td py={3}>
-                          <Badge
-                            colorScheme={statusColors[record.status] || 'gray'}
-                            variant="subtle"
-                            px={2}
-                            py={1}
-                            borderRadius="full"
-                          >
-                            {statusLabels[record.status] || record.status}
-                          </Badge>
-                        </Td>
-                        <Td py={3}>
-                          {record.is_justified ? (
-                            <Badge colorScheme="green" variant="subtle" px={2} py={1} borderRadius="full">
-                              Sí
-                            </Badge>
-                          ) : (
-                            <Text fontSize="sm" color="gray.400">—</Text>
-                          )}
-                        </Td>
-                        <Td py={3} fontSize="sm" color="gray.600">
-                          {record.justification_note || '—'}
-                        </Td>
-                      </Tr>
-                    ))}
-                  </Tbody>
-                </Table>
+                  ))}
+                </Tbody>
+              </Table>
+            </TableContainer>
+          )}
+        </>
+      )}
 
-                <Box as="style" display="none">
-                  {`
-                    @keyframes fadeSlideIn {
-                      from { opacity: 0; transform: translateY(6px); }
-                      to   { opacity: 1; transform: translateY(0); }
-                    }
-                  `}
-                </Box>
-              </TableContainer>
-            )}
-          </>
-        )}
-      </Box>
+      {/* ─── Grade Modal ────────────────────────────────────────── */}
+      <Modal isOpen={isOpen} onClose={onClose} size="md">
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>
+            Calificar a {gradingStudent?.first_name} {gradingStudent?.last_name}
+          </ModalHeader>
+          <ModalCloseButton />
+          <ModalBody pb={6}>
+            <VStack spacing={4}>
+              <FormControl>
+                <FormLabel fontSize="sm" color="gray.500">Materia</FormLabel>
+                <Text fontWeight="semibold" fontSize="md">
+                  {selectedCourse?.subjects?.find(s => String(s.id) === selectedSubjectId)?.name || '—'}
+                </Text>
+              </FormControl>
+
+              <FormControl isRequired>
+                <FormLabel fontSize="sm">Nota (0–10)</FormLabel>
+                <NumberInput
+                  min={0}
+                  max={10}
+                  step={0.01}
+                  precision={2}
+                  value={gradeForm.grade}
+                  onChange={(val) => handleGradeChange('grade', val)}
+                >
+                  <NumberInputField />
+                  <NumberInputStepper>
+                    <NumberIncrementStepper />
+                    <NumberDecrementStepper />
+                  </NumberInputStepper>
+                </NumberInput>
+              </FormControl>
+
+              <FormControl isRequired>
+                <FormLabel fontSize="sm">Tipo</FormLabel>
+                <Select
+                  value={gradeForm.type}
+                  onChange={(e) => handleGradeChange('type', e.target.value)}
+                  bg="white"
+                >
+                  {Object.entries(gradeTypeLabels).map(([value, label]) => (
+                    <option key={value} value={value}>{label}</option>
+                  ))}
+                </Select>
+              </FormControl>
+
+              <FormControl>
+                <FormLabel fontSize="sm">Descripción</FormLabel>
+                <Textarea
+                  value={gradeForm.description}
+                  onChange={(e) => handleGradeChange('description', e.target.value)}
+                  placeholder="Opcional — comentarios sobre la calificación"
+                  bg="white"
+                />
+              </FormControl>
+
+              <Button
+                colorScheme="blue"
+                onClick={submitGrade}
+                isLoading={gradeSubmitting}
+                loadingText="Guardando..."
+                w="full"
+                size="lg"
+                leftIcon={<FiCheckCircle />}
+              >
+                Guardar Calificación
+              </Button>
+            </VStack>
+          </ModalBody>
+        </ModalContent>
+      </Modal>
     </Box>
   );
+}
+
+// ─── Main DocenteDashboard ───────────────────────────────────────────
+
+export default function DocenteDashboard() {
+  const sections = [
+    { id: 'courses', label: 'Mis Cursos', icon: FiBookOpen, component: CoursesSection },
+    { id: 'profile', label: 'Mi Perfil', icon: FiUser, component: ProfileSection },
+  ];
+
+  return <DashboardLayout sections={sections} />;
 }

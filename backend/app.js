@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
+const { sequelize } = require('./models');
 const errorMiddleware = require('./middlewares/errorMiddleware');
 const authRoutes = require('./modules/auth/auth.routes');
 const usersRoutes = require('./modules/users/users.routes');
@@ -9,6 +10,7 @@ const coursesRoutes = require('./modules/courses/courses.routes');
 const studentsRoutes = require('./modules/students/students.routes');
 const subjectsRoutes = require('./modules/subjects/subjects.routes');
 const attendancesRoutes = require('./modules/attendances/attendances.routes');
+const gradesRoutes = require('./modules/grades/grades.routes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -28,10 +30,10 @@ app.use(express.urlencoded({ extended: true }));
 // HTTP request logger
 app.use(morgan('dev'));
 
-// Rate limiting global: 100 requests / 15 min
+// Rate limiting global: 500 requests / 15 min (SPA-friendly)
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: 500,
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -66,6 +68,9 @@ app.use('/api/v1/subjects', subjectsRoutes);
 // Attendances routes (preceptor/admin management)
 app.use('/api/v1/attendances', attendancesRoutes);
 
+// Grades routes (teacher/admin management)
+app.use('/api/v1/grades', gradesRoutes);
+
 // 404 handler
 app.use((req, res) => {
   res.status(404).json({
@@ -80,9 +85,17 @@ app.use(errorMiddleware);
 // ─── Inicio del servidor ────────────────────────────────────────
 
 if (require.main === module) {
-  app.listen(PORT, () => {
-    console.log(`Servidor iniciado en puerto ${PORT}`);
-  });
+  (async () => {
+    try {
+      await sequelize.sync();
+      console.log('✓ Base de datos sincronizada');
+    } catch (err) {
+      console.error('✗ Error al sincronizar la base de datos:', err.message);
+    }
+    app.listen(PORT, () => {
+      console.log(`Servidor iniciado en puerto ${PORT}`);
+    });
+  })();
 }
 
 module.exports = app;

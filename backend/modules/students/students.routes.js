@@ -60,7 +60,7 @@ const idValidation = [
 router.post(
   '/',
   authMiddleware,
-  roleMiddleware('admin'),
+  roleMiddleware('admin', 'preceptor'),
   validationMiddleware(createStudentValidations),
   studentsController.createStudent
 );
@@ -75,7 +75,7 @@ router.get(
 router.get(
   '/:id',
   authMiddleware,
-  roleMiddleware('admin'),
+  roleMiddleware('admin', 'preceptor'),
   validationMiddleware(idValidation),
   studentsController.getStudentById
 );
@@ -83,7 +83,7 @@ router.get(
 router.put(
   '/:id',
   authMiddleware,
-  roleMiddleware('admin'),
+  roleMiddleware('admin', 'preceptor'),
   validationMiddleware([...idValidation, ...updateStudentValidations]),
   studentsController.updateStudent
 );
@@ -91,7 +91,7 @@ router.put(
 router.delete(
   '/:id',
   authMiddleware,
-  roleMiddleware('admin'),
+  roleMiddleware('admin', 'preceptor'),
   validationMiddleware(idValidation),
   studentsController.deactivateStudent
 );
@@ -107,7 +107,7 @@ router.delete(
 router.post(
   '/:id/parents',
   authMiddleware,
-  roleMiddleware('admin'),
+  roleMiddleware('admin', 'preceptor'),
   validationMiddleware([...idValidation, ...linkParentValidations]),
   studentsController.linkParent
 );
@@ -115,9 +115,17 @@ router.post(
 router.get(
   '/:id/parents',
   authMiddleware,
-  roleMiddleware('admin'),
+  roleMiddleware('admin', 'preceptor'),
   validationMiddleware(idValidation),
   studentsController.getParents
+);
+
+// Parent: get my children
+router.get(
+  '/me/children',
+  authMiddleware,
+  roleMiddleware('padre'),
+  studentsController.getMyChildren
 );
 
 module.exports = router;

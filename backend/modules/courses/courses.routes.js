@@ -98,7 +98,7 @@ router.post(
 router.get(
   '/:id/subjects',
   authMiddleware,
-  roleMiddleware('admin'),
+  roleMiddleware('admin', 'preceptor'),
   validationMiddleware(idValidation),
   coursesController.getSubjects
 );

@@ -162,6 +162,32 @@ const studentsService = {
 
     return parents;
   },
+
+  async getMyChildren(userId) {
+    const links = await ParentStudent.findAll({
+      where: { user_id: userId },
+      include: [
+        {
+          model: Student,
+          as: 'Student',
+          include: [{ model: Course, as: 'Course' }],
+        },
+      ],
+    });
+
+    return links.map(link => ({
+      id: link.Student.id,
+      first_name: link.Student.first_name,
+      last_name: link.Student.last_name,
+      dni: link.Student.dni,
+      birth_date: link.Student.birth_date,
+      is_active: link.Student.is_active,
+      course: link.Student.Course
+        ? { id: link.Student.Course.id, name: link.Student.Course.name, year: link.Student.Course.year, division: link.Student.Course.division }
+        : null,
+      relationship: link.relationship,
+    }));
+  },
 };
 
 module.exports = studentsService;

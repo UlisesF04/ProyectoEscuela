@@ -13,6 +13,12 @@ const assignTeacherValidations = [
     .isInt({ min: 1 }).withMessage('El ID del usuario debe ser un número entero positivo'),
 ];
 
+const removeTeacherValidations = [
+  body('user_id')
+    .notEmpty().withMessage('El ID del usuario es obligatorio')
+    .isInt({ min: 1 }).withMessage('El ID del usuario debe ser un número entero positivo'),
+];
+
 const idValidation = [
   param('id')
     .isInt({ min: 1 }).withMessage('El ID debe ser un número entero positivo'),
@@ -26,6 +32,14 @@ router.get(
   subjectsController.getMySubjects
 );
 
+// Get courses with students for the authenticated teacher
+router.get(
+  '/my/courses',
+  authMiddleware,
+  roleMiddleware('docente'),
+  subjectsController.getMyCoursesWithStudents
+);
+
 router.get(
   '/:id',
   authMiddleware,
@@ -37,7 +51,7 @@ router.get(
 router.get(
   '/:id/teachers',
   authMiddleware,
-  roleMiddleware('admin'),
+  roleMiddleware('admin', 'preceptor', 'docente'),
   validationMiddleware(idValidation),
   subjectsController.getTeachers
 );
@@ -45,9 +59,17 @@ router.get(
 router.post(
   '/:id/teachers',
   authMiddleware,
-  roleMiddleware('admin'),
+  roleMiddleware('admin', 'preceptor'),
   validationMiddleware([...idValidation, ...assignTeacherValidations]),
   subjectsController.assignTeacher
+);
+
+router.delete(
+  '/:id/teachers',
+  authMiddleware,
+  roleMiddleware('admin', 'preceptor'),
+  validationMiddleware([...idValidation, ...removeTeacherValidations]),
+  subjectsController.removeTeacher
 );
 
 module.exports = router;
