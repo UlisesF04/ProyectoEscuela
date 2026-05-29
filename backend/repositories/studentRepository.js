@@ -29,6 +29,12 @@ const studentRepository = {
     return student.update({ is_active: false });
   },
 
+  async reactivate(id) {
+    const student = await Student.findByPk(id);
+    if (!student) return null;
+    return student.update({ is_active: true });
+  },
+
   async findByDni(dni) {
     return Student.findOne({ where: { dni } });
   },

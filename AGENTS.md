@@ -2,7 +2,7 @@
 
 > Contrato de comportamiento del agente para este repositorio.
 > Toda instrucción aquí tiene prioridad sobre el comportamiento default del agente.
-> Última actualización: 2026-05-27
+> Última actualización: 2026-05-30
 
 ---
 
@@ -85,6 +85,8 @@ Antes de proponer cualquier change, leé los archivos relevantes para el dominio
 > Estado actualizado del CHANGES.md. Actualizá esta sección cada vez que completes
 > un `/opsx:archive`.
 > Para el detalle completo (árbol de dependencias, paralelismo, governance) consultá `CHANGES.md`.
+>
+> ⚠️ **Post-rediseño C-13**: Todos los changes nuevos que toquen frontend DEBEN revisar vistas y rutas contra el diseño de C-13 (paleta Cozy Chocolate Cream, componentes compartidos, layout DashboardLayout, routing por rol). Usar checklist de impeccable antes de cerrar tareas de UI.
 
 ### FASE 0 — Cimientos
 
@@ -100,7 +102,7 @@ Antes de proponer cualquier change, leé los archivos relevantes para el dominio
 
 - [x] C-05 `attendance-module` — MEDIO — depende de C-04 ✅ 2026-05-27
 - [x] C-06 `grades-module` — MEDIO — depende de C-04 ✅ 2026-05-29
-- [ ] C-07 `tasks-module` — MEDIO — depende de C-04
+- [ ] C-07 `tasks-module` — MEDIO — depende de C-04 🔴 post-C13: usar vistas existentes TasksPage/TaskSubmissionsPage
 
 ### FASE 3 — Portal Parental
 
@@ -108,18 +110,31 @@ Antes de proponer cualquier change, leé los archivos relevantes para el dominio
 
 ### FASE 4 — Recursos Humanos
 
-- [ ] C-09 `teacher-leaves-module` — BAJO — depende de C-04
+- [ ] C-09 `teacher-leaves-module` — BAJO — depende de C-04 🔴 post-C13: usar vistas existentes MyLeavesPage/LeavesPage
 
 ### FASE 5 — Automatización Inteligente
 
-- [ ] C-10 `notification-agent` — ALTO — depende de C-04
+- [ ] C-10 `notification-agent` — ALTO — depende de C-04 🔴 post-C13: usar vista existente NotificationLogsPage si aplica
 
 ### FASE 6 — Cierre y Calidad
 
-- [ ] C-11 `admin-dashboard-and-polish` — BAJO — depende de C-10
+- [ ] C-11 `admin-dashboard-and-polish` — BAJO — depende de C-10 🔴 post-C13: vistas ya existen, conectar con datos reales
 - [ ] C-12 `devops-deployment` — BAJO — depende de C-01
 
-**Camino crítico**: `C-01 → C-02 → C-03 → C-04 → C-10 → C-11`
+### FASE 7 — Rediseño Frontend
+
+- [x] C-13 `frontend-redesign` — MEDIO — depende de C-04 ✅ 2026-05-29 (archivado en openspec)
+  - [x] C-13.0 `theme-tokens`
+  - [x] C-13.1 `admin-views-refactor`
+  - [x] C-13.2 `preceptor-views-refactor`
+  - [x] C-13.3 `docente-views-refactor`
+  - [x] C-13.4 `padre-views-refactor`
+  - [x] C-13.5 `shared-components`
+  - [x] C-13.6 `responsive`
+  - [x] C-13.7 `missing-views`
+
+**Camino crítico**: `C-01 → C-02 → C-03 → C-04 → C-10 → C-11` (C-13 fuera del camino crítico, corre en paralelo)
+Todos los changes pendientes deben revisar frontend y rutas contra el diseño de C-13.
 
 ---
 

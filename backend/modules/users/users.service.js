@@ -184,12 +184,18 @@ const usersService = {
    * Get all users (excluding admins). Includes both active and inactive.
    * @returns {Array} List of non-admin users
    */
-  async getAllUsers() {
-    const users = await userRepository.findAll({
-      role: { [require('sequelize').Op.ne]: 'admin' },
-    });
+  async getAllUsers(filters = {}) {
+    const { Op } = require('sequelize');
+    const where = {
+      role: { [Op.ne]: 'admin' },
+    };
 
-    // Remove password_hash from all users
+    if (filters.is_active !== undefined) {
+      where.is_active = filters.is_active === 'true' || filters.is_active === true;
+    }
+
+    const users = await userRepository.findAll(where);
+
     return users.map((user) => {
       const { password_hash: _, ...userWithoutPassword } = user.toJSON();
       return userWithoutPassword;

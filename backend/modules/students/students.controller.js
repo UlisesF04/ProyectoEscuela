@@ -69,6 +69,19 @@ const studentsController = {
     }
   },
 
+  async reactivateStudent(req, res, next) {
+    try {
+      const { id } = req.params;
+      await studentsService.reactivateStudent(id);
+      res.status(200).json({
+        status: 'success',
+        message: 'Estudiante reactivado exitosamente',
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
   async permanentDeleteStudent(req, res, next) {
     try {
       const { id } = req.params;

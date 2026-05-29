@@ -1,0 +1,6 @@
+{
+  "name": "Vivid Edu-Pulse Portal",
+  "description": "Interactive prototype for 27 role-based views of a school management portal, styled with a warm-vivid palette and featuring a canonical Markdown export center.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

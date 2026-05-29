@@ -99,6 +99,11 @@ export const adminService = {
     return res.data;
   },
 
+  async reactivateStudent(id) {
+    const { data: res } = await api.put(`/students/${id}/reactivate`);
+    return res.data;
+  },
+
   async permanentDeleteStudent(id) {
     const { data: res } = await api.delete(`/students/${id}/permanent`);
     return res.data;

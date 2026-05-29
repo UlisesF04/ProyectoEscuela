@@ -1,0 +1,67 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@500;600;700;800&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Montserrat", "Inter", sans-serif;
+  
+  --color-warm-amber: #FF6B35;
+  --color-tertiary: #2D1B08;
+  --color-tertiary-container: #3D2511;
+  --color-on-tertiary-container: #F7C59F;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #FFFDFB;
+  --color-on-surface-variant: #7D5A44;
+  --color-success-green: #10B981;
+  --color-warning-amber: #FF6B35;
+  --color-error-red: #EF4444;
+
+  /* Automatic theme mapper: converts slate utilities into cozy warm chocolate cream palette */
+  --color-slate-50: #FFFDFB;       /* Warm-beige container background */
+  --color-slate-100: #E8D5C4;      /* Light border accents */
+  --color-slate-200: #D8C3B1;      /* Medium border bounds */
+  --color-slate-300: #C0A997;      /* Solid greyish brown placeholder and ticks */
+  --color-slate-400: #9C8370;      /* Muted paragraph icons/sub-elements */
+  --color-slate-500: #7D5A44;      /* Descriptive subtexts */
+  --color-slate-605: #634532;      /* Informative texts */
+  --color-slate-700: #463021;      /* Base body text */
+  --color-slate-800: #2D1B08;      /* Primary dark headers and titles */
+  --color-slate-900: #1B0F04;      /* Core dark emphasis */
+}
+
+/* Glassmorphic custom panels matching the design guide */
+.glass-panel {
+  background: rgba(255, 248, 242, 0.92);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(232, 213, 196, 0.4);
+}
+
+.glass-panel-dark {
+  background: rgba(45, 27, 8, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 107, 53, 0.15);
+}
+
+/* Warm, high-energy background gradients based on image reference */
+.vivid-bg-gradient {
+  background: linear-gradient(135deg, #2D1B08 0%, #FF6B35 50%, #F7C59F 100%);
+  background-size: 200% 200%;
+  animation: gradientShift 18s ease infinite;
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Hide scrollbar for clean dashboard previews */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

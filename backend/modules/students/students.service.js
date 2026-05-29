@@ -85,6 +85,20 @@ const studentsService = {
     await studentRepository.deactivate(id);
   },
 
+  async reactivateStudent(id) {
+    const student = await studentRepository.findById(id);
+
+    if (!student) {
+      throw new AppError('Estudiante no encontrado', 404);
+    }
+
+    if (student.is_active) {
+      throw new AppError('El estudiante ya está activo', 409);
+    }
+
+    await studentRepository.reactivate(id);
+  },
+
   async permanentDeleteStudent(id) {
     const student = await studentRepository.findById(id);
 

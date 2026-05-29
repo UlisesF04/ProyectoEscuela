@@ -4,6 +4,8 @@
 > Cada change es atómico: un agente puede implementarlo en una sesión (~4-6 horas).
 > **Leer este archivo antes de ejecutar cualquier `/opsx:propose`.**
 > Actualizar los estados `[ ]` → `[x]` a medida que cada change se archiva con `/opsx:archive`.
+>
+> ⚠️ **Post-rediseño C-13 (OBLIGATORIO)**: Todos los changes nuevos que toquen frontend DEBEN revisar que las vistas y rutas se ajusten al diseño de C-13 (paleta Cozy Chocolate Cream, componentes compartidos, layout con DashboardLayout, routing por rol). Validar con el checklist de impeccable antes de dar por terminada cualquier tarea de UI.
 
 ---
 
@@ -13,7 +15,8 @@
 2. **Leer antes** los archivos de KB listados en cada change para tener contexto completo.
 3. **Proponer** el change con `/opsx:propose C-NN-nombre-kebab`.
 4. **Implementar** siguiendo el scope operacional (modelos, endpoints, migraciones, tests).
-5. **Archivar** con `/opsx:archive C-NN` y marcar `[x]` en este documento.
+5. **Verificar diseño post-rediseño**: si el change toca frontend, revisar que las vistas y rutas sigan el diseño de C-13 (paleta Cozy Chocolate Cream, componentes compartidos, layout DashboardLayout). Ver con el checklist de impeccable.
+6. **Archivar** con `/opsx:archive C-NN` y marcar `[x]` en este documento.
 
 ---
 
@@ -24,18 +27,21 @@ C-01 foundation-setup (done)
  └── C-02 core-models (done)
       └── C-03 auth-system (done)
            └── C-04 admin-panel (done)
-                ├── C-05 attendance-module (done) ──┐
-                │                                    │
-                ├── C-06 grades-module (done) ───────┤── C-08 parental-dashboard (done)
-                │                                    │
-                ├── C-07 tasks-module ───────────────┘ (soft dep)
+                ├── C-05 attendance-module (done) ───┐
+                │                                     │
+                ├── C-06 grades-module (done) ────────┤── C-08 parental-dashboard (done)
+                │                                     │
+                ├── C-07 tasks-module ────────────────┘ (soft dep)
                 │
                 ├── C-09 teacher-leaves-module
                 │
-                └── C-10 notification-agent ─── C-11 admin-dashboard-and-polish
+                ├── C-10 notification-agent ─── C-11 admin-dashboard-and-polish
+                │
+                 └── C-13 frontend-redesign (done)
 ```
 
 C-12 devops-deployment es independiente y puede correr en paralelo desde GATE 2.
+C-13 frontend-redesign es paralelo a toda la Fase 2-6 y depende solo de C-04.
 
 ### Paralelismo por fase
 
@@ -56,6 +62,7 @@ C-12 devops-deployment es independiente y puede correr en paralelo desde GATE 2.
   → C-08 parental-dashboard ✓              [Agente C — si C-05 + C-06]
   → C-09 teacher-leaves-module             [Agente B — si C-06 ✓]
   → C-10 notification-agent                [Agente A — si C-05 ✓]
+   → C-13 frontend-redesign ✓               [Agente D — Frontend UI]
 
 **GATE 4**: C-05 + C-06 ✓ — APIs de notas y asistencias listas
   → C-07 tasks-module                      [Agente C — sin bloqueo de otros changes]
@@ -69,17 +76,20 @@ C-12 devops-deployment es independiente y puede correr en paralelo desde GATE 2.
 
 Incluye el agente de notificaciones (diferenciador del proyecto). Sin él, el sistema es un CRUD escolar más.
 
-### Plan óptimo con 3 agentes
+> C-13 frontend-redesign está fuera del camino crítico y corre en paralelo desde GATE 3.
 
-| Paso | Agente A (Backend Core) | Agente B (Backend Aux)  | Agente C (Frontend)    |
-|------|-------------------------|-------------------------|------------------------|
-| 1    | C-01 foundation-setup ✓ | —                       | —                      |
-| 2    | C-02 core-models ✓      | —                       | —                      |
-| 3    | C-03 auth-system ✓      | C-12 devops-deployment  | —                      |
-| 4    | C-04 admin-panel ✓      | —                       | —                      |
-| 5    | C-05 attendance-module ✓| C-06 grades-module ✓    | C-08 parental-dashbrd ✓|
-| 6    | C-10 notification-agent | C-09 teacher-leaves-mod | C-07 tasks-module      |
-| 7    | C-11 admin-dash-polish  | —                       | —                      |
+### Plan óptimo con 4 agentes
+
+| Paso | Agente A (Backend Core) | Agente B (Backend Aux)  | Agente C (Frontend)    | Agente D (Frontend UI)     |
+|------|-------------------------|-------------------------|------------------------|----------------------------|
+| 1    | C-01 foundation-setup ✓ | —                       | —                      | —                          |
+| 2    | C-02 core-models ✓      | —                       | —                      | —                          |
+| 3    | C-03 auth-system ✓      | C-12 devops-deployment  | —                      | —                          |
+| 4    | C-04 admin-panel ✓      | —                       | —                      | —                          |
+| 5    | C-05 attendance-module ✓| C-06 grades-module ✓    | C-08 parental-dashbrd ✓| C-13.0 theme + C-13.1 admin|
+| 6    | C-10 notification-agent | C-09 teacher-leaves-mod | C-07 tasks-module      | C-13.2 preceptor           |
+| 7    | C-11 admin-dash-polish  | —                       | —                      | C-13.3 docente + C-13.4 padre |
+| 8    | —                       | —                       | —                      | C-13.5 shared + C-13.6 responsive + C-13.7 missing ✓|
 
 ---
 
@@ -247,9 +257,10 @@ Incluye el agente de notificaciones (diferenciador del proyecto). Sin él, el si
   - `PUT /api/v1/tasks/:taskId/submissions/:studentId` — cambiar estado (pendiente→entregada/tarde, unidireccional RN-15)
   - `GET /api/v1/students/:id/tasks` — tareas de un alumno con estado de entrega
   - Validaciones: due_date >= today (RN-13), materia asignada al docente (RN-04)
-  - Frontend: `DocenteDashboard.jsx` sección tareas — formulario creación, listado con estados, selector de estado de entrega
+  - Frontend: adaptar `pages/docente/TasksPage.jsx` y `pages/docente/TaskSubmissionsPage.jsx` (ya existen del C-13) con datos reales
   - Tests: creación atómica con transacción, rollback en fallo, máquina de estados unidireccional, permisos
   - Reglas de negocio: RN-04, RN-13, RN-14, RN-15
+  - 🔴 **Post-rediseño C-13**: Las vistas frontend ya existen (TasksPage, TaskSubmissionsPage). NO crear nuevas páginas — conectar endpoints a las existentes y respetar paleta Cozy Chocolate Cream, componentes compartidos, y layout DashboardLayout.
 - **Dependencias**: `C-04`
 - **Governance**: MEDIO (transacción atómica, máquina de estados)
 - **Leer antes**:
@@ -300,9 +311,10 @@ Incluye el agente de notificaciones (diferenciador del proyecto). Sin él, el si
   - `GET /api/v1/teacher-leaves/me` — historial del docente autenticado con resumen de días
   - `GET /api/v1/teacher-leaves` — todas las licencias (admin)
   - Validaciones: end_date >= start_date (RN-20), solo admin puede cambiar status, solo docente puede crear
-  - Frontend: formulario de solicitud en `DocenteDashboard.jsx`, panel de aprobación en `AdminDashboard.jsx`
+  - Frontend: adaptar `pages/docente/MyLeavesPage.jsx` y `pages/admin/LeavesPage.jsx` (ya existen del C-13) con datos reales
   - Tests: solicitud exitosa, fechas inválidas, aprobación por no-admin 403, licencia ya procesada 409
   - Reglas de negocio: RN-19, RN-20
+  - 🔴 **Post-rediseño C-13**: Las vistas frontend ya existen (MyLeavesPage, LeavesPage). NO crear nuevas páginas — conectar endpoints a las existentes y respetar paleta Cozy Chocolate Cream, componentes compartidos, y layout DashboardLayout.
 - **Dependencias**: `C-04`
 - **Governance**: BAJO (CRUD simple con estados, sin integraciones externas)
 - **Leer antes**:
@@ -337,6 +349,7 @@ Incluye el agente de notificaciones (diferenciador del proyecto). Sin él, el si
   - Tests: consultas SQL, envío mockeado de Twilio, anti-spam (misma alerta no se reenvía en 24h)
   - Reglas de negocio: RN-16, RN-17, RN-18
   - Archivo `agent/scheduler/README.md` con instrucciones de ejecución y monitoreo
+  - 🔴 **Post-rediseño C-13**: Si se agregan vistas frontend para logs/notificaciones, deben usar `pages/admin/NotificationLogsPage.jsx` (ya existe del C-13), paleta Cozy Chocolate Cream, componentes compartidos, y layout DashboardLayout.
 - **Dependencias**: `C-04` (necesita datos de usuarios, estudiantes y vínculos parentales)
 - **Governance**: ALTO (integración externa Twilio, comunicación con familias, datos sensibles)
 - **Leer antes**:
@@ -366,6 +379,7 @@ Incluye el agente de notificaciones (diferenciador del proyecto). Sin él, el si
   - Ruta `/unauthorized` con mensaje claro por rol
   - Manejo de error 429 (rate limit) en frontend con mensaje amigable
   - Tests: integración de dashboard admin, visualización de logs
+  - 🔴 **Post-rediseño C-13**: Las vistas ya existen (DashboardOverview, NotificationLogsPage, ConfigurationPage). Conectar con datos reales y respetar paleta Cozy Chocolate Cream, componentes compartidos, y layout DashboardLayout.
 - **Dependencias**: `C-10` (para logs de notificaciones)
 - **Governance**: BAJO (solo lectura + UI)
 - **Leer antes**:
@@ -390,3 +404,135 @@ Incluye el agente de notificaciones (diferenciador del proyecto). Sin él, el si
   - `knowledge-base/11_despliegue_y_devops.md` completo
   - `knowledge-base/02_descripcion_general.md` §Integraciones externas
   - `knowledge-base/08_arquitectura_propuesta.md` §Estructura de directorios
+
+---
+
+## FASE 7 — Rediseño Frontend
+
+> Refactor completo del frontend aplicando el design system de Google Stitch sobre Chakra UI.
+> Dividido en sub-fases para poder iterar por rol sin bloquear el resto del desarrollo.
+
+### [C-13] `frontend-redesign`
+- **Estado**: `[x]` archivado — 2026-05-29
+- **Scope general**: Adaptar el diseño premium generado por Google Stitch (Tailwind v4) a nuestro stack Chakra UI + JSX + React Router v6. Separar los dashboards monolíticos actuales en vistas por ruta, con componentización y estados completos.
+- **Dependencias**: `C-04` (necesita los dashboards actuales como base)
+- **Governance**: MEDIO (solo UI, sin impacto en lógica de negocio)
+- **Leer antes**:
+  - `VISTAS.md` completo
+  - `Diseño Front/CANONICAL_SYS_VISTAS.md` — design system tokens
+  - `frontend/src/theme.js` — theme de Chakra con tokens adaptados
+  - `knowledge-base/08_arquitectura_propuesta.md` §Frontend
+
+---
+
+#### Sub-fase C-13.0 `theme-tokens`
+- **Estado**: `[x]` completado
+- **Scope**:
+  - Crear `frontend/src/theme.js` con `extendTheme` de Chakra UI
+  - Mapear colores Stitch: warm-amber (#FF6B35), terracota (#2D1B08), surface creams
+  - Configurar tipografía: Montserrat (headings) + Inter (body)
+  - Radios: 32px cards, pill buttons (full), 12px inputs
+  - Sombras: warm shadow tokens (`rgba(124, 45, 18, 0.08)`)
+  - Tintes por rol: admin( violeta), preceptor(teal), docente(naranja), padre(rosa)
+  - Glassmorphism: `.glass-panel` con backdrop-filter
+  - Degradado animado para LoginPage
+  - Sin cambios en páginas existentes
+- **Dependencias**: ninguna (tarea de configuración)
+
+#### Sub-fase C-13.1 `admin-views-refactor`
+- **Estado**: `[x]` completado
+- **Scope**:
+  - Refactor `AdminDashboard.jsx` → separar en páginas por ruta:
+    - `pages/admin/DashboardOverview.jsx` — cards de resumen + actividad reciente
+    - `pages/admin/UsersPage.jsx` — CRUD usuarios + tabla con roles
+    - `pages/admin/CoursesPage.jsx` — cursos + materias expandibles
+    - `pages/admin/StudentsPage.jsx` — alumnos + vinculación padres
+    - `pages/admin/AssignmentsPage.jsx` — asignación docente a materias
+    - `pages/admin/LinksPage.jsx` — vínculos padre-alumno
+    - `pages/admin/LeavesPage.jsx` — aprobar/rechazar licencias
+  - Crear `AdminSidebar.jsx` con items de navegación
+  - Aplicar theme tokens (fondos violeta suave, cards 32px, pill buttons)
+  - Estados: loading (skeleton), empty (mensaje+icono), error (toast)
+  - Layout responsivo: sidebar colapsable en tablet, drawer en mobile
+  - Conectar cada página a su service correspondiente (adminService, api.js)
+- **Dependencias**: `C-13.0`
+
+#### Sub-fase C-13.2 `preceptor-views-refactor`
+- **Estado**: `[x]` completado
+- **Scope**:
+  - Refactor `PreceptorDashboard.jsx` → separar en páginas:
+    - `pages/preceptor/AttendanceRegisterPage.jsx` — grilla con 3 estados toggle
+    - `pages/preceptor/AttendanceHistoryPage.jsx` — historial + resumen cards
+    - `pages/preceptor/PendingCertificatesPage.jsx` — justificación + certificados
+  - Componentes: `AttendanceGrid.jsx` mejorado (color coding, estados)
+  - Aplicar theme tokens (fondos teal suave)
+  - Estados completos: loading, empty, error, duplicado, irreversible
+- **Dependencias**: `C-13.0`
+
+#### Sub-fase C-13.3 `docente-views-refactor`
+- **Estado**: `[x]` completado
+- **Scope**:
+  - Refactor `DocenteDashboard.jsx` → separar en páginas:
+    - `pages/docente/GradesPage.jsx` — tabla de notas con inputs 0-10
+    - `pages/docente/TasksPage.jsx` — lista de tareas + modal creación
+    - `pages/docente/TaskSubmissionsPage.jsx` — entregas unidireccionales
+    - `pages/docente/MyLeavesPage.jsx` — solicitud + historial
+    - `pages/docente/ProfileSection.jsx` — datos personales
+  - Componentes: `GradeForm.jsx`, `TaskCard.jsx`
+  - Aplicar theme tokens (fondos naranja suave)
+  - Estados: loading, empty, error, validación en tiempo real
+- **Dependencias**: `C-13.0`
+
+#### Sub-fase C-13.4 `padre-views-refactor`
+- **Estado**: `[x]` completado
+- **Scope**:
+  - Refactor `PadreDashboard.jsx` → separar en páginas:
+    - `pages/padre/ChildGradesPage.jsx` — notas del hijo con color coding
+    - `pages/padre/ChildAttendancesPage.jsx` — asistencias + alerta visual
+    - `pages/padre/ChildTasksPage.jsx` — tareas con urgencia ≤2 días
+    - `pages/padre/UploadCertificatePage.jsx` — dropzone drag & drop
+  - Componente: `ChildSelector.jsx` — tabs (≤3 hijos) / dropdown (>3)
+  - Aplicar theme tokens (fondos rosa suave)
+  - Estados: loading, empty, error, alerta umbral crítico
+- **Dependencias**: `C-13.0`
+
+#### Sub-fase C-13.5 `shared-components`
+- **Estado**: `[x]` completado
+- **Scope**:
+  - Crear componentes compartidos faltantes:
+    - `EmptyState.jsx` — icono + título + descripción + acción opcional
+    - `LoadingSkeleton.jsx` — variantes: tabla, card, texto
+    - `ErrorBoundary.jsx` — captura errores de render + reintentar
+    - `ErrorAlert.jsx` — toast para 401, 403, 429, 500 con mensajes amigables
+    - `GradeForm.jsx` — input numérico 0-10 con validación
+    - `AttendanceSummary.jsx` — cards de resumen (totales, %)
+  - Refactor `DataTable.jsx` con diseño Stitch (bordes 32px, skeleton, empty state)
+  - Refactor `DashboardLayout.jsx` con sidebar colapsable + responsive
+- **Dependencias**: `C-13.0`
+
+#### Sub-fase C-13.6 `responsive`
+- **Estado**: `[x]` completado
+- **Scope**:
+  - Verificar todos los dashboards en mobile (<768px):
+    - Sidebar → drawer hamburguer
+    - Grids 4 cols → 1 col
+    - Tablas → scroll horizontal o cards apiladas
+    - Modales → full screen en mobile
+  - Verificar tablet (768-1023px):
+    - Sidebar → rail de 64px solo iconos
+    - Grids → 2 columnas
+  - Header adaptativo con breadcrumb responsivo
+  - Touch targets mínimos 44px en botones mobile
+- **Dependencias**: `C-13.1`, `C-13.2`, `C-13.3`, `C-13.4`
+
+#### Sub-fase C-13.7 `missing-views`
+- **Estado**: `[x]` completado
+- **Scope**:
+  - Construir vistas que aún no existen en el frontend actual:
+    - `AdminLeavesPage.jsx` — si C-09 está implementado
+    - `AdminNotificationLogsPage.jsx` — si C-10 está implementado
+    - `AdminConfigurationPage.jsx` — si C-11 está implementado
+    - `AdminNotFoundPage.jsx` (404 real, no redirect)
+    - `AdminUnauthorizedPage.jsx` (componente extraído, no inline)
+  - Verificar integración con endpoints reales
+- **Dependencias**: `C-13.0`, más C-09, C-10, C-11 según corresponda

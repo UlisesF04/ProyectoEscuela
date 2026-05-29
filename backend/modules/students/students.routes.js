@@ -96,6 +96,14 @@ router.delete(
   studentsController.deactivateStudent
 );
 
+router.put(
+  '/:id/reactivate',
+  authMiddleware,
+  roleMiddleware('admin'),
+  validationMiddleware(idValidation),
+  studentsController.reactivateStudent
+);
+
 router.delete(
   '/:id/permanent',
   authMiddleware,

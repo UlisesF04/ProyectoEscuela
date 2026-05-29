@@ -58,7 +58,7 @@ const usersController = {
    */
   async getAllUsers(req, res, next) {
     try {
-      const users = await usersService.getAllUsers();
+      const users = await usersService.getAllUsers(req.query);
       res.status(200).json({
         status: 'success',
         data: users,
