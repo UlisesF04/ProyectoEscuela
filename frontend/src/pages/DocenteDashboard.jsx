@@ -61,8 +61,11 @@ function ProfileSection() {
 
   if (!user) {
     return (
-      <Center h="50vh">
-        <Spinner size="xl" />
+      <Center h="400px">
+        <VStack spacing={4}>
+          <Spinner size="xl" color="blue.500" thickness="3px" />
+          <Text color="gray.500">Cargando perfil...</Text>
+        </VStack>
       </Center>
     );
   }
@@ -208,8 +211,11 @@ function CoursesSection() {
 
   if (coursesLoading) {
     return (
-      <Center h="50vh">
-        <Spinner size="xl" />
+      <Center h="400px">
+        <VStack spacing={4}>
+          <Spinner size="xl" color="blue.500" thickness="3px" />
+          <Text color="gray.500">Cargando cursos...</Text>
+        </VStack>
       </Center>
     );
   }
@@ -379,6 +385,8 @@ function CoursesSection() {
                           leftIcon={<FiStar />}
                           onClick={() => openGradeModal(student)}
                           isDisabled={!selectedSubjectId}
+                          _active={{ transform: 'scale(0.96)' }}
+                          transition="transform 120ms ease-out"
                         >
                           Calificar
                         </Button>
@@ -458,6 +466,8 @@ function CoursesSection() {
                 w="full"
                 size="lg"
                 leftIcon={<FiCheckCircle />}
+                _active={{ transform: 'scale(0.96)' }}
+                transition="transform 120ms ease-out"
               >
                 Guardar Calificación
               </Button>

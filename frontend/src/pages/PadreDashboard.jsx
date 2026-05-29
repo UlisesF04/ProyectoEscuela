@@ -12,6 +12,7 @@ import {
   Th,
   Td,
   TableContainer,
+  useDisclosure,
   useToast,
   Heading,
   Spinner,
@@ -31,7 +32,7 @@ import {
   ModalBody,
   ModalCloseButton,
 } from '@chakra-ui/react';
-import { FiUsers, FiUser, FiEye, FiBookOpen, FiCalendar } from 'react-icons/fi';
+import { FiUsers, FiBookOpen, FiCalendar, FiUser } from 'react-icons/fi';
 import DashboardLayout from '../components/DashboardLayout';
 import { parentService } from '../services/parentService';
 import { gradesService } from '../services/gradesService';
@@ -173,7 +174,7 @@ function ChildrenSection() {
             bg="white"
             borderColor="gray.200"
             _hover={{ shadow: 'md', borderColor: 'green.300' }}
-            transition="all 200ms ease-out"
+            transition="box-shadow 200ms ease-out, border-color 200ms ease-out"
           >
             <CardHeader pb={2}>
               <Heading size="md" color="gray.800">
@@ -195,6 +196,8 @@ function ChildrenSection() {
                   colorScheme="green"
                   variant="outline"
                   onClick={() => handleViewGrades(child)}
+                  _active={{ transform: 'scale(0.96)' }}
+                  transition="transform 120ms ease-out"
                 >
                   Ver Notas
                 </Button>
@@ -204,6 +207,8 @@ function ChildrenSection() {
                   colorScheme="blue"
                   variant="outline"
                   onClick={() => handleViewAttendance(child)}
+                  _active={{ transform: 'scale(0.96)' }}
+                  transition="transform 120ms ease-out"
                 >
                   Ver Asistencias
                 </Button>

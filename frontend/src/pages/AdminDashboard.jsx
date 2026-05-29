@@ -367,17 +367,7 @@ function UsersSection() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <Box as="style" display="none">
-        {`
-          @keyframes fadeSlideIn {
-            from { opacity: 0; transform: translateY(6px); }
-            to   { opacity: 1; transform: translateY(0); }
-          }
-          .chakra-tabs__tab-panel {
-            animation: fadeSlideIn 200ms ease-out both;
-          }
-        `}
-      </Box>
+
     </Box>
   );
 }
@@ -664,17 +654,7 @@ function CoursesSection() {
         </ModalContent>
       </Modal>
 
-      <Box as="style" display="none">
-        {`
-          @keyframes fadeSlideIn {
-            from { opacity: 0; transform: translateY(6px); }
-            to   { opacity: 1; transform: translateY(0); }
-          }
-          .chakra-tabs__tab-panel {
-            animation: fadeSlideIn 200ms ease-out both;
-          }
-        `}
-      </Box>
+
     </Box>
   );
 }
@@ -1081,17 +1061,7 @@ function StudentsSection() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <Box as="style" display="none">
-        {`
-          @keyframes fadeSlideIn {
-            from { opacity: 0; transform: translateY(6px); }
-            to   { opacity: 1; transform: translateY(0); }
-          }
-          .chakra-tabs__tab-panel {
-            animation: fadeSlideIn 200ms ease-out both;
-          }
-        `}
-      </Box>
+
     </Box>
   );
 }
@@ -1329,17 +1299,7 @@ function TeachersSection() {
         </ModalContent>
       </Modal>
 
-      <Box as="style" display="none">
-        {`
-          @keyframes fadeSlideIn {
-            from { opacity: 0; transform: translateY(6px); }
-            to   { opacity: 1; transform: translateY(0); }
-          }
-          .chakra-tabs__tab-panel {
-            animation: fadeSlideIn 200ms ease-out both;
-          }
-        `}
-      </Box>
+
     </Box>
   );
 }

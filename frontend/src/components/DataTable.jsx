@@ -1,3 +1,4 @@
+import { keyframes } from '@emotion/react';
 import {
   Table,
   Thead,
@@ -15,11 +16,16 @@ import {
   Icon,
 } from '@chakra-ui/react';
 
+const fadeSlideIn = keyframes`
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+`;
+
 const rowStyles = {
   _hover: { bg: 'gray.100', transition: 'background-color 160ms ease-out' },
   _active: { bg: 'gray.200' },
   // Stagger entrance via CSS custom property --row-index
-  animation: 'fadeSlideIn 300ms ease-out both',
+  animation: `${fadeSlideIn} 300ms ease-out both`,
   animationDelay: 'calc(var(--row-index, 0) * 30ms)',
 };
 
@@ -139,15 +145,6 @@ export default function DataTable({
           ))}
         </Tbody>
       </Table>
-
-      <Box as="style" display="none">
-        {`
-          @keyframes fadeSlideIn {
-            from { opacity: 0; transform: translateY(6px); }
-            to   { opacity: 1; transform: translateY(0); }
-          }
-        `}
-      </Box>
     </TableContainer>
   );
 }

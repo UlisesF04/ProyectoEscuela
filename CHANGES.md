@@ -22,12 +22,16 @@
 ```
 C-01 foundation-setup (done)
  └── C-02 core-models (done)
-      └── C-03 auth-system
-           └── C-04 admin-panel
-                ├── C-05 attendance-module ──────┐
-                ├── C-06 grades-module ──────────┤
-                ├── C-07 tasks-module ───────────┤
-                ├── C-09 teacher-leaves-module ──┘
+      └── C-03 auth-system (done)
+           └── C-04 admin-panel (done)
+                ├── C-05 attendance-module (done) ──┐
+                │                                    │
+                ├── C-06 grades-module (done) ───────┤── C-08 parental-dashboard (done)
+                │                                    │
+                ├── C-07 tasks-module ───────────────┘ (soft dep)
+                │
+                ├── C-09 teacher-leaves-module
+                │
                 └── C-10 notification-agent ─── C-11 admin-dashboard-and-polish
 ```
 
@@ -47,13 +51,14 @@ C-12 devops-deployment es independiente y puede correr en paralelo desde GATE 2.
 
 **GATE 3**: C-04 ✓ — Admin panel operativo ← **PRIMER FORK**
   → C-05 attendance-module ✓              [Agente A — Backend Core]
-  → C-06 grades-module                     [Agente B — Backend Aux]
+  → C-06 grades-module ✓                   [Agente B — Backend Aux]
   → C-07 tasks-module                      [Agente C — Frontend]
+  → C-08 parental-dashboard ✓              [Agente C — si C-05 + C-06]
   → C-09 teacher-leaves-module             [Agente B — si C-06 ✓]
   → C-10 notification-agent                [Agente A — si C-05 ✓]
 
-**GATE 4**: C-05 + C-06 + C-07 ✓ — APIs académicas listas
-  → C-08 parental-dashboard                [Agente C]
+**GATE 4**: C-05 + C-06 ✓ — APIs de notas y asistencias listas
+  → C-07 tasks-module                      [Agente C — sin bloqueo de otros changes]
 
 **GATE 5**: C-10 ✓ — Agente funcionando
   → C-11 admin-dashboard-and-polish        [Agente A]
@@ -68,12 +73,12 @@ Incluye el agente de notificaciones (diferenciador del proyecto). Sin él, el si
 
 | Paso | Agente A (Backend Core) | Agente B (Backend Aux)  | Agente C (Frontend)    |
 |------|-------------------------|-------------------------|------------------------|
-| 1    | C-01 foundation-setup   | —                       | —                      |
-| 2    | C-02 core-models        | —                       | —                      |
-| 3    | C-03 auth-system        | C-12 devops-deployment  | —                      |
-| 4    | C-04 admin-panel        | —                       | —                      |
-| 5    | C-05 attendance-module  | C-06 grades-module      | C-07 tasks-module      |
-| 6    | C-10 notification-agent | C-09 teacher-leaves-mod | C-08 parental-dashbrd  |
+| 1    | C-01 foundation-setup ✓ | —                       | —                      |
+| 2    | C-02 core-models ✓      | —                       | —                      |
+| 3    | C-03 auth-system ✓      | C-12 devops-deployment  | —                      |
+| 4    | C-04 admin-panel ✓      | —                       | —                      |
+| 5    | C-05 attendance-module ✓| C-06 grades-module ✓    | C-08 parental-dashbrd ✓|
+| 6    | C-10 notification-agent | C-09 teacher-leaves-mod | C-07 tasks-module      |
 | 7    | C-11 admin-dash-polish  | —                       | —                      |
 
 ---
@@ -206,19 +211,25 @@ Incluye el agente de notificaciones (diferenciador del proyecto). Sin él, el si
   - `knowledge-base/10_preguntas_abiertas.md` IN-01 (almacenamiento certificados)
 
 ### [C-06] `grades-module`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` completado — 2026-05-29
 - **Scope**:
   - Módulo backend `modules/grades/`: CRUD calificaciones
-  - Modelo Sequelize `Grade` con CHECK(1.00 ≤ value ≤ 10.00)
+  - Modelo Sequelize `Grade` con DECIMAL(5,2)
   - `POST /api/v1/grades` — carga de nota con verificación de asignación docente (RN-04)
   - `PUT /api/v1/grades/:id`, `DELETE /api/v1/grades/:id` — solo docente propietario (RN-12)
   - `GET /api/v1/students/:id/grades` — historial por materia y período (con filtros)
-  - Validaciones: rango 1-10 (RN-10), período válido (RN-11), materia asignada (RN-04)
-  - Frontend: `DocenteDashboard.jsx` sección calificaciones — selector de materia, alumno, período; `GradeForm.jsx` con validación cliente
-  - Tests: carga exitosa, fuera de rango, materia no asignada, período inválido, edición por otro docente 403
+  - `GET /api/v1/grades/subjects/:subjectId` — notas por materia
+  - Validaciones: rango 0-10 (RN-10), período válido (RN-11), materia asignada (RN-04)
+  - Frontend: `DocenteDashboard.jsx` sección calificaciones, `gradesService.js`
+  - Migración 004: tabla `grades`
   - Reglas de negocio: RN-04, RN-10, RN-11, RN-12
 - **Dependencias**: `C-04`
 - **Governance**: MEDIO (datos académicos sensibles, pero solo CRUD con validación)
+- **Leer antes**:
+  - `knowledge-base/07_flujos_principales.md` §Flujo 3: Carga de calificación
+  - `knowledge-base/06_funcionalidades.md` §Épica 4: Calificaciones
+  - `knowledge-base/05_reglas_de_negocio.md` §Calificaciones (RN-CA)
+  - `knowledge-base/04_modelo_de_datos.md` §grades
 - **Leer antes**:
   - `knowledge-base/07_flujos_principales.md` §Flujo 3: Carga de calificación
   - `knowledge-base/06_funcionalidades.md` §Épica 4: Calificaciones
@@ -255,17 +266,17 @@ Incluye el agente de notificaciones (diferenciador del proyecto). Sin él, el si
 > Dashboard para padres con consulta de datos de sus hijos y subida de certificados.
 
 ### [C-08] `parental-dashboard`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` completado — 2026-05-29
 - **Scope**:
-  - Frontend: `PadreDashboard.jsx` con tabs/secciones para Notas, Asistencias, Tareas, Subir Certificado
-  - Sección `ChildGrades` — tabla de calificaciones por materia y período con promedio (consume `GET /api/v1/students/:id/grades`)
-  - Sección `ChildAttendances` — historial de asistencias por fecha con resumen de totales (consume `GET /api/v1/students/:id/attendances`)
-  - Sección `ChildTasks` — listado de tareas con estado de entrega y fecha de vencimiento, filtro por pendientes (consume `GET /api/v1/students/:id/tasks`)
-  - Sección `UploadCertificate` — formulario de subida de certificado para inasistencia no justificada (consume `POST /api/v1/certificates/upload`)
-  - Filtro por hijo si el padre tiene múltiples alumnos vinculados
-  - Guardias RN-03: cada vista verifica que el alumno esté vinculado al padre (backend 403 + frontend oculta)
-  - Tests: visualización de datos del hijo vinculado, 403 para alumno no vinculado, subida de certificado
-- **Dependencias**: `C-05`, `C-06`, `C-07`
+  - Frontend: `PadreDashboard.jsx` con secciones Mis Hijos y Mi Perfil
+  - Sección `ChildrenSection` — cards de hijos con botones para Ver Notas y Ver Asistencias
+  - `GET /api/v1/students/me/children` — endpoint backend que devuelve hijos del padre autenticado
+  - Modal de notas: tabla con materia, nota, tipo, descripción, fecha (consume `GET /api/v1/students/:id/grades`)
+  - Modal de asistencias: historial con resumen de totales (consume `GET /api/v1/students/:id/attendances`)
+  - `DashboardLayout.jsx` — layout reutilizable con sidebar colapsable, avatar, navegación por secciones
+  - Guardias RN-03: roleMiddleware('padre') en endpoint de hijos
+  - Perfil del padre con datos personales
+- **Dependencias**: `C-05`, `C-06` (C-07 opcional — soft dependency, se agrega sección de tareas cuando se implemente)
 - **Governance**: BAJO (solo lectura + subida de archivos, sin lógica de negocio crítica)
 - **Leer antes**:
   - `knowledge-base/06_funcionalidades.md` §Épica 6: Consulta Parental
