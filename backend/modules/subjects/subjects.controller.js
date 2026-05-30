@@ -66,6 +66,16 @@ const subjectsController = {
     }
   },
 
+  async getTeacherSubjects(req, res, next) {
+    try {
+      const { userId } = req.params;
+      const subjects = await subjectsService.getTeacherSubjects(userId);
+      res.status(200).json({ status: 'success', data: subjects });
+    } catch (error) {
+      next(error);
+    }
+  },
+
   async removeTeacher(req, res, next) {
     try {
       const { id } = req.params;

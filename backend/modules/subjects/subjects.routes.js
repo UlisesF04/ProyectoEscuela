@@ -41,6 +41,13 @@ router.get(
 );
 
 router.get(
+  '/teachers/:userId',
+  authMiddleware,
+  roleMiddleware('admin', 'preceptor'),
+  subjectsController.getTeacherSubjects
+);
+
+router.get(
   '/:id',
   authMiddleware,
   roleMiddleware('admin'),

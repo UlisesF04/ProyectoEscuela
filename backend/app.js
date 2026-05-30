@@ -11,6 +11,8 @@ const studentsRoutes = require('./modules/students/students.routes');
 const subjectsRoutes = require('./modules/subjects/subjects.routes');
 const attendancesRoutes = require('./modules/attendances/attendances.routes');
 const gradesRoutes = require('./modules/grades/grades.routes');
+const licencesRoutes = require('./modules/licences/licences.routes');
+const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -71,6 +73,12 @@ app.use('/api/v1/attendances', attendancesRoutes);
 // Grades routes (teacher/admin management)
 app.use('/api/v1/grades', gradesRoutes);
 
+// Static files – uploads
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Licences routes
+app.use('/api/v1/licences', licencesRoutes);
+
 // 404 handler
 app.use((req, res) => {
   res.status(404).json({
@@ -87,7 +95,7 @@ app.use(errorMiddleware);
 if (require.main === module) {
   (async () => {
     try {
-      await sequelize.sync();
+      await sequelize.sync({ alter: true });
       console.log('✓ Base de datos sincronizada');
     } catch (err) {
       console.error('✗ Error al sincronizar la base de datos:', err.message);

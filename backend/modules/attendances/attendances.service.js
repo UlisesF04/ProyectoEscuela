@@ -36,7 +36,7 @@ const attendancesService = {
       throw new AppError('Debe proporcionar un array de registros', 400);
     }
 
-    const created = [];
+    const results = [];
 
     for (const record of records) {
       const { student_id, date, status } = record;
@@ -48,20 +48,20 @@ const attendancesService = {
 
       const existing = await attendanceRepository.findByStudentAndDate(student_id, date);
       if (existing) {
-        throw new AppError(`Ya existe un registro para el alumno ${student_id} en la fecha ${date}`, 409);
+        const updated = await attendanceRepository.update(existing.id, { status, registered_by: userId });
+        results.push(updated);
+      } else {
+        const attendance = await attendanceRepository.create({
+          student_id,
+          date,
+          status,
+          registered_by: userId,
+        });
+        results.push(attendance);
       }
-
-      const attendance = await attendanceRepository.create({
-        student_id,
-        date,
-        status,
-        registered_by: userId,
-      });
-
-      created.push(attendance);
     }
 
-    return created;
+    return results;
   },
 
   async update(id, data) {
@@ -106,6 +106,36 @@ const attendancesService = {
     const summary = await attendanceRepository.getSummaryByStudentId(studentId);
 
     return { records, summary };
+  },
+
+  async getCourseAttendance(courseId, date) {
+    const students = await Student.findAll({
+      where: { course_id: courseId, is_active: true },
+      attributes: ['id', 'first_name', 'last_name'],
+    });
+
+    const attendances = await attendanceRepository.findByCourseAndDate(courseId, date);
+
+    const attMap = {};
+    attendances.forEach((a) => {
+      attMap[a.student_id] = { status: a.status, is_justified: a.is_justified };
+    });
+
+    const records = students.map((s) => ({
+      id: s.id,
+      first_name: s.first_name,
+      last_name: s.last_name,
+      status: attMap[s.id]?.status || null,
+      is_justified: attMap[s.id]?.is_justified || false,
+    }));
+
+    const counts = { presente: 0, ausente: 0, tarde: 0, justificadas: 0 };
+    attendances.forEach((a) => {
+      if (counts[a.status] !== undefined) counts[a.status]++;
+      if (a.is_justified) counts.justificadas++;
+    });
+
+    return { records, summary: { ...counts, total: students.length } };
   },
 
   async uploadCertificate(attendanceId, file, userId) {

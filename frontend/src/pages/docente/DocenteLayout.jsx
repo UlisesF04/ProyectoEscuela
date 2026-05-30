@@ -1,9 +1,8 @@
 import DashboardLayout from '../../components/DashboardLayout';
-import { FiEdit3, FiClipboard, FiCalendar, FiUser } from 'react-icons/fi';
+import { FiEdit3, FiCalendar, FiUser } from 'react-icons/fi';
 
 const sections = [
   { id: 'grades', label: 'Calificaciones', icon: FiEdit3, path: '/docente/grades' },
-  { id: 'tasks', label: 'Tareas', icon: FiClipboard, path: '/docente/tasks' },
   { id: 'leaves', label: 'Mis Licencias', icon: FiCalendar, path: '/docente/leaves' },
   { id: 'profile', label: 'Mi Perfil', icon: FiUser, path: '/docente/profile' },
 ];

@@ -1,3 +1,4 @@
+const { Sequelize } = require('sequelize');
 const courseRepository = require('../../repositories/courseRepository');
 const subjectRepository = require('../../repositories/subjectRepository');
 const { Course, Subject, TeacherSubject, Student } = require('../../models');
@@ -23,6 +24,20 @@ const coursesService = {
         ['year', 'DESC'],
         ['name', 'ASC'],
       ],
+      include: [
+        {
+          model: Subject,
+          as: 'Subjects',
+          attributes: [],
+        },
+      ],
+      attributes: {
+        include: [
+          [Sequelize.fn('COUNT', Sequelize.col('Subjects.id')), 'subjects_count'],
+        ],
+      },
+      group: ['Course.id'],
+      subQuery: false,
     });
 
     return courses;

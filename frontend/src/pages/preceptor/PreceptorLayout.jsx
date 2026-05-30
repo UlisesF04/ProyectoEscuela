@@ -1,10 +1,11 @@
 import DashboardLayout from '../../components/DashboardLayout';
-import { FiEdit3, FiClock, FiFileText } from 'react-icons/fi';
+import { FiEdit3, FiClock, FiFileText, FiCalendar } from 'react-icons/fi';
 
 const sections = [
   { id: 'register', label: 'Registrar Asistencia', icon: FiEdit3, path: '/preceptor/attendance/register' },
   { id: 'history', label: 'Historial', icon: FiClock, path: '/preceptor/attendance/history' },
   { id: 'justify', label: 'Justificaciones', icon: FiFileText, path: '/preceptor/justify' },
+  { id: 'leaves', label: 'Mis Licencias', icon: FiCalendar, path: '/preceptor/leaves' },
 ];
 
 export default function PreceptorLayout() {

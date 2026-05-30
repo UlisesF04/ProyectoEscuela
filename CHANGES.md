@@ -27,17 +27,13 @@ C-01 foundation-setup (done)
  └── C-02 core-models (done)
       └── C-03 auth-system (done)
            └── C-04 admin-panel (done)
-                ├── C-05 attendance-module (done) ───┐
-                │                                     │
-                ├── C-06 grades-module (done) ────────┤── C-08 parental-dashboard (done)
-                │                                     │
-                ├── C-07 tasks-module ────────────────┘ (soft dep)
-                │
+                ├── C-05 attendance-module (done)
+                ├── C-06 grades-module (done)
+                │    └── C-07 grades-evolution
+                ├── C-08 parental-dashboard (done)
                 ├── C-09 teacher-leaves-module
-                │
                 ├── C-10 notification-agent ─── C-11 admin-dashboard-and-polish
-                │
-                 └── C-13 frontend-redesign (done)
+                └── C-13 frontend-redesign (done)
 ```
 
 C-12 devops-deployment es independiente y puede correr en paralelo desde GATE 2.
@@ -58,16 +54,15 @@ C-13 frontend-redesign es paralelo a toda la Fase 2-6 y depende solo de C-04.
 **GATE 3**: C-04 ✓ — Admin panel operativo ← **PRIMER FORK**
   → C-05 attendance-module ✓              [Agente A — Backend Core]
   → C-06 grades-module ✓                   [Agente B — Backend Aux]
-  → C-07 tasks-module                      [Agente C — Frontend]
   → C-08 parental-dashboard ✓              [Agente C — si C-05 + C-06]
   → C-09 teacher-leaves-module             [Agente B — si C-06 ✓]
   → C-10 notification-agent                [Agente A — si C-05 ✓]
    → C-13 frontend-redesign ✓               [Agente D — Frontend UI]
 
-**GATE 4**: C-05 + C-06 ✓ — APIs de notas y asistencias listas
-  → C-07 tasks-module                      [Agente C — sin bloqueo de otros changes]
+**GATE 4**: C-06 ✓ — Módulo de calificaciones listo
+  → C-07 grades-evolution                 [Agente C — sin bloqueo de otros changes]
 
-**GATE 5**: C-10 ✓ — Agente funcionando
+**GATE 5**: C-10 — Agente funcionando
   → C-11 admin-dashboard-and-polish        [Agente A]
 
 ### Camino crítico (6 changes — mínimo irreducible)
@@ -86,10 +81,10 @@ Incluye el agente de notificaciones (diferenciador del proyecto). Sin él, el si
 | 2    | C-02 core-models ✓      | —                       | —                      | —                          |
 | 3    | C-03 auth-system ✓      | C-12 devops-deployment  | —                      | —                          |
 | 4    | C-04 admin-panel ✓      | —                       | —                      | —                          |
-| 5    | C-05 attendance-module ✓| C-06 grades-module ✓    | C-08 parental-dashbrd ✓| C-13.0 theme + C-13.1 admin|
-| 6    | C-10 notification-agent | C-09 teacher-leaves-mod | C-07 tasks-module      | C-13.2 preceptor           |
-| 7    | C-11 admin-dash-polish  | —                       | —                      | C-13.3 docente + C-13.4 padre |
-| 8    | —                       | —                       | —                      | C-13.5 shared + C-13.6 responsive + C-13.7 missing ✓|
+| 5    | C-05 attendance-module ✓| C-06 grades-module ✓    | C-08 parental-dashbrd ✓| C-13.0 theme ✓ + C-13.1 admin ✓|
+| 6    | C-10 notification-agent | C-09 teacher-leaves-mod | C-07 grades-evolution  | C-13.2 preceptor ✓          |
+| 7    | C-11 admin-dash-polish  | —                       | —                      | C-13.3 docente ✓ + C-13.4 padre ✓|
+| 8    | —                       | —                       | —                      | C-13.5 shared ✓ + C-13.6 responsive ✓ + C-13.7 missing ✓|
 
 ---
 
@@ -194,7 +189,7 @@ Incluye el agente de notificaciones (diferenciador del proyecto). Sin él, el si
 
 ## FASE 2 — Gestión Académica
 
-> Asistencias, calificaciones y tareas. El corazón operativo del sistema.
+> Asistencias, calificaciones y evolución académica. El corazón operativo del sistema.
 
 ### [C-05] `attendance-module`
 - **Estado**: `[x]` completado — 2026-05-27
@@ -246,29 +241,25 @@ Incluye el agente de notificaciones (diferenciador del proyecto). Sin él, el si
   - `knowledge-base/05_reglas_de_negocio.md` §Calificaciones (RN-CA)
   - `knowledge-base/04_modelo_de_datos.md` §grades
 
-### [C-07] `tasks-module`
+### [C-07] `grades-evolution`
 - **Estado**: `[ ]` pendiente
 - **Scope**:
-  - Módulo backend `modules/tasks/`: CRUD tareas + submissions
-  - Modelos Sequelize: `Task`, `TaskSubmission` con UNIQUE(task_id, student_id)
-  - `POST /api/v1/tasks` — creación con transacción atómica: crea tarea + submissions para todos los alumnos del curso (RN-14)
-  - `PUT /api/v1/tasks/:id`, `DELETE /api/v1/tasks/:id` — solo docente propietario
-  - `GET /api/v1/subjects/:id/tasks` — tareas de una materia
-  - `PUT /api/v1/tasks/:taskId/submissions/:studentId` — cambiar estado (pendiente→entregada/tarde, unidireccional RN-15)
-  - `GET /api/v1/students/:id/tasks` — tareas de un alumno con estado de entrega
-  - Validaciones: due_date >= today (RN-13), materia asignada al docente (RN-04)
-  - Frontend: adaptar `pages/docente/TasksPage.jsx` y `pages/docente/TaskSubmissionsPage.jsx` (ya existen del C-13) con datos reales
-  - Tests: creación atómica con transacción, rollback en fallo, máquina de estados unidireccional, permisos
-  - Reglas de negocio: RN-04, RN-13, RN-14, RN-15
-  - 🔴 **Post-rediseño C-13**: Las vistas frontend ya existen (TasksPage, TaskSubmissionsPage). NO crear nuevas páginas — conectar endpoints a las existentes y respetar paleta Cozy Chocolate Cream, componentes compartidos, y layout DashboardLayout.
-- **Dependencias**: `C-04`
-- **Governance**: MEDIO (transacción atómica, máquina de estados)
+  - Módulo backend `modules/grades/`: nuevo endpoint `GET /api/v1/students/:id/evolution`
+  - Query que agrupa calificaciones por materia y período (trimestre), ordenadas cronológicamente
+  - Estructura de respuesta: `{ subjects: [{ id, name, grades: [{ period, value, date }] }] }`
+  - Validaciones: solo el padre de ese alumno (RN-03) o el docente de la materia pueden acceder
+  - Frontend: nuevo componente `GradeEvolutionView` — tabla evolutiva con materias como filas y períodos como columnas, más un mini line-chart por materia (opcional, puede ser solo tabla)
+  - Integración en `PadreDashboard` como nueva sección "Evolución" por hijo
+  - Integración en `DocenteDashboard` como nueva sección "Evolución del alumno" (selector de alumno)
+  - Tests: query agrupada, permisos por rol, formato de respuesta, materia sin calificaciones
+  - Sin modelos nuevos — solo consulta sobre `Grade` existente
+- **Dependencias**: `C-06` (necesita el módulo de calificaciones)
+- **Governance**: BAJO (solo consulta, sin mutación de datos)
 - **Leer antes**:
-  - `knowledge-base/07_flujos_principales.md` §Flujo 6: Creación de tarea con generación automática de submissions
-  - `knowledge-base/06_funcionalidades.md` §Épica 5: Tareas y Entregas
-  - `knowledge-base/05_reglas_de_negocio.md` §Tareas (RN-TA)
-  - `knowledge-base/04_modelo_de_datos.md` §tasks, §task_submissions
-  - `knowledge-base/08_arquitectura_propuesta.md` §Transaction Atomicity
+  - `knowledge-base/07_flujos_principales.md` §Flujo 3: Carga de calificación
+  - `knowledge-base/06_funcionalidades.md` §Épica 4: Calificaciones
+  - `knowledge-base/05_reglas_de_negocio.md` §Calificaciones (RN-CA)
+  - `knowledge-base/04_modelo_de_datos.md` §grades
 
 ---
 
@@ -287,7 +278,7 @@ Incluye el agente de notificaciones (diferenciador del proyecto). Sin él, el si
   - `DashboardLayout.jsx` — layout reutilizable con sidebar colapsable, avatar, navegación por secciones
   - Guardias RN-03: roleMiddleware('padre') en endpoint de hijos
   - Perfil del padre con datos personales
-- **Dependencias**: `C-05`, `C-06` (C-07 opcional — soft dependency, se agrega sección de tareas cuando se implemente)
+- **Dependencias**: `C-05`, `C-06`
 - **Governance**: BAJO (solo lectura + subida de archivos, sin lógica de negocio crítica)
 - **Leer antes**:
   - `knowledge-base/06_funcionalidades.md` §Épica 6: Consulta Parental

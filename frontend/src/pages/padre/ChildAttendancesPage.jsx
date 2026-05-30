@@ -34,7 +34,10 @@ export default function ChildAttendancesPage() {
 
   useEffect(() => {
     parentService.getMyChildren()
-      .then(setChildren)
+      .then((data) => {
+        setChildren(data || []);
+        if (data && data.length > 0) setSelectedChild(data[0]);
+      })
       .catch(() => {});
   }, []);
 
@@ -51,10 +54,6 @@ export default function ChildAttendancesPage() {
       .catch((err) => setError(err))
       .finally(() => setLoading(false));
   }, [selectedChild]);
-
-  if (!selectedChild && children.length > 0 && !selectedChild) {
-    setSelectedChild(children[0]);
-  }
 
   const attendancePercent = (() => {
     if (!summary) return 100;

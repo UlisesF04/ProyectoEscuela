@@ -97,6 +97,13 @@ router.put(
 );
 
 router.get(
+  '/courses/:courseId',
+  authMiddleware,
+  roleMiddleware('preceptor', 'admin', 'docente'),
+  attendancesController.getCourseAttendance
+);
+
+router.get(
   '/students/:studentId',
   authMiddleware,
   roleMiddleware('preceptor', 'admin', 'docente', 'padre'),

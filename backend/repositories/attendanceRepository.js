@@ -51,6 +51,8 @@ const attendanceRepository = {
       attributes: [
         [sequelize.fn('COUNT', sequelize.col('id')), 'total_days'],
         [sequelize.fn('SUM', sequelize.literal("CASE WHEN status = 'ausente' THEN 1 ELSE 0 END")), 'total_absences'],
+        [sequelize.fn('SUM', sequelize.literal("CASE WHEN status = 'presente' THEN 1 ELSE 0 END")), 'presentes'],
+        [sequelize.fn('SUM', sequelize.literal("CASE WHEN status = 'tarde' THEN 1 ELSE 0 END")), 'tardes'],
         [sequelize.fn('SUM', sequelize.literal("CASE WHEN is_justified = true THEN 1 ELSE 0 END")), 'justified_absences'],
         [sequelize.fn('SUM', sequelize.literal("CASE WHEN status = 'ausente' AND is_justified = false THEN 1 ELSE 0 END")), 'unjustified_absences'],
       ],
@@ -61,9 +63,24 @@ const attendanceRepository = {
     return {
       total_days: parseInt(row.total_days, 10) || 0,
       total_absences: parseInt(row.total_absences, 10) || 0,
+      presentes: parseInt(row.presentes, 10) || 0,
+      tardes: parseInt(row.tardes, 10) || 0,
       justified_absences: parseInt(row.justified_absences, 10) || 0,
       unjustified_absences: parseInt(row.unjustified_absences, 10) || 0,
     };
+  },
+
+  async findByCourseAndDate(courseId, date) {
+    const { Student } = require('../models');
+    return Attendance.findAll({
+      include: [{
+        model: Student,
+        where: { course_id: courseId },
+        attributes: ['id', 'first_name', 'last_name'],
+      }],
+      where: { date },
+      attributes: ['id', 'student_id', 'status', 'is_justified'],
+    });
   },
 
   async destroy(id) {

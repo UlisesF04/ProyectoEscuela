@@ -7,12 +7,14 @@ const TeacherSubject = require('./TeacherSubject');
 const ParentStudent = require('./ParentStudent');
 const Attendance = require('./Attendance');
 const Grade = require('./Grade');
+const Licence = require('./Licence');
 
 // ─── User associations ─────────────────────────────────────────
 User.hasMany(TeacherSubject, { foreignKey: 'user_id' });
 User.hasMany(ParentStudent, { foreignKey: 'user_id' });
 User.hasMany(Attendance, { foreignKey: 'registered_by', as: 'registrar' });
 User.hasMany(Grade, { foreignKey: 'created_by', as: 'grades' });
+User.hasMany(Licence, { foreignKey: 'user_id', as: 'licences' });
 
 // ─── Student associations ──────────────────────────────────────
 Student.belongsTo(Course, { foreignKey: 'course_id' });
@@ -46,6 +48,9 @@ Grade.belongsTo(Student, { foreignKey: 'student_id' });
 Grade.belongsTo(Subject, { foreignKey: 'subject_id' });
 Grade.belongsTo(User, { foreignKey: 'created_by', as: 'createdBy' });
 
+// ─── Licence associations ──────────────────────────────────────
+Licence.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
 module.exports = {
   sequelize,
   User,
@@ -56,4 +61,5 @@ module.exports = {
   ParentStudent,
   Attendance,
   Grade,
+  Licence,
 };

@@ -321,7 +321,7 @@ export default function StudentsPage() {
         }
         actions={(student) => [
           { label: 'Editar', icon: FiEdit2, onClick: () => openEditModal(student), variant: 'ghost' },
-          { label: 'Ver Padres', icon: FiUsers, onClick: () => openParentsModal(student), colorScheme: 'brand', variant: 'outline' },
+          { label: 'Asignar Padres', icon: FiUsers, onClick: () => openParentsModal(student), colorScheme: 'brand', variant: 'outline' },
           ...(student.is_active
             ? [{ label: 'Desactivar', icon: FiToggleRight, onClick: () => openDeleteDialog(student, 'deactivate'), colorScheme: 'orange', variant: 'ghost' }]
             : [

@@ -15,7 +15,7 @@ export default function ChildSelector({ children = [], selectedChild, onChange }
           <TabList>
             {children.map((child) => (
               <Tab key={child.id} borderRadius="pill">
-                {child.nombre} {child.apellido}
+                {child.first_name} {child.last_name}
               </Tab>
             ))}
           </TabList>
@@ -37,7 +37,7 @@ export default function ChildSelector({ children = [], selectedChild, onChange }
         <option value="">Seleccionar hijo...</option>
         {children.map((child) => (
           <option key={child.id} value={child.id}>
-            {child.nombre} {child.apellido} - {child.curso || ''}
+            {child.first_name} {child.last_name} - {child.course?.name || ''}
           </option>
         ))}
       </Select>

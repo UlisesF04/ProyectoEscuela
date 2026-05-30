@@ -26,6 +26,11 @@ export const attendanceService = {
     return { records: res.data, summary: res.summary };
   },
 
+  async getCourseAttendance(courseId, date) {
+    const { data: res } = await api.get(`/attendances/courses/${courseId}`, { params: { date } });
+    return { records: res.data, summary: res.summary };
+  },
+
   async uploadCertificate(formData) {
     const { data: res } = await api.post('/attendances/certificates/upload', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },

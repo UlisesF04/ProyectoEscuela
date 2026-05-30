@@ -1,191 +1,133 @@
 import {
   Box, Heading, Select, Button, HStack, FormControl, FormLabel,
-  NumberInput, NumberInputField, NumberInputStepper, NumberIncrementStepper,
-  NumberDecrementStepper, useToast, IconButton, Table, Thead, Tbody, Tr, Th, Td,
-  TableContainer,
+  Modal, ModalOverlay, ModalContent, ModalHeader, ModalCloseButton,
+  ModalBody, ModalFooter, Input, NumberInput, NumberInputField,
+  useToast, VStack, Text, Badge,
 } from '@chakra-ui/react';
 import { useState, useEffect, useCallback } from 'react';
-import { FiSave, FiCheck } from 'react-icons/fi';
+import { FiPlus, FiSave } from 'react-icons/fi';
 import LoadingSkeleton from '../../components/LoadingSkeleton';
 import ErrorAlert from '../../components/ErrorAlert';
 import EmptyState from '../../components/EmptyState';
 import { gradesService } from '../../services/gradesService';
 import { teacherService } from '../../services/teacherService';
 
-const PERIODS = ['1er Trimestre', '2do Trimestre', '3er Trimestre', 'Recuperatorio'];
-const TYPES = ['Examen', 'Trabajo', 'Tarea', 'Oral', 'Otro'];
+const TYPE_OPTIONS = [
+  { value: 'examen', label: 'Examen' },
+  { value: 'tarea', label: 'Tarea' },
+  { value: 'trabajo', label: 'Trabajo Practico' },
+  { value: 'oral', label: 'Exposicion' },
+];
 
 export default function GradesPage() {
   const toast = useToast();
+  const [courses, setCourses] = useState([]);
+  const [selectedCourseId, setSelectedCourseId] = useState('');
   const [subjects, setSubjects] = useState([]);
   const [selectedSubjectId, setSelectedSubjectId] = useState('');
-  const [period, setPeriod] = useState(PERIODS[0]);
-  const [gradeType, setGradeType] = useState(TYPES[0]);
-  const [grades, setGrades] = useState([]);
+  const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [loadingGrades, setLoadingGrades] = useState(false);
-  const [savingBatch, setSavingBatch] = useState(false);
   const [error, setError] = useState(null);
-  const [savingRow, setSavingRow] = useState(null);
-  const [dirtyValues, setDirtyValues] = useState({});
 
-  const fetchSubjects = useCallback(() => {
+  // Modal state
+  const [modalStudent, setModalStudent] = useState(null);
+  const [gradeValue, setGradeValue] = useState('');
+  const [gradeType, setGradeType] = useState('examen');
+  const [gradeDate, setGradeDate] = useState(new Date().toISOString().split('T')[0]);
+  const [saving, setSaving] = useState(false);
+
+  const fetchCourses = useCallback(() => {
     setLoading(true);
     setError(null);
     teacherService.getMyCourses()
-      .then((res) => {
-        const data = res.data || res || [];
-        setSubjects(data);
-        if (data.length > 0 && !selectedSubjectId) {
-          setSelectedSubjectId(data[0].id?.toString() || '');
+      .then((data) => {
+        const coursesData = data || [];
+        setCourses(coursesData);
+        if (coursesData.length > 0) {
+          const firstCourseId = coursesData[0].id?.toString() || '';
+          setSelectedCourseId(firstCourseId);
+          const firstSubjects = coursesData[0].subjects || [];
+          setSubjects(firstSubjects);
+          setSelectedSubjectId(firstSubjects.length > 0 ? firstSubjects[0].id?.toString() || '' : '');
         }
       })
       .catch((err) => setError(err))
       .finally(() => setLoading(false));
   }, []);
 
-  useEffect(() => { fetchSubjects(); }, []);
+  useEffect(() => { fetchCourses(); }, []);
+
+  const handleCourseChange = (courseId) => {
+    setSelectedCourseId(courseId);
+    const course = courses.find((c) => c.id === parseInt(courseId));
+    const courseSubjects = course?.subjects || [];
+    setSubjects(courseSubjects);
+    setSelectedSubjectId(courseSubjects.length > 0 ? courseSubjects[0].id?.toString() || '' : '');
+  };
 
   useEffect(() => {
-    if (!selectedSubjectId) return;
-    setLoadingGrades(true);
-    setDirtyValues({});
-    gradesService.getSubjectGrades(selectedSubjectId)
-      .then((res) => {
-        const data = res.data || res || [];
-        setGrades(data);
-      })
-      .catch(() => {
-        setGrades([]);
-        toast({ title: 'Error', description: 'No se pudieron cargar las calificaciones', status: 'error', duration: 3000, isClosable: true, position: 'top-right' });
-      })
-      .finally(() => setLoadingGrades(false));
-  }, [selectedSubjectId]);
+    if (!selectedCourseId || !selectedSubjectId) return;
+    const course = courses.find((c) => c.id === parseInt(selectedCourseId));
+    setStudents(course?.students || []);
+  }, [selectedCourseId, selectedSubjectId, courses]);
 
-  const handleGradeChange = (studentId, value) => {
-    setDirtyValues((prev) => ({ ...prev, [studentId]: value }));
+  const openGradeModal = (student) => {
+    setModalStudent(student);
+    setGradeValue('');
+    setGradeType('examen');
+    setGradeDate(new Date().toISOString().split('T')[0]);
   };
 
-  const getGradeValue = (student) => {
-    if (dirtyValues[student.id] !== undefined) return dirtyValues[student.id];
-    return student.grade ?? '';
-  };
-
-  const isValidGrade = (val) => {
-    if (val === '' || val === undefined || val === null) return false;
-    const n = parseFloat(val);
-    return !isNaN(n) && n >= 0 && n <= 10;
-  };
-
-  const getGradeError = (student) => {
-    const val = getGradeValue(student);
-    if (val === '' || val === undefined || val === null) return false;
-    const n = parseFloat(val);
-    return isNaN(n) || n < 0 || n > 10;
-  };
-
-  const buildPayload = (student, val) => ({
-    student_id: student.student_id || student.id,
-    subject_id: parseInt(selectedSubjectId),
-    grade: parseFloat(val),
-    period,
-    type: gradeType,
-  });
-
-  const saveGrade = async (student) => {
-    const val = getGradeValue(student);
-    if (!isValidGrade(val)) return;
-    setSavingRow(student.id);
+  const handleSaveGrade = async () => {
+    if (!modalStudent || !selectedSubjectId) return;
+    const val = parseFloat(gradeValue);
+    if (isNaN(val) || val < 0 || val > 10) {
+      toast({ title: 'Nota inválida', description: 'La nota debe estar entre 0 y 10', status: 'warning', duration: 3000, isClosable: true, position: 'top-right' });
+      return;
+    }
+    setSaving(true);
     try {
-      const payload = buildPayload(student, val);
-      if (student.grade_id || student.id_grade) {
-        await gradesService.updateGrade(student.grade_id || student.id_grade, payload);
-      } else {
-        await gradesService.createGrade(payload);
-      }
-      setDirtyValues((prev) => {
-        const next = { ...prev };
-        delete next[student.id];
-        return next;
+      await gradesService.createGrade({
+        student_id: modalStudent.id,
+        subject_id: parseInt(selectedSubjectId),
+        grade: val,
+        type: gradeType,
+        date: gradeDate,
       });
-      setGrades((prev) =>
-        prev.map((g) =>
-          g.id === student.id ? { ...g, grade: parseFloat(val), grade_id: g.grade_id || 'saved' } : g
-        )
-      );
-      toast({ title: 'Nota guardada', status: 'success', duration: 2000, isClosable: true, position: 'top-right' });
+      toast({ title: 'Nota guardada', description: `Nota de ${modalStudent.first_name} ${modalStudent.last_name} registrada`, status: 'success', duration: 3000, isClosable: true, position: 'top-right' });
+      setModalStudent(null);
     } catch (err) {
-      toast({ title: 'Error', description: err.response?.data?.message || 'No se pudo guardar', status: 'error', duration: 3000, isClosable: true, position: 'top-right' });
+      toast({ title: 'Error', description: err?.response?.data?.message || 'No se pudo guardar', status: 'error', duration: 5000, isClosable: true, position: 'top-right' });
     } finally {
-      setSavingRow(null);
+      setSaving(false);
     }
-  };
-
-  const saveAll = async () => {
-    const keys = Object.keys(dirtyValues);
-    if (keys.length === 0) {
-      toast({ title: 'Sin cambios', description: 'No hay notas pendientes por guardar', status: 'info', duration: 2000, isClosable: true, position: 'top-right' });
-      return;
-    }
-    const invalid = keys.filter((k) => !isValidGrade(dirtyValues[k]));
-    if (invalid.length > 0) {
-      toast({ title: 'Notas inválidas', description: 'Corrija los valores resaltados antes de guardar', status: 'warning', duration: 3000, isClosable: true, position: 'top-right' });
-      return;
-    }
-    setSavingBatch(true);
-    let saved = 0;
-    let failed = 0;
-    for (const studentId of keys) {
-      const student = grades.find((g) => g.id === parseInt(studentId));
-      if (!student) continue;
-      try {
-        const payload = buildPayload(student, dirtyValues[studentId]);
-        if (student.grade_id || student.id_grade) {
-          await gradesService.updateGrade(student.grade_id || student.id_grade, payload);
-        } else {
-          await gradesService.createGrade(payload);
-        }
-        saved++;
-      } catch {
-        failed++;
-      }
-    }
-    setDirtyValues({});
-    if (failed > 0) {
-      toast({ title: `Guardadas ${saved}, fallaron ${failed}`, status: 'warning', duration: 3000, isClosable: true, position: 'top-right' });
-    } else {
-      toast({ title: `Todas las notas guardadas (${saved})`, status: 'success', duration: 2000, isClosable: true, position: 'top-right' });
-    }
-    setSavingBatch(false);
-    setLoadingGrades(true);
-    gradesService.getSubjectGrades(selectedSubjectId)
-      .then((res) => setGrades(res.data || res || []))
-      .catch(() => {})
-      .finally(() => setLoadingGrades(false));
   };
 
   if (loading) return <LoadingSkeleton variant="text" rows={5} />;
 
-  if (!subjects || subjects.length === 0) {
+  if (!courses || courses.length === 0) {
     return (
       <Box>
         <Heading as="h1" size="lg" mb={6} fontFamily="heading">Calificaciones</Heading>
-        <EmptyState
-          title="No tiene materias asignadas"
-          description="Contacte al administrador."
-        />
+        <EmptyState title="No tiene cursos asignados" description="Contacte al administrador." />
       </Box>
     );
   }
 
-  const hasDirty = Object.keys(dirtyValues).length > 0;
-
   return (
     <Box>
-      <ErrorAlert error={error} onRetry={fetchSubjects} />
+      <ErrorAlert error={error} onRetry={fetchCourses} />
       <Heading as="h1" size="lg" mb={6} fontFamily="heading">Calificaciones</Heading>
 
       <HStack spacing={4} mb={6} flexWrap="wrap">
+        <FormControl w="200px">
+          <FormLabel fontSize="sm" color="onSurfaceVariant">Curso</FormLabel>
+          <Select value={selectedCourseId} onChange={(e) => handleCourseChange(e.target.value)} borderRadius="input">
+            {courses.map((c) => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </Select>
+        </FormControl>
         <FormControl w="220px">
           <FormLabel fontSize="sm" color="onSurfaceVariant">Materia</FormLabel>
           <Select value={selectedSubjectId} onChange={(e) => setSelectedSubjectId(e.target.value)} borderRadius="input">
@@ -194,110 +136,78 @@ export default function GradesPage() {
             ))}
           </Select>
         </FormControl>
-        <FormControl w="180px">
-          <FormLabel fontSize="sm" color="onSurfaceVariant">Periodo</FormLabel>
-          <Select value={period} onChange={(e) => setPeriod(e.target.value)} borderRadius="input">
-            {PERIODS.map((p) => <option key={p} value={p}>{p}</option>)}
-          </Select>
-        </FormControl>
-        <FormControl w="160px">
-          <FormLabel fontSize="sm" color="onSurfaceVariant">Tipo</FormLabel>
-          <Select value={gradeType} onChange={(e) => setGradeType(e.target.value)} borderRadius="input">
-            {TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-          </Select>
-        </FormControl>
       </HStack>
 
-      {loadingGrades ? (
-        <LoadingSkeleton variant="table" rows={5} columns={3} />
-      ) : grades.length === 0 ? (
-        <EmptyState title="No hay alumnos en esta materia" description="Asigne alumnos a la materia desde el panel de administración." />
+      {students.length === 0 ? (
+        <EmptyState title="No hay alumnos en este curso" description="Asigne alumnos al curso desde el panel de administración." />
       ) : (
-        <Box>
-          <Box borderRadius="card" border="1px solid" borderColor="outlineVariant" overflow="hidden" bg="white" boxShadow="warmSm">
-            <TableContainer>
-              <Table variant="simple">
-                <Thead bg="containerLow">
-                  <Tr>
-                    <Th fontSize="xs" textTransform="uppercase" letterSpacing="wider" color="onSurfaceVariant" py={4}>Alumno</Th>
-                    <Th fontSize="xs" textTransform="uppercase" letterSpacing="wider" color="onSurfaceVariant" py={4}>Nota</Th>
-                    <Th fontSize="xs" textTransform="uppercase" letterSpacing="wider" color="onSurfaceVariant" py={4} w="80px">Acción</Th>
-                  </Tr>
-                </Thead>
-                <Tbody>
-                  {grades.map((student, idx) => {
-                    const val = getGradeValue(student);
-                    const isInvalid = getGradeError(student);
-                    const isDirty = dirtyValues[student.id] !== undefined;
-                    const isSaving = savingRow === student.id;
-                    return (
-                      <Tr
-                        key={student.id}
-                        _hover={{ bg: 'containerLow', transition: 'background-color 160ms ease-out' }}
-                        sx={{ animation: 'fadeSlideIn 300ms ease-out both', animationDelay: `${idx * 30}ms` }}
-                      >
-                        <Td py={3} fontSize="sm">
-                          {`${student.first_name || ''} ${student.last_name || ''}`.trim() || student.student_name || '—'}
-                        </Td>
-                        <Td py={3}>
-                          <NumberInput
-                            value={val}
-                            onChange={(v) => handleGradeChange(student.id, v)}
-                            min={0} max={10} step={0.01} precision={2}
-                            keepWithinRange={false} clampValueOnBlur
-                            size="sm" w="120px"
-                          >
-                            <NumberInputField
-                              borderRadius="input"
-                              borderColor={isInvalid ? 'error' : isDirty ? 'primary' : 'outlineVariant'}
-                              _focus={{ borderColor: 'primary', boxShadow: 'outline' }}
-                            />
-                            <NumberInputStepper>
-                              <NumberIncrementStepper />
-                              <NumberDecrementStepper />
-                            </NumberInputStepper>
-                          </NumberInput>
-                          {isInvalid && (
-                            <Box as="span" fontSize="xs" color="error" mt={1}>Debe estar entre 0 y 10</Box>
-                          )}
-                        </Td>
-                        <Td py={3}>
-                          <IconButton
-                            icon={isSaving ? <FiSave /> : <FiCheck />}
-                            size="sm"
-                            variant="ghost"
-                            colorScheme={isDirty ? 'brand' : 'gray'}
-                            borderRadius="pill"
-                            isDisabled={!isDirty || isInvalid || isSaving}
-                            isLoading={isSaving}
-                            onClick={() => saveGrade(student)}
-                            minW="44px" minH="44px"
-                            _active={{ transform: 'scale(0.96)' }}
-                            transition="transform 120ms ease-out"
-                          />
-                        </Td>
-                      </Tr>
-                    );
-                  })}
-                </Tbody>
-              </Table>
-            </TableContainer>
-          </Box>
-
-          {hasDirty && (
-            <Button
-              mt={4}
-              leftIcon={<FiSave />}
-              onClick={saveAll}
-              isLoading={savingBatch}
-              loadingText="Guardando..."
-              colorScheme="brand"
+        <Box borderRadius="card" border="1px solid" borderColor="outlineVariant" overflow="hidden" bg="white" boxShadow="warmSm">
+          {students.map((student, idx) => (
+            <HStack
+              key={student.id}
+              p={4}
+              borderBottom={idx < students.length - 1 ? '1px solid' : 'none'}
+              borderColor="outlineVariant"
+              justify="space-between"
+              _hover={{ bg: 'containerLow', transition: 'background-color 160ms ease-out' }}
+              sx={{ animation: 'fadeSlideIn 300ms ease-out both', animationDelay: `${idx * 30}ms` }}
             >
-              Guardar todas ({Object.keys(dirtyValues).length})
-            </Button>
-          )}
+              <Text fontWeight={500} fontSize="sm">
+                {student.first_name} {student.last_name}
+              </Text>
+              <Button
+                leftIcon={<FiPlus />}
+                colorScheme="brand"
+                size="sm"
+                borderRadius="pill"
+                onClick={() => openGradeModal(student)}
+                _active={{ transform: 'scale(0.97)' }}
+                transition="transform 160ms ease-out"
+              >
+                Agregar Nota
+              </Button>
+            </HStack>
+          ))}
         </Box>
       )}
+
+      <Modal isOpen={!!modalStudent} onClose={() => setModalStudent(null)} size={{ base: 'full', md: 'md' }} closeOnOverlayClick={!saving}>
+        <ModalOverlay />
+        <ModalContent borderRadius="card">
+          <ModalHeader fontFamily="heading">
+            Agregar Nota — {modalStudent?.first_name} {modalStudent?.last_name}
+          </ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <VStack spacing={4}>
+              <FormControl isRequired>
+                <FormLabel fontSize="sm" color="onSurfaceVariant">Nota (0-10)</FormLabel>
+                <NumberInput value={gradeValue} onChange={(v) => setGradeValue(v)} min={0} max={10} step={0.01} precision={2} keepWithinRange={false} clampValueOnBlur>
+                  <NumberInputField borderRadius="input" />
+                </NumberInput>
+              </FormControl>
+              <FormControl isRequired>
+                <FormLabel fontSize="sm" color="onSurfaceVariant">Tipo</FormLabel>
+                <Select value={gradeType} onChange={(e) => setGradeType(e.target.value)} borderRadius="input">
+                  {TYPE_OPTIONS.map((t) => (
+                    <option key={t.value} value={t.value}>{t.label}</option>
+                  ))}
+                </Select>
+              </FormControl>
+              <FormControl isRequired>
+                <FormLabel fontSize="sm" color="onSurfaceVariant">Fecha</FormLabel>
+                <Input type="date" value={gradeDate} onChange={(e) => setGradeDate(e.target.value)} borderRadius="input" />
+              </FormControl>
+            </VStack>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="ghost" mr={3} onClick={() => setModalStudent(null)} isDisabled={saving}>Cancelar</Button>
+            <Button leftIcon={<FiSave />} colorScheme="brand" isLoading={saving} onClick={handleSaveGrade} _active={{ transform: 'scale(0.97)' }} transition="transform 160ms ease-out">
+              Guardar Nota
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </Box>
   );
 }

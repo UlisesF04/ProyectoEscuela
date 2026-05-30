@@ -75,6 +75,20 @@ const attendancesController = {
     }
   },
 
+  async getCourseAttendance(req, res, next) {
+    try {
+      const { courseId } = req.params;
+      const { date } = req.query;
+      if (!date) {
+        return res.status(400).json({ status: 'error', message: 'El parámetro date es obligatorio' });
+      }
+      const result = await attendancesService.getCourseAttendance(courseId, date);
+      res.status(200).json({ status: 'success', data: result.records, summary: result.summary });
+    } catch (error) {
+      next(error);
+    }
+  },
+
   async uploadCertificate(req, res, next) {
     try {
       const { attendance_id } = req.body;

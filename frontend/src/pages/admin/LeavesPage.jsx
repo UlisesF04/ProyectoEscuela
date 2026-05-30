@@ -1,240 +1,170 @@
 import {
-  Box, Heading, Tabs, TabList, TabPanels, TabPanel, Tab, Button,
-  Card, CardBody, Text, VStack, HStack, Badge, useToast,
-  AlertDialog, AlertDialogOverlay, AlertDialogContent, AlertDialogHeader,
-  AlertDialogBody, AlertDialogFooter, useDisclosure,
+  Box, Heading, Text, Table, Thead, Tbody, Tr, Th, Td,
+  TableContainer, Badge, Button, useToast, Flex,
 } from '@chakra-ui/react';
-import { useState, useEffect, useRef } from 'react';
-import { FiCheck, FiX, FiExternalLink } from 'react-icons/fi';
-import DataTable from '../../components/DataTable';
+import { useState, useEffect, useCallback } from 'react';
+import { FiDownload } from 'react-icons/fi';
 import LoadingSkeleton from '../../components/LoadingSkeleton';
 import ErrorAlert from '../../components/ErrorAlert';
-import api from '../../services/api';
+import EmptyState from '../../components/EmptyState';
+import { licencesService } from '../../services/licencesService';
 
-const statusConfig = {
-  aprobada: { color: 'green', label: 'Aprobada' },
-  pendiente: { color: 'yellow', label: 'Pendiente' },
-  rechazada: { color: 'red', label: 'Rechazada' },
-};
+function formatDate(dateStr) {
+  return new Date(dateStr).toLocaleDateString('es-AR', {
+    day: 'numeric', month: 'long', year: 'numeric',
+  });
+}
+
+async function handleDownload(id, fileName, toast) {
+  try {
+    const response = await licencesService.download(id);
+    const url = URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName || 'licencia';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  } catch {
+    toast({
+      title: 'Error al descargar',
+      description: 'No se pudo descargar el archivo',
+      status: 'error', duration: 3000, isClosable: true, position: 'top-right',
+    });
+  }
+}
 
 export default function LeavesPage() {
-  const [leaves, setLeaves] = useState([]);
+  const [licences, setLicences] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [actionTarget, setActionTarget] = useState(null);
-  const [actionStatus, setActionStatus] = useState(null);
-  const [actionLoading, setActionLoading] = useState(false);
-  const { isOpen, onOpen, onClose } = useDisclosure();
-  const cancelRef = useRef();
   const toast = useToast();
 
-  const fetchLeaves = () => {
+  const fetchLicences = useCallback(() => {
     setLoading(true);
     setError(null);
-    api.get('/teacher-leaves')
-      .then((res) => setLeaves(res.data?.data || []))
-      .catch((err) => setError(err))
+    licencesService.getAllForAdmin()
+      .then((data) => setLicences(Array.isArray(data) ? data : []))
+      .catch(setError)
       .finally(() => setLoading(false));
-  };
+  }, []);
 
-  useEffect(() => { fetchLeaves(); }, []);
+  useEffect(() => { fetchLicences(); }, [fetchLicences]);
 
-  const pendingLeaves = leaves.filter((l) => l.status === 'pendiente');
-  const historyLeaves = leaves.filter((l) => l.status !== 'pendiente');
-
-  const openConfirm = (leave, status) => {
-    setActionTarget(leave);
-    setActionStatus(status);
-    onOpen();
-  };
-
-  const handleAction = async () => {
-    if (!actionTarget) return;
-    setActionLoading(true);
-    try {
-      await api.put(`/teacher-leaves/${actionTarget.id}/status`, { status: actionStatus });
-      toast({
-        title: `Licencia ${actionStatus === 'aprobada' ? 'aprobada' : 'rechazada'}`,
-        status: 'success', duration: 3000, isClosable: true, position: 'top-right',
-      });
-      onClose();
-      fetchLeaves();
-    } catch (err) {
-      toast({
-        title: 'Error al actualizar',
-        description: err?.response?.data?.message || 'Ocurrió un error',
-        status: 'error', duration: 5000, isClosable: true, position: 'top-right',
-      });
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const historyColumns = [
-    { key: 'created_at', label: 'Fecha', render: (l) => new Date(l.created_at).toLocaleDateString() },
-    { key: 'teacher', label: 'Docente', render: (l) => l.Teacher ? `${l.Teacher.first_name} ${l.Teacher.last_name}` : l.teacher_name || '—' },
-    { key: 'type', label: 'Tipo', render: (l) => l.type || '—' },
+  const columns = [
     {
-      key: 'status', label: 'Estado',
+      key: 'createdAt', label: 'Fecha',
+      render: (l) => (
+        <Text fontSize="sm" color="onSurface">{formatDate(l.createdAt)}</Text>
+      ),
+    },
+    {
+      key: 'user', label: 'Docente',
       render: (l) => {
-        const cfg = statusConfig[l.status] || { color: 'gray', label: l.status };
-        return <Badge variant="subtle" colorScheme={cfg.color}>{cfg.label}</Badge>;
+        if (!l.user) return <Text fontSize="sm" color="onSurfaceVariant">—</Text>;
+        return (
+          <Box>
+            <Text fontSize="sm" fontWeight={500} color="onSurface">
+              {l.user.first_name} {l.user.last_name}
+            </Text>
+            <Badge variant="subtle" colorScheme="brand" fontSize="2xs">
+              {l.user.role}
+            </Badge>
+          </Box>
+        );
       },
     },
-    { key: 'days', label: 'Días', render: (l) => l.days ?? '—' },
     {
-      key: 'certificate', label: 'Certificado',
-      render: (l) => l.certificate_url ? (
+      key: 'title', label: 'Licencia',
+      render: (l) => <Text fontSize="sm" color="onSurface">{l.title}</Text>,
+    },
+    {
+      key: 'file', label: 'Documentación',
+      render: (l) => l.has_file ? (
         <Button
-          as="a"
-          href={l.certificate_url}
-          target="_blank"
           size="sm"
           variant="ghost"
-          leftIcon={<FiExternalLink />}
+          leftIcon={<FiDownload />}
+          onClick={() => handleDownload(l.id, l.file_name, toast)}
           borderRadius="pill"
-          _active={{ transform: 'scale(0.97)' }}
-          transition="transform 160ms ease-out"
         >
-          Ver
+          {l.file_name || 'Descargar'}
         </Button>
-      ) : '—',
+      ) : (
+        <Text fontSize="sm" color="onSurfaceVariant">Sin archivo</Text>
+      ),
     },
   ];
 
+  if (loading) return <LoadingSkeleton variant="text" rows={6} />;
+
   return (
     <Box>
-      <ErrorAlert error={error} onRetry={fetchLeaves} />
-      <Heading as="h1" size="lg" mb={6} fontFamily="heading">
-        Licencias Docentes
-      </Heading>
-      <Tabs variant="soft-rounded" colorScheme="brand">
-        <TabList mb={6}>
-          <Tab borderRadius="pill" _active={{ transform: 'scale(0.97)' }} transition="transform 160ms ease-out">
-            Pendientes de revisión
-          </Tab>
-          <Tab borderRadius="pill" _active={{ transform: 'scale(0.97)' }} transition="transform 160ms ease-out">
-            Historial
-          </Tab>
-        </TabList>
-        <TabPanels>
-          <TabPanel px={0}>
-            {loading ? (
-              <LoadingSkeleton variant="card" rows={3} />
-            ) : pendingLeaves.length === 0 ? (
-              <Box textAlign="center" py={12} px={6} borderRadius="card" bg="containerLow">
-                <Text fontSize="lg" fontWeight="semibold" color="onSurface" mb={1}>
-                  No hay licencias pendientes
-                </Text>
-                <Text fontSize="sm" color="onSurfaceVariant">
-                  Todas las licencias han sido revisadas.
-                </Text>
-              </Box>
-            ) : (
-              <VStack spacing={4} align="stretch">
-                {pendingLeaves.map((leave) => (
-                  <Card key={leave.id} borderRadius="card" boxShadow="warmSm" bg="white">
-                    <CardBody>
-                      <HStack spacing={4} align="flex-start" wrap="wrap">
-                        <VStack align="flex-start" flex={1} spacing={1}>
-                          <Text fontWeight={600}>
-                            {leave.Teacher ? `${leave.Teacher.first_name} ${leave.Teacher.last_name}` : leave.teacher_name || 'Docente'}
-                          </Text>
-                          <Text fontSize="sm" color="onSurfaceVariant">
-                            {new Date(leave.created_at).toLocaleDateString()} — {leave.type || 'Licencia'}
-                          </Text>
-                          {leave.days && (
-                            <Text fontSize="sm" color="onSurfaceVariant">
-                              {leave.days} día(s)
-                            </Text>
-                          )}
-                        </VStack>
-                        <HStack spacing={2}>
-                          <Badge variant="subtle" colorScheme="yellow" fontSize="xs">
-                            Pendiente
-                          </Badge>
-                          {leave.certificate_url && (
-                            <Button
-                              as="a"
-                              href={leave.certificate_url}
-                              target="_blank"
-                              size="sm"
-                              variant="ghost"
-                              leftIcon={<FiExternalLink />}
-                              borderRadius="pill"
-                              _active={{ transform: 'scale(0.97)' }}
-                              transition="transform 160ms ease-out"
-                            >
-                              Certificado
-                            </Button>
-                          )}
-                        </HStack>
-                      </HStack>
-                      <HStack spacing={3} mt={4} justify="flex-end">
-                        <Button
-                          leftIcon={<FiCheck />}
-                          variant="success"
-                          size="sm"
-                          onClick={() => openConfirm(leave, 'aprobada')}
-                          _active={{ transform: 'scale(0.97)' }}
-                          transition="transform 160ms ease-out"
-                        >
-                          Aprobar
-                        </Button>
-                        <Button
-                          leftIcon={<FiX />}
-                          variant="danger"
-                          size="sm"
-                          onClick={() => openConfirm(leave, 'rechazada')}
-                          _active={{ transform: 'scale(0.97)' }}
-                          transition="transform 160ms ease-out"
-                        >
-                          Rechazar
-                        </Button>
-                      </HStack>
-                    </CardBody>
-                  </Card>
-                ))}
-              </VStack>
-            )}
-          </TabPanel>
-          <TabPanel px={0}>
-            <DataTable
-              columns={historyColumns}
-              data={historyLeaves}
-              loading={loading}
-              emptyMessage="No hay licencias en el historial"
-            />
-          </TabPanel>
-        </TabPanels>
-      </Tabs>
+      <ErrorAlert error={error} onRetry={fetchLicences} />
+      <Flex justify="space-between" align="center" mb={6}>
+        <Heading as="h1" size="lg" fontFamily="heading">
+          Licencias Docentes
+        </Heading>
+        <Text fontSize="sm" color="onSurfaceVariant">
+          Total: {licences.length}
+        </Text>
+      </Flex>
 
-      <AlertDialog isOpen={isOpen} leastDestructiveRef={cancelRef} onClose={onClose} motionPreset="scale">
-        <AlertDialogOverlay />
-        <AlertDialogContent borderRadius="card">
-          <AlertDialogHeader fontFamily="heading">
-            {actionStatus === 'aprobada' ? 'Aprobar licencia' : 'Rechazar licencia'}
-          </AlertDialogHeader>
-          <AlertDialogBody>
-            ¿Está seguro de que desea {actionStatus === 'aprobada' ? 'aprobar' : 'rechazar'} esta licencia?
-          </AlertDialogBody>
-          <AlertDialogFooter>
-            <Button ref={cancelRef} onClick={onClose} variant="ghost" _active={{ transform: 'scale(0.97)' }} transition="transform 160ms ease-out">
-              Cancelar
-            </Button>
-            <Button
-              colorScheme={actionStatus === 'aprobada' ? 'green' : 'red'}
-              ml={3}
-              isLoading={actionLoading}
-              onClick={handleAction}
-              _active={{ transform: 'scale(0.97)' }}
-              transition="transform 160ms ease-out"
-            >
-              {actionStatus === 'aprobada' ? 'Aprobar' : 'Rechazar'}
-            </Button>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {licences.length === 0 ? (
+        <EmptyState
+          title="Sin licencias"
+          description="No hay licencias registradas en el sistema."
+        />
+      ) : (
+        <Box
+          borderRadius="card"
+          border="1px solid"
+          borderColor="outlineVariant"
+          overflow="hidden"
+          bg="white"
+          boxShadow="warmSm"
+        >
+          <TableContainer>
+            <Table variant="simple">
+              <Thead bg="containerLow">
+                <Tr>
+                  {columns.map((col) => (
+                    <Th
+                      key={col.key}
+                      fontSize="xs"
+                      textTransform="uppercase"
+                      letterSpacing="wider"
+                      color="onSurfaceVariant"
+                      py={4}
+                    >
+                      {col.label}
+                    </Th>
+                  ))}
+                </Tr>
+              </Thead>
+              <Tbody>
+                {licences.map((l, idx) => (
+                  <Tr
+                    key={l.id || idx}
+                    _hover={{ bg: 'containerLow', transition: 'background-color 160ms ease-out' }}
+                    sx={{
+                      animation: 'fadeSlideIn 300ms ease-out both',
+                      animationDelay: `${idx * 30}ms`,
+                    }}
+                  >
+                    {columns.map((col) => (
+                      <Td key={col.key} py={3}>
+                        {col.render ? col.render(l) : l[col.key] ?? '—'}
+                      </Td>
+                    ))}
+                  </Tr>
+                ))}
+              </Tbody>
+            </Table>
+          </TableContainer>
+        </Box>
+      )}
     </Box>
   );
 }

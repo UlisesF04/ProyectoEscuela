@@ -102,11 +102,11 @@ Antes de proponer cualquier change, leé los archivos relevantes para el dominio
 
 - [x] C-05 `attendance-module` — MEDIO — depende de C-04 ✅ 2026-05-27
 - [x] C-06 `grades-module` — MEDIO — depende de C-04 ✅ 2026-05-29
-- [ ] C-07 `tasks-module` — MEDIO — depende de C-04 🔴 post-C13: usar vistas existentes TasksPage/TaskSubmissionsPage
+- [ ] C-07 `grades-evolution` — BAJO — depende de C-06
 
 ### FASE 3 — Portal Parental
 
-- [x] C-08 `parental-dashboard` — BAJO — depende de C-05, C-06 (C-07 soft dep) ✅ 2026-05-29
+- [x] C-08 `parental-dashboard` — BAJO — depende de C-05, C-06 ✅ 2026-05-29
 
 ### FASE 4 — Recursos Humanos
 

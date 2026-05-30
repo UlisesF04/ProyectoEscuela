@@ -20,15 +20,29 @@ export default function AttendanceRegisterPage() {
   const [loadingStudents, setLoadingStudents] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const toast = useToast();
 
   useEffect(() => {
     setLoadingCourses(true);
     adminService.getCourses()
-      .then((res) => setCourses(res.data || []))
+      .then((data) => setCourses(data || []))
       .catch(() => {})
       .finally(() => setLoadingCourses(false));
   }, []);
+
+  useEffect(() => {
+    if (!selectedCourseId || !selectedDate) return;
+    attendanceService.getCourseAttendance(parseInt(selectedCourseId), selectedDate)
+      .then((result) => {
+        const attMap = {};
+        (result.records || []).forEach((r) => {
+          if (r.status) attMap[`${r.id}-${selectedDate}`] = r.status;
+        });
+        setAttendances(attMap);
+      })
+      .catch(() => {});
+  }, [selectedCourseId, selectedDate, refreshTrigger]);
 
   const handleCourseChange = async (courseId) => {
     setSelectedCourseId(courseId);
@@ -37,8 +51,8 @@ export default function AttendanceRegisterPage() {
     setLoadingStudents(true);
     setError(null);
     try {
-      const res = await adminService.getStudents();
-      const courseStudents = (res.data || []).filter((s) => s.course_id === parseInt(courseId) || s.Course?.id === parseInt(courseId));
+      const allStudents = await adminService.getStudents();
+      const courseStudents = (allStudents || []).filter((s) => s.course_id === parseInt(courseId) || s.Course?.id === parseInt(courseId));
       setStudents(courseStudents);
     } catch (err) {
       setError(err);
@@ -73,7 +87,7 @@ export default function AttendanceRegisterPage() {
     try {
       await attendanceService.batchRegister(records);
       toast({ title: 'Asistencia registrada', status: 'success', duration: 3000, isClosable: true, position: 'top-right' });
-      setAttendances({});
+      setRefreshTrigger(t => t + 1);
     } catch (err) {
       toast({
         title: 'Error al guardar',

@@ -146,6 +146,25 @@ const subjectsService = {
     return assignment;
   },
 
+  async getTeacherSubjects(userId) {
+    const assignments = await TeacherSubject.findAll({
+      where: { user_id: userId },
+      include: [{
+        model: Subject,
+        as: 'Subject',
+        include: [{ model: Course, as: 'Course' }],
+      }],
+    });
+
+    return assignments.map(a => ({
+      id: a.id,
+      subject_id: a.Subject.id,
+      subject_name: a.Subject.name,
+      course_id: a.Subject.course_id,
+      course_name: a.Subject.Course?.name || null,
+    }));
+  },
+
   async removeTeacher(subjectId, userId) {
     const subject = await subjectRepository.findById(subjectId);
     if (!subject) {

@@ -125,6 +125,16 @@ export const adminService = {
     return res.data;
   },
 
+  async getTeacherSubjects(userId) {
+    const { data: res } = await api.get(`/subjects/teachers/${userId}`);
+    return res.data;
+  },
+
+  async removeTeacher(subjectId, userId) {
+    const { data: res } = await api.delete(`/subjects/${subjectId}/teachers`, { data: { user_id: userId } });
+    return res.data;
+  },
+
   async getTeachers(subjectId) {
     const { data: res } = await api.get(`/subjects/${subjectId}/teachers`);
     return res.data;

@@ -147,10 +147,10 @@ export default function DashboardLayout({ sections = [], role }) {
           h={10}
           px={collapsed ? 0 : 3}
           fontSize="sm"
-          title={collapsed ? 'Cerrar sesión' : ''}
+          title={collapsed ? 'Cerrar sesi├│n' : ''}
           borderRadius="pill"
         >
-          {collapsed ? null : 'Cerrar sesión'}
+          {collapsed ? null : 'Cerrar sesi├│n'}
         </Button>
 
         {!isMobile && (
@@ -194,7 +194,7 @@ export default function DashboardLayout({ sections = [], role }) {
             icon={<FiMenu />}
             variant="ghost"
             onClick={() => setMobileOpen(true)}
-            aria-label="Abrir menú"
+            aria-label="Abrir men├║"
             size="lg"
             minW="44px"
             minH="44px"

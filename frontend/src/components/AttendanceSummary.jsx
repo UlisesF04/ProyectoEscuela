@@ -3,7 +3,11 @@ import { SimpleGrid, Box, Text, Stat, StatLabel, StatNumber } from '@chakra-ui/r
 export default function AttendanceSummary({ totals }) {
   if (!totals) return null;
 
-  const { present = 0, absent = 0, late = 0, justified = 0, totalDays = 0 } = totals;
+  const present = totals.present ?? totals.presentes ?? 0;
+  const absent = totals.absent ?? totals.ausentes ?? totals.total_absences ?? 0;
+  const late = totals.late ?? totals.tardes ?? 0;
+  const justified = totals.justified ?? totals.justificadas ?? totals.justified_absences ?? 0;
+  const totalDays = totals.totalDays ?? totals.total_days ?? totals.total ?? 0;
   const attendancePercent = totalDays > 0
     ? Math.round(((present + late) / totalDays) * 100)
     : 0;

@@ -223,7 +223,7 @@ export default function Login() {
           </Button>
 
           <Text fontSize="sm" color="onSurfaceVariant" textAlign="center">
-            ¿Necesitás ayuda? Contactá al administrador del sistema
+            ¿Necesitas ayuda? Contacta al administrador del sistema
           </Text>
         </VStack>
       </Box>

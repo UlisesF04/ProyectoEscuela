@@ -5,7 +5,7 @@ import '@fontsource/inter/500.css';
 import '@fontsource/inter/600.css';
 
 const colors = {
-  // Background & Surfaces — creamy warm
+  // Background & Surfaces ÔÇö creamy warm
   background: '#FFF8F2',         // Soft warm cream (main page background)
   surface: '#FFFDFB',            // Vanilla surface (cards, containers)
   surfaceDim: '#F5E6D8',         // Warm dimmed tone for subtle backgrounds
@@ -16,7 +16,7 @@ const colors = {
   containerHigh: '#FFF5ED',      // Warmer still
   containerHighest: '#FFF0E5',   // Warmest surface
 
-  // On-colors — text on surfaces
+  // On-colors ÔÇö text on surfaces
   onSurface: '#463021',          // Base body text (slate-700)
   onSurfaceVariant: '#7D5A44',   // Soft cocoa text for secondary info (slate-500)
   inverseSurface: '#2D1B08',     // Dark chocolate (for dark backgrounds)
@@ -36,7 +36,7 @@ const colors = {
   success: '#10B981',            // Emerald green
   error: '#EF4444',              // Red
 
-  // REMOVE roleBg entirely — no more per-role color tints
+  // REMOVE roleBg entirely ÔÇö no more per-role color tints
 
   // Slate scale for text and elements (mapped from spec)
   slate: {

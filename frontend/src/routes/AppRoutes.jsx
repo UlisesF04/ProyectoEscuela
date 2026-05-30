@@ -12,7 +12,6 @@ import UsersPage from '../pages/admin/UsersPage';
 import CoursesPage from '../pages/admin/CoursesPage';
 import StudentsPage from '../pages/admin/StudentsPage';
 import AssignmentsPage from '../pages/admin/AssignmentsPage';
-import LinksPage from '../pages/admin/LinksPage';
 import LeavesPage from '../pages/admin/LeavesPage';
 import NotificationLogsPage from '../pages/admin/NotificationLogsPage';
 import ConfigurationPage from '../pages/admin/ConfigurationPage';
@@ -21,13 +20,13 @@ import ConfigurationPage from '../pages/admin/ConfigurationPage';
 import PreceptorLayout from '../pages/preceptor/PreceptorLayout';
 import AttendanceRegisterPage from '../pages/preceptor/AttendanceRegisterPage';
 import AttendanceHistoryPage from '../pages/preceptor/AttendanceHistoryPage';
-import PendingCertificatesPage from '../pages/preceptor/PendingCertificatesPage';
+import JustificacionesPage from '../pages/preceptor/JustificacionesPage';
+import PreceptorMyLeavesPage from '../pages/preceptor/MyLeavesPage';
 
 // Docente
 import DocenteLayout from '../pages/docente/DocenteLayout';
 import GradesPage from '../pages/docente/GradesPage';
-import TasksPage from '../pages/docente/TasksPage';
-import TaskSubmissionsPage from '../pages/docente/TaskSubmissionsPage';
+
 import MyLeavesPage from '../pages/docente/MyLeavesPage';
 import ProfileSection from '../pages/docente/ProfileSection';
 
@@ -35,8 +34,7 @@ import ProfileSection from '../pages/docente/ProfileSection';
 import PadreLayout from '../pages/padre/PadreLayout';
 import ChildGradesPage from '../pages/padre/ChildGradesPage';
 import ChildAttendancesPage from '../pages/padre/ChildAttendancesPage';
-import ChildTasksPage from '../pages/padre/ChildTasksPage';
-import UploadCertificatePage from '../pages/padre/UploadCertificatePage';
+import JustificativosPage from '../pages/padre/JustificativosPage';
 
 function DashboardRedirect({ user }) {
   const roleMap = {
@@ -74,7 +72,6 @@ export default function AppRoutes() {
         <Route path="courses" element={<CoursesPage />} />
         <Route path="students" element={<StudentsPage />} />
         <Route path="assignments" element={<AssignmentsPage />} />
-        <Route path="links" element={<LinksPage />} />
         <Route path="leaves" element={<LeavesPage />} />
         <Route path="notifications" element={<NotificationLogsPage />} />
         <Route path="config" element={<ConfigurationPage />} />
@@ -92,7 +89,8 @@ export default function AppRoutes() {
         <Route index element={<Navigate to="attendance/register" replace />} />
         <Route path="attendance/register" element={<AttendanceRegisterPage />} />
         <Route path="attendance/history" element={<AttendanceHistoryPage />} />
-        <Route path="justify" element={<PendingCertificatesPage />} />
+        <Route path="justify" element={<JustificacionesPage />} />
+        <Route path="leaves" element={<PreceptorMyLeavesPage />} />
       </Route>
 
       {/* Docente routes */}
@@ -106,8 +104,6 @@ export default function AppRoutes() {
       >
         <Route index element={<Navigate to="grades" replace />} />
         <Route path="grades" element={<GradesPage />} />
-        <Route path="tasks" element={<TasksPage />} />
-        <Route path="tasks/:taskId/submissions" element={<TaskSubmissionsPage />} />
         <Route path="leaves" element={<MyLeavesPage />} />
         <Route path="profile" element={<ProfileSection />} />
       </Route>
@@ -124,8 +120,7 @@ export default function AppRoutes() {
         <Route index element={<Navigate to="grades" replace />} />
         <Route path="grades" element={<ChildGradesPage />} />
         <Route path="attendances" element={<ChildAttendancesPage />} />
-        <Route path="tasks" element={<ChildTasksPage />} />
-        <Route path="upload-certificate" element={<UploadCertificatePage />} />
+        <Route path="justificativos" element={<JustificativosPage />} />
       </Route>
 
       {/* Root and catch-all */}

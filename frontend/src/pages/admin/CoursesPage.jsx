@@ -182,7 +182,7 @@ export default function CoursesPage() {
       label: 'Materias',
       render: (c) => (
         <Badge variant="subtle" colorScheme="blue">
-          {c.subjects?.length ?? 0} materias
+          {c.subjects_count ?? 0} materias
         </Badge>
       ),
     },

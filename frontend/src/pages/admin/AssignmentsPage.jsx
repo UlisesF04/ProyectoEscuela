@@ -30,14 +30,14 @@ export default function AssignmentsPage() {
     setLoading(true);
     setError(null);
     adminService.getUsersByRole('docente')
-      .then((res) => setTeachers(res.data || []))
+      .then((data) => setTeachers(data || []))
       .catch((err) => setError(err))
       .finally(() => setLoading(false));
   };
 
   const fetchCourses = () => {
     adminService.getCourses()
-      .then((res) => setCourses(res.data || []))
+      .then((data) => setCourses(data || []))
       .catch(() => {});
   };
 
@@ -54,8 +54,8 @@ export default function AssignmentsPage() {
     setSubjectsLoading(true);
     onOpen();
     try {
-      const res = await adminService.getTeachers(teacher.id);
-      setTeacherSubjects(res.data || []);
+      const data = await adminService.getTeacherSubjects(teacher.id);
+      setTeacherSubjects(data || []);
     } catch {
       setTeacherSubjects([]);
     } finally {
@@ -68,8 +68,8 @@ export default function AssignmentsPage() {
     setSelectedSubjectId('');
     if (!courseId) { setSubjects([]); return; }
     try {
-      const res = await adminService.getSubjects(courseId);
-      setSubjects(res.data || []);
+      const data = await adminService.getSubjects(courseId);
+      setSubjects(data || []);
     } catch {
       setSubjects([]);
     }
@@ -79,10 +79,10 @@ export default function AssignmentsPage() {
     if (!selectedSubjectId || !selectedTeacher) return;
     setAssigning(true);
     try {
-      await adminService.assignTeacher(selectedSubjectId, { teacher_id: selectedTeacher.id });
+      await adminService.assignTeacher(selectedSubjectId, { user_id: selectedTeacher.id });
       toast({ title: 'Asignación exitosa', status: 'success', duration: 3000, isClosable: true, position: 'top-right' });
-      const res = await adminService.getTeachers(selectedTeacher.id);
-      setTeacherSubjects(res.data || []);
+      const data = await adminService.getTeacherSubjects(selectedTeacher.id);
+      setTeacherSubjects(data || []);
       setSelectedSubjectId('');
     } catch (err) {
       toast({
@@ -97,10 +97,10 @@ export default function AssignmentsPage() {
 
   const handleRemoveSubject = async (subjectId) => {
     try {
-      await adminService.assignTeacher(subjectId, { teacher_id: null });
+      await adminService.removeTeacher(subjectId, selectedTeacher.id);
       toast({ title: 'Materia desasignada', status: 'info', duration: 3000, isClosable: true, position: 'top-right' });
-      const res = await adminService.getTeachers(selectedTeacher.id);
-      setTeacherSubjects(res.data || []);
+      const data = await adminService.getTeacherSubjects(selectedTeacher.id);
+      setTeacherSubjects(data || []);
     } catch (err) {
       toast({
         title: 'Error al desasignar',
@@ -120,7 +120,7 @@ export default function AssignmentsPage() {
     <Box>
       <ErrorAlert error={error} onRetry={fetchTeachers} />
       <Heading as="h1" size="lg" mb={6} fontFamily="heading">
-        Asignaciones Docentes
+        Docentes
       </Heading>
       <DataTable
         columns={columns}
@@ -171,10 +171,10 @@ export default function AssignmentsPage() {
                         gap={3}
                       >
                         <HStack flex={1} spacing={2}>
-                          <Text fontWeight={500} fontSize="sm">{s.name}</Text>
-                          {s.Course && (
+                          <Text fontWeight={500} fontSize="sm">{s.subject_name}</Text>
+                          {s.course_name && (
                             <Badge variant="subtle" colorScheme="brand" fontSize="xs">
-                              {s.Course.name}
+                              {s.course_name}
                             </Badge>
                           )}
                         </HStack>
@@ -184,7 +184,7 @@ export default function AssignmentsPage() {
                           variant="ghost"
                           colorScheme="red"
                           borderRadius="pill"
-                          onClick={() => handleRemoveSubject(s.id)}
+                          onClick={() => handleRemoveSubject(s.subject_id)}
                           minW="44px" minH="44px"
                           _active={{ transform: 'scale(0.97)' }}
                           transition="transform 160ms ease-out"
