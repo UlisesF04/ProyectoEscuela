@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Box,
   Flex,
   VStack,
   Text,
   Button,
+  Collapse,
   Icon,
   Avatar,
   HStack,
@@ -15,6 +16,12 @@ import {
   DrawerOverlay,
   DrawerContent,
   DrawerCloseButton,
+  AlertDialog,
+  AlertDialogOverlay,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogBody,
+  AlertDialogFooter,
   useBreakpointValue,
 } from '@chakra-ui/react';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
@@ -42,6 +49,8 @@ export default function DashboardLayout({ sections = [], role }) {
     return saved ? JSON.parse(saved) : false;
   });
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [logoutAlertOpen, setLogoutAlertOpen] = useState(false);
+  const cancelRef = useRef();
 
   const isMobile = useBreakpointValue({ base: true, md: false });
   const isTablet = useBreakpointValue({ base: false, md: true, lg: false });
@@ -64,7 +73,12 @@ export default function DashboardLayout({ sections = [], role }) {
   const roleInfo = roleLabels[user?.role] || { label: 'Usuario', color: 'gray.400' };
   const bgTint = '#FFF8F2';
 
-  const handleLogout = async () => {
+  const handleLogout = () => {
+    setLogoutAlertOpen(true);
+  };
+
+  const confirmLogout = async () => {
+    setLogoutAlertOpen(false);
     await logout();
     navigate('/login', { replace: true });
   };
@@ -84,7 +98,7 @@ export default function DashboardLayout({ sections = [], role }) {
             name={`${user?.first_name} ${user?.last_name}`}
             bg={roleInfo.color}
           />
-          {!collapsed && (
+          <Collapse in={!collapsed} animateOpacity style={{ flex: 1, minWidth: 0 }}>
             <Box flex={1} minW={0}>
               <Text fontSize="sm" fontWeight={600} color="white" isTruncated>
                 {user?.first_name} {user?.last_name}
@@ -93,7 +107,7 @@ export default function DashboardLayout({ sections = [], role }) {
                 {roleInfo.label}
               </Badge>
             </Box>
-          )}
+          </Collapse>
         </HStack>
       </VStack>
 
@@ -147,84 +161,63 @@ export default function DashboardLayout({ sections = [], role }) {
           h={10}
           px={collapsed ? 0 : 3}
           fontSize="sm"
-          title={collapsed ? 'Cerrar sesi├│n' : ''}
+          title={collapsed ? 'Cerrar sesión' : ''}
           borderRadius="pill"
         >
-          {collapsed ? null : 'Cerrar sesi├│n'}
+          {collapsed ? null : 'Cerrar sesión'}
         </Button>
-
-        {!isMobile && (
-          <Button
-            variant="ghost"
-            size="xs"
-            onClick={() => setCollapsed(!collapsed)}
-            color="whiteAlpha.500"
-            _hover={{ color: 'white' }}
-            _active={{ transform: 'scale(0.97)' }}
-            transition="all 160ms ease-out"
-            w="full"
-          >
-            <Icon as={collapsed ? FiChevronRight : FiChevronLeft} />
-          </Button>
-        )}
       </VStack>
     </>
   );
 
   const sidebarWidth = collapsed ? '64px' : '280px';
 
-  // Mobile: hamburger + Outlet
-  if (isMobile) {
-    return (
-      <Box minH="100vh" bg={bgTint}>
-        {/* Mobile header */}
-        <Flex
-          as="header"
-          position="sticky"
-          top={0}
-          zIndex={99}
-          bg="white"
-          px={4}
-          py={3}
-          boxShadow="warmSm"
-          align="center"
-          justify="space-between"
-        >
-          <IconButton
-            icon={<FiMenu />}
-            variant="ghost"
-            onClick={() => setMobileOpen(true)}
-            aria-label="Abrir men├║"
-            size="lg"
-            minW="44px"
-            minH="44px"
-          />
-          <Text fontSize="sm" fontWeight={600} color="onSurface">
-            {sections.find((s) => isActive(s.path))?.label || 'Dashboard'}
-          </Text>
-          <Avatar
-            size="sm"
-            name={`${user?.first_name} ${user?.last_name}`}
-            bg={roleInfo.color}
-          />
-        </Flex>
+  const renderContent = isMobile ? (
+    <Box minH="100vh" bg={bgTint}>
+      {/* Mobile header */}
+      <Flex
+        as="header"
+        position="sticky"
+        top={0}
+        zIndex={99}
+        bg="white"
+        px={4}
+        py={3}
+        boxShadow="warmSm"
+        align="center"
+        justify="space-between"
+      >
+        <IconButton
+          icon={<FiMenu />}
+          variant="ghost"
+          onClick={() => setMobileOpen(true)}
+          aria-label="Abrir menú"
+          size="lg"
+          minW="44px"
+          minH="44px"
+        />
+        <Text fontSize="sm" fontWeight={600} color="onSurface">
+          {sections.find((s) => isActive(s.path))?.label || 'Dashboard'}
+        </Text>
+        <Avatar
+          size="sm"
+          name={`${user?.first_name} ${user?.last_name}`}
+          bg={roleInfo.color}
+        />
+      </Flex>
 
-        <Drawer isOpen={mobileOpen} placement="left" onClose={() => setMobileOpen(false)}>
-          <DrawerOverlay />
-          <DrawerContent bg="#2D1B08" maxW="280px">
-            {sidebarContent}
-          </DrawerContent>
-        </Drawer>
+      <Drawer isOpen={mobileOpen} placement="left" onClose={() => setMobileOpen(false)}>
+        <DrawerOverlay />
+        <DrawerContent bg="#2D1B08" maxW="280px">
+          {sidebarContent}
+        </DrawerContent>
+      </Drawer>
 
-        <Box p={4}>
-          <Outlet />
-        </Box>
+      <Box p={4}>
+        <Outlet />
       </Box>
-    );
-  }
-
-  // Desktop / Tablet: fixed sidebar + Outlet
-  return (
+    </Box>
+  ) : (
     <Flex minH="100vh" bg={bgTint}>
       {/* Sidebar */}
       <Box
@@ -237,9 +230,39 @@ export default function DashboardLayout({ sections = [], role }) {
         position="fixed"
         h="100vh"
         zIndex={100}
-        overflow="hidden"
       >
-        {sidebarContent}
+        {/* Inner wrapper keeps content clipped while collapse button overflows */}
+        <Box display="flex" flexDirection="column" h="100%" overflow="hidden">
+          {sidebarContent}
+        </Box>
+
+        {!isMobile && (
+          <IconButton
+            icon={<Icon as={collapsed ? FiChevronRight : FiChevronLeft} boxSize={5} />}
+            variant="ghost"
+            size="xs"
+            aria-label={collapsed ? 'Expandir sidebar' : 'Contraer sidebar'}
+            onClick={() => setCollapsed(!collapsed)}
+            position="absolute"
+            right="-10px"
+            top="50%"
+            transform="translateY(-50%)"
+            bg="#2D1B08"
+            border="1px solid"
+            borderColor="whiteAlpha.200"
+            borderRadius="full"
+            minW="28px"
+            minH="28px"
+            w="28px"
+            h="28px"
+            color="whiteAlpha.700"
+            _hover={{ color: 'white', bg: '#3D2B18', borderColor: 'whiteAlpha.400' }}
+            _active={{ transform: 'translateY(-50%) scale(0.95)' }}
+            transition="all 160ms ease-out"
+            zIndex={101}
+            sx={{ boxShadow: '0 0 0 2px #2D1B08' }}
+          />
+        )}
       </Box>
 
       {/* Main content */}
@@ -253,5 +276,36 @@ export default function DashboardLayout({ sections = [], role }) {
         <Outlet />
       </Box>
     </Flex>
+  );
+
+  return (
+    <>
+      {renderContent}
+
+      {/* Confirm logout dialog - at root level for proper centering */}
+      <AlertDialog
+        isOpen={logoutAlertOpen}
+        leastDestructiveRef={cancelRef}
+        onClose={() => setLogoutAlertOpen(false)}
+      >
+        <AlertDialogOverlay display="flex" alignItems="center" justifyContent="center" />
+        <AlertDialogContent>
+          <AlertDialogHeader fontFamily="heading" fontSize="lg">
+            Cerrar sesión
+          </AlertDialogHeader>
+          <AlertDialogBody>
+            ¿Está seguro de que desea cerrar sesión?
+          </AlertDialogBody>
+          <AlertDialogFooter>
+            <Button ref={cancelRef} variant="ghost" onClick={() => setLogoutAlertOpen(false)}>
+              Cancelar
+            </Button>
+            <Button variant="danger" onClick={confirmLogout} ml={3}>
+              Cerrar sesión
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

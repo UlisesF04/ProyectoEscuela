@@ -1,13 +1,15 @@
-import { createContext, useContext, useReducer, useCallback } from 'react';
+import { createContext, useContext, useReducer, useCallback, useEffect } from 'react';
 import { authService } from '../services/authService';
 import { setAuthToken } from '../services/api';
+
+const TOKEN_KEY = 'authToken';
 
 const AuthContext = createContext(null);
 
 const initialState = {
   user: null,
   token: null,
-  loading: false,
+  loading: true, // starts true — we don't know yet if there's a session stored
   error: null,
 };
 
@@ -60,11 +62,12 @@ export function AuthProvider({ children }) {
     dispatch({ type: 'SET_LOADING' });
     try {
       const data = await authService.login(email, password);
+      localStorage.setItem(TOKEN_KEY, data.token);
+      setAuthToken(data.token);
       dispatch({
         type: 'LOGIN_SUCCESS',
         payload: { user: data.user, token: data.token },
       });
-      setAuthToken(data.token);
       return data.user;
     } catch (err) {
       const message =
@@ -80,12 +83,40 @@ export function AuthProvider({ children }) {
     } catch {
       // Ignore logout errors (token may already be invalid)
     }
-    dispatch({ type: 'LOGOUT' });
+    localStorage.removeItem(TOKEN_KEY);
     setAuthToken(null);
+    dispatch({ type: 'LOGOUT' });
   }, []);
 
   const clearError = useCallback(() => {
     dispatch({ type: 'CLEAR_ERROR' });
+  }, []);
+
+  // Restore session from localStorage on mount
+  useEffect(() => {
+    const restoreSession = async () => {
+      const savedToken = localStorage.getItem(TOKEN_KEY);
+      if (!savedToken) {
+        dispatch({ type: 'LOGOUT' }); // sets loading → false
+        return;
+      }
+
+      setAuthToken(savedToken);
+      try {
+        const user = await authService.getMe();
+        dispatch({
+          type: 'LOGIN_SUCCESS',
+          payload: { user, token: savedToken },
+        });
+      } catch {
+        // Token was invalid or expired — clean up
+        localStorage.removeItem(TOKEN_KEY);
+        setAuthToken(null);
+        dispatch({ type: 'LOGOUT' });
+      }
+    };
+
+    restoreSession();
   }, []);
 
   return (

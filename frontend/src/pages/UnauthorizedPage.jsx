@@ -1,12 +1,13 @@
-import { Box, Heading, Text, Button, Icon, VStack } from '@chakra-ui/react';
+import {
+  Box, Heading, Text, Button, Icon, VStack,
+} from '@chakra-ui/react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/AuthContext';   
 import { FiLock, FiArrowLeft, FiLogOut } from 'react-icons/fi';
 
 export default function UnauthorizedPage() {
   const navigate = useNavigate();
   const { logout, user } = useAuth();
-
   const roleMap = {
     admin: '/admin',
     preceptor: '/preceptor',

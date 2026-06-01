@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { Spinner, Center } from '@chakra-ui/react';
 import { useAuth } from '../context/AuthContext';
 import Login from '../pages/Login';
 import NotFoundPage from '../pages/NotFoundPage';
@@ -49,7 +50,16 @@ function DashboardRedirect({ user }) {
 }
 
 export default function AppRoutes() {
-  const { user, token } = useAuth();
+  const { user, token, loading } = useAuth();
+
+  // Mientras restauramos sesión del localStorage, mostramos un spinner
+  if (loading) {
+    return (
+      <Center h="100vh">
+        <Spinner size="xl" />
+      </Center>
+    );
+  }
 
   return (
     <Routes>
