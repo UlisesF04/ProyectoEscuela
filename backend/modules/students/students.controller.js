@@ -133,6 +133,19 @@ const studentsController = {
       next(error);
     }
   },
+
+  async getStudentEvolution(req, res, next) {
+    try {
+      const { id } = req.params;
+      const data = await studentsService.getEvolutionForStudent(id, req.user);
+      res.status(200).json({
+        status: 'success',
+        data,
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
 };
 
 module.exports = studentsController;

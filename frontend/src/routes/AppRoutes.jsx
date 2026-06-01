@@ -26,6 +26,7 @@ import PreceptorMyLeavesPage from '../pages/preceptor/MyLeavesPage';
 // Docente
 import DocenteLayout from '../pages/docente/DocenteLayout';
 import GradesPage from '../pages/docente/GradesPage';
+import StudentEvolutionPage from '../pages/docente/student-evolution-page';
 
 import MyLeavesPage from '../pages/docente/MyLeavesPage';
 import ProfileSection from '../pages/docente/ProfileSection';
@@ -35,6 +36,7 @@ import PadreLayout from '../pages/padre/PadreLayout';
 import ChildGradesPage from '../pages/padre/ChildGradesPage';
 import ChildAttendancesPage from '../pages/padre/ChildAttendancesPage';
 import JustificativosPage from '../pages/padre/JustificativosPage';
+import ChildEvolutionPage from '../pages/padre/child-evolution-page';
 
 function DashboardRedirect({ user }) {
   const roleMap = {
@@ -104,6 +106,7 @@ export default function AppRoutes() {
       >
         <Route index element={<Navigate to="grades" replace />} />
         <Route path="grades" element={<GradesPage />} />
+        <Route path="evolution" element={<StudentEvolutionPage />} />
         <Route path="leaves" element={<MyLeavesPage />} />
         <Route path="profile" element={<ProfileSection />} />
       </Route>
@@ -119,6 +122,7 @@ export default function AppRoutes() {
       >
         <Route index element={<Navigate to="grades" replace />} />
         <Route path="grades" element={<ChildGradesPage />} />
+        <Route path="evolution" element={<ChildEvolutionPage />} />
         <Route path="attendances" element={<ChildAttendancesPage />} />
         <Route path="justificativos" element={<JustificativosPage />} />
       </Route>

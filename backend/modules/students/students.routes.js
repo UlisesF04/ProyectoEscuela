@@ -136,4 +136,14 @@ router.get(
   studentsController.getMyChildren
 );
 
+// Get grade evolution for a student
+// C-07 grades-evolution: padre of student, docente of assigned subject(s), or admin
+router.get(
+  '/:id/evolution',
+  authMiddleware,
+  roleMiddleware('padre', 'docente', 'admin'),
+  validationMiddleware(idValidation),
+  studentsController.getStudentEvolution
+);
+
 module.exports = router;

@@ -1,0 +1,924 @@
+import { useState, useEffect, useRef, useMemo } from 'react';
+import {
+  Box,
+  Heading,
+  Text,
+  HStack,
+  VStack,
+  Badge,
+  SimpleGrid,
+  Skeleton,
+  SkeletonText,
+  Stack,
+  Tooltip,
+} from '@chakra-ui/react';
+import { keyframes } from '@emotion/react';
+import { FiTrendingUp, FiTrendingDown, FiMinus } from 'react-icons/fi';
+import EmptyState from './EmptyState';
+import ErrorAlert from './ErrorAlert';
+
+// ─── Animations (transform + opacity only, GPU-accelerated) ─────
+// Custom ease-out: cubic-bezier(0.23, 1, 0.32, 1) (Emil's "strong ease-out")
+const fadeInUp = keyframes`
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+`;
+
+const drawLine = keyframes`
+  from { stroke-dashoffset: 100; }
+  to { stroke-dashoffset: 0; }
+`;
+
+const popIn = keyframes`
+  from { opacity: 0; transform: scale(0); }
+  to { opacity: 1; transform: scale(1); }
+`;
+
+const areaFadeIn = keyframes`
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+`;
+
+// ─── Helpers ────────────────────────────────────────────────────
+const GRADE_TYPE_LABELS = {
+  examen: 'Examen',
+  trabajo: 'Trabajo Práctico',
+  tarea: 'Tarea',
+  oral: 'Oral',
+  otro: 'Otro',
+};
+
+const GRADE_COLORS = {
+  high: { bg: 'rgba(34, 139, 80, 0.12)', fg: '#1f6b3d', border: 'rgba(34, 139, 80, 0.3)' },     // >= 7
+  mid:  { bg: 'rgba(217, 145, 38, 0.14)', fg: '#8a5a14', border: 'rgba(217, 145, 38, 0.35)' },  // 4 - 6.99
+  low:  { bg: 'rgba(180, 50, 50, 0.12)', fg: '#8a2424', border: 'rgba(180, 50, 50, 0.32)' },     // < 4
+};
+
+const CHART_HEIGHT_PER_SUBJECT = 160;
+const CHART_HEIGHT_GENERAL = 160;
+const ACCENT_COLOR = '#7c2d12';
+
+function gradeBand(value) {
+  if (value === null || value === undefined) return 'mid';
+  if (value >= 7) return 'high';
+  if (value >= 4) return 'mid';
+  return 'low';
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+  // date comes as "YYYY-MM-DD" (DATEONLY)
+  const [y, m, d] = dateStr.split('-');
+  return `${d}/${m}/${y}`;
+}
+
+function trendIcon(grades) {
+  if (grades.length < 2) return FiMinus;
+  const first = grades[0].value;
+  const last = grades[grades.length - 1].value;
+  const diff = last - first;
+  if (diff > 0.5) return FiTrendingUp;
+  if (diff < -0.5) return FiTrendingDown;
+  return FiMinus;
+}
+
+// Build a smooth Catmull-Rom spline through the points, expressed as a
+// cubic Bezier path. Falls back to a straight line for 1-2 points.
+function buildCatmullRomPath(points) {
+  if (points.length === 0) return '';
+  if (points.length === 1) {
+    return `M ${points[0].x.toFixed(2)} ${points[0].y.toFixed(2)}`;
+  }
+  if (points.length === 2) {
+    return `M ${points[0].x.toFixed(2)} ${points[0].y.toFixed(2)} L ${points[1].x.toFixed(2)} ${points[1].y.toFixed(2)}`;
+  }
+
+  let d = `M ${points[0].x.toFixed(2)} ${points[0].y.toFixed(2)}`;
+  for (let i = 0; i < points.length - 1; i++) {
+    const p0 = points[i - 1] || points[i];
+    const p1 = points[i];
+    const p2 = points[i + 1];
+    const p3 = points[i + 2] || points[i + 1];
+
+    // Uniform Catmull-Rom with tension 0.5 (standard smooth curve through all points)
+    const cp1x = p1.x + (p2.x - p0.x) / 6;
+    const cp1y = p1.y + (p2.y - p0.y) / 6;
+    const cp2x = p2.x - (p3.x - p1.x) / 6;
+    const cp2y = p2.y - (p3.y - p1.y) / 6;
+
+    d += ` C ${cp1x.toFixed(2)} ${cp1y.toFixed(2)}, ${cp2x.toFixed(2)} ${cp2y.toFixed(2)}, ${p2.x.toFixed(2)} ${p2.y.toFixed(2)}`;
+  }
+  return d;
+}
+
+// Extend a line path to close it at a baseline, creating an area-fill shape.
+function buildAreaPath(linePath, points, baselineY) {
+  if (points.length < 2) return '';
+  const last = points[points.length - 1];
+  const first = points[0];
+  return `${linePath} L ${last.x.toFixed(2)} ${baselineY.toFixed(2)} L ${first.x.toFixed(2)} ${baselineY.toFixed(2)} Z`;
+}
+
+// Short date format for x-axis labels (dd/mm).
+function formatDateShort(dateStr) {
+  if (!dateStr) return '';
+  const [y, m, d] = dateStr.split('-');
+  return `${d}/${m}`;
+}
+
+// ─── Sub-component: Smooth curve chart (Catmull-Rom + area fill) ─
+function MiniLineChart({ grades, height = CHART_HEIGHT_PER_SUBJECT, accentColor = ACCENT_COLOR, gradientId = 'miniAreaFill' }) {
+  // ViewBox 400x160 (2.5:1) — renders proportional to a 160px-tall card chart
+  // without `preserveAspectRatio="none"`, so circles stay circular.
+  const W = 400;
+  const H = 160;
+  const padXLeft = 24; // room for y-axis labels
+  const padXRight = 12;
+  const padYTop = 16;
+  const padYBottom = 28; // room for first/last date labels
+  const innerW = W - padXLeft - padXRight;
+  const innerH = H - padYTop - padYBottom;
+  const baselineYSvg = padYTop + innerH; // y in SVG = y=0 in data
+  const yMin = 0;
+  const yMax = 10;
+
+  const points = useMemo(() => {
+    if (grades.length === 0) return [];
+    return grades.map((g, i) => {
+      const x = grades.length === 1
+        ? padXLeft + innerW / 2
+        : padXLeft + (i / (grades.length - 1)) * innerW;
+      const y = padYTop + innerH - ((g.value - yMin) / (yMax - yMin)) * innerH;
+      return { x, y, grade: g };
+    });
+  }, [grades, innerW, innerH]);
+
+  if (points.length === 0) {
+    return (
+      <Box
+        h={`${height}px`}
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+        color="onSurfaceVariant"
+        fontSize="sm"
+      >
+        Sin datos suficientes
+      </Box>
+    );
+  }
+
+  // Catmull-Rom smooth curve through all points (falls back to straight line for ≤2)
+  const linePathD = buildCatmullRomPath(points);
+  const areaPathD = buildAreaPath(linePathD, points, baselineYSvg);
+
+  const firstPoint = points[0];
+  const lastPoint = points[points.length - 1];
+
+  return (
+    <Box w="full" position="relative">
+      <style>
+        {`
+          @media (prefers-reduced-motion: no-preference) {
+            .evolution-area {
+              opacity: 0;
+              transform-origin: center bottom;
+              transform-box: fill-box;
+              animation: ${areaFadeIn.toString()} 700ms cubic-bezier(0.23, 1, 0.32, 1) 700ms forwards;
+            }
+            .evolution-path {
+              stroke-dasharray: 100;
+              stroke-dashoffset: 100;
+              animation: ${drawLine.toString()} 1100ms cubic-bezier(0.23, 1, 0.32, 1) 200ms forwards;
+            }
+            .evolution-point {
+              opacity: 0;
+              transform-origin: center;
+              transform-box: fill-box;
+              animation: ${popIn.toString()} 360ms cubic-bezier(0.23, 1, 0.32, 1) forwards;
+            }
+            .evolution-point {
+              transition: transform 180ms cubic-bezier(0.23, 1, 0.32, 1);
+              cursor: pointer;
+            }
+            .evolution-point:hover {
+              transform: scale(1.18);
+            }
+          }
+          @media (prefers-reduced-motion: reduce) {
+            .evolution-path { stroke-dasharray: none; stroke-dashoffset: 0; }
+            .evolution-point { opacity: 1; transform: none; transition: none; }
+            .evolution-area { opacity: 1; transform: none; animation: none; }
+          }
+        `}
+      </style>
+
+      <svg
+        viewBox={`0 0 ${W} ${H}`}
+        width="100%"
+        height={height}
+        role="img"
+        aria-label="Gráfico de evolución de calificaciones"
+        style={{ display: 'block', overflow: 'visible' }}
+      >
+        <defs>
+          <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={accentColor} stopOpacity="0.22" />
+            <stop offset="60%" stopColor={accentColor} stopOpacity="0.06" />
+            <stop offset="100%" stopColor={accentColor} stopOpacity="0" />
+          </linearGradient>
+        </defs>
+
+        {/* Y-axis grid lines (subtle dashed) */}
+        {[2, 4, 6, 8, 10].map((tick) => {
+          const y = padYTop + innerH - ((tick - yMin) / (yMax - yMin)) * innerH;
+          return (
+            <g key={tick}>
+              <line
+                x1={padXLeft}
+                x2={W - padXRight}
+                y1={y}
+                y2={y}
+                stroke="rgba(125, 90, 60, 0.08)"
+                strokeWidth="1"
+                strokeDasharray="2 3"
+              />
+              <text
+                x={padXLeft - 6}
+                y={y + 3}
+                textAnchor="end"
+                fontSize="9"
+                fill="rgba(125, 90, 60, 0.55)"
+                fontFamily="inherit"
+              >
+                {tick}
+              </text>
+            </g>
+          );
+        })}
+
+        {/* Reinforced baseline (y=0) */}
+        <line
+          x1={padXLeft}
+          x2={W - padXRight}
+          y1={baselineYSvg}
+          y2={baselineYSvg}
+          stroke="rgba(125, 90, 60, 0.25)"
+          strokeWidth="1.5"
+        />
+
+        {/* Area fill under the curve */}
+        <path
+          d={areaPathD}
+          fill={`url(#${gradientId})`}
+          className="evolution-area"
+        />
+
+        {/* The smooth curve with draw-in animation */}
+        <path
+          d={linePathD}
+          fill="none"
+          stroke={accentColor}
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          pathLength="100"
+          className="evolution-path"
+        />
+
+        {/* Data points: halo + solid, with band-based fill, hover scale */}
+        {points.map((p, i) => {
+          const band = gradeBand(p.grade.value);
+          const fill = band === 'high' ? '#22c55e' : band === 'mid' ? '#d99126' : '#b83232';
+          return (
+            <g
+              key={i}
+              className="evolution-point"
+              style={{ animationDelay: `${800 + i * 70}ms` }}
+            >
+              <circle cx={p.x} cy={p.y} r="11" fill={accentColor} fillOpacity="0.18" />
+              <circle cx={p.x} cy={p.y} r="6.5" fill={fill} stroke="white" strokeWidth="2" />
+              <title>
+                {`${formatDate(p.grade.date)} · ${p.grade.value.toFixed(2)} (${GRADE_TYPE_LABELS[p.grade.type] || p.grade.type})`}
+              </title>
+            </g>
+          );
+        })}
+
+        {/* First and last date labels (x-axis) */}
+        {points.length >= 2 && (
+          <>
+            <text
+              x={firstPoint.x}
+              y={H - 8}
+              textAnchor="start"
+              fontSize="9"
+              fill="rgba(125, 90, 60, 0.6)"
+              fontFamily="inherit"
+            >
+              {formatDateShort(firstPoint.grade.date)}
+            </text>
+            <text
+              x={lastPoint.x}
+              y={H - 8}
+              textAnchor="end"
+              fontSize="9"
+              fill="rgba(125, 90, 60, 0.6)"
+              fontFamily="inherit"
+            >
+              {formatDateShort(lastPoint.grade.date)}
+            </text>
+          </>
+        )}
+      </svg>
+    </Box>
+  );
+}
+
+// ─── Sub-component: General trend chart (one line, mean per date) ─
+function GeneralTrendChart({ subjects, height = CHART_HEIGHT_GENERAL }) {
+  // Aggregate all grades across all subjects by date, computing the mean per date
+  const aggregated = useMemo(() => {
+    const all = subjects.flatMap((s) =>
+      (s.grades || []).map((g) => ({ date: g.date, value: g.value }))
+    );
+    if (all.length === 0) return [];
+    const byDate = new Map();
+    all.forEach(({ date, value }) => {
+      if (!date) return;
+      if (!byDate.has(date)) byDate.set(date, { sum: 0, count: 0 });
+      const entry = byDate.get(date);
+      entry.sum += value;
+      entry.count += 1;
+    });
+    return Array.from(byDate.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, { sum, count }]) => ({
+        date,
+        value: sum / count,
+        count,
+      }));
+  }, [subjects]);
+
+  // ViewBox 600x160 (3.75:1) — fits a wider summary header without distortion
+  const W = 600;
+  const H = 160;
+  const padXLeft = 28;
+  const padXRight = 14;
+  const padYTop = 18;
+  const padYBottom = 28;
+  const innerW = W - padXLeft - padXRight;
+  const innerH = H - padYTop - padYBottom;
+  const baselineYSvg = padYTop + innerH;
+  const yMin = 0;
+  const yMax = 10;
+
+  if (aggregated.length === 0) return null;
+
+  const totalGrades = aggregated.reduce((acc, p) => acc + p.count, 0);
+  const firstDate = aggregated[0].date;
+  const lastDate = aggregated[aggregated.length - 1].date;
+  const firstPoint = aggregated[0];
+  const lastPoint = aggregated[aggregated.length - 1];
+
+  // Single point: show a centered dot only (no curve possible with 1 sample)
+  if (aggregated.length === 1) {
+    const cx = padXLeft + innerW / 2;
+    const cy = padYTop + innerH - ((aggregated[0].value - yMin) / (yMax - yMin)) * innerH;
+    return (
+      <Box
+        bg="#FFFBF6"
+        borderRadius="20px"
+        p={4}
+        border="1px solid"
+        borderColor="rgba(125, 90, 60, 0.08)"
+      >
+        <HStack justify="space-between" mb={2}>
+          <Text fontSize="xs" color="onSurfaceVariant" textTransform="uppercase" letterSpacing="0.06em" fontWeight={600}>
+            Promedio general
+          </Text>
+          <Text fontSize="xs" color="onSurfaceVariant">
+            {formatDate(aggregated[0].date)} · {aggregated[0].count}{' '}
+            {aggregated[0].count === 1 ? 'calificación' : 'calificaciones'}
+          </Text>
+        </HStack>
+        <Box w="full">
+          <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={height} style={{ display: 'block' }} role="img" aria-label="Promedio general en una sola fecha">
+            <defs>
+              <linearGradient id="generalSingleFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={ACCENT_COLOR} stopOpacity="0.22" />
+                <stop offset="100%" stopColor={ACCENT_COLOR} stopOpacity="0" />
+              </linearGradient>
+            </defs>
+            {[2, 4, 6, 8, 10].map((tick) => {
+              const y = padYTop + innerH - ((tick - yMin) / (yMax - yMin)) * innerH;
+              return (
+                <g key={tick}>
+                  <line
+                    x1={padXLeft}
+                    x2={W - padXRight}
+                    y1={y}
+                    y2={y}
+                    stroke="rgba(125, 90, 60, 0.08)"
+                    strokeWidth="1"
+                    strokeDasharray="2 3"
+                  />
+                  <text
+                    x={padXLeft - 6}
+                    y={y + 3}
+                    textAnchor="end"
+                    fontSize="9"
+                    fill="rgba(125, 90, 60, 0.55)"
+                    fontFamily="inherit"
+                  >
+                    {tick}
+                  </text>
+                </g>
+              );
+            })}
+            <line
+              x1={padXLeft}
+              x2={W - padXRight}
+              y1={baselineYSvg}
+              y2={baselineYSvg}
+              stroke="rgba(125, 90, 60, 0.25)"
+              strokeWidth="1.5"
+            />
+            <circle cx={cx} cy={cy} r="13" fill={ACCENT_COLOR} fillOpacity="0.18" />
+            <circle cx={cx} cy={cy} r="7" fill={ACCENT_COLOR} stroke="white" strokeWidth="2" />
+          </svg>
+        </Box>
+      </Box>
+    );
+  }
+
+  // 2+ points: smooth curve + area fill
+  const points = aggregated.map((g, i) => {
+    const x = padXLeft + (i / (aggregated.length - 1)) * innerW;
+    const y = padYTop + innerH - ((g.value - yMin) / (yMax - yMin)) * innerH;
+    return { x, y, ...g };
+  });
+
+  const linePathD = buildCatmullRomPath(points);
+  const areaPathD = buildAreaPath(linePathD, points, baselineYSvg);
+
+  return (
+    <Box
+      bg="#FFFBF6"
+      borderRadius="20px"
+      p={4}
+      border="1px solid"
+      borderColor="rgba(125, 90, 60, 0.08)"
+    >
+      <HStack justify="space-between" mb={2} flexWrap="wrap" gap={1}>
+        <Text fontSize="xs" color="onSurfaceVariant" textTransform="uppercase" letterSpacing="0.06em" fontWeight={600}>
+          Promedio general por fecha
+        </Text>
+        <HStack spacing={3} fontSize="xs" color="onSurfaceVariant">
+          <Text>{formatDate(firstDate)}</Text>
+          <Text aria-hidden="true">→</Text>
+          <Text>{formatDate(lastDate)}</Text>
+        </HStack>
+      </HStack>
+
+      <Box w="full" position="relative">
+        <style>
+          {`
+            @media (prefers-reduced-motion: no-preference) {
+              .general-trend-area {
+                opacity: 0;
+                transform-origin: center bottom;
+                transform-box: fill-box;
+                animation: ${areaFadeIn.toString()} 800ms cubic-bezier(0.23, 1, 0.32, 1) 900ms forwards;
+              }
+              .general-trend-path {
+                stroke-dasharray: 100;
+                stroke-dashoffset: 100;
+                animation: ${drawLine.toString()} 1300ms cubic-bezier(0.23, 1, 0.32, 1) 200ms forwards;
+              }
+              .general-trend-point {
+                opacity: 0;
+                transform-origin: center;
+                transform-box: fill-box;
+                animation: ${popIn.toString()} 360ms cubic-bezier(0.23, 1, 0.32, 1) forwards;
+                transition: transform 180ms cubic-bezier(0.23, 1, 0.32, 1);
+                cursor: pointer;
+              }
+              .general-trend-point:hover { transform: scale(1.18); }
+            }
+            @media (prefers-reduced-motion: reduce) {
+              .general-trend-path { stroke-dasharray: none; stroke-dashoffset: 0; }
+              .general-trend-point { opacity: 1; transform: none; transition: none; }
+              .general-trend-area { opacity: 1; transform: none; animation: none; }
+            }
+          `}
+        </style>
+
+        <svg
+          viewBox={`0 0 ${W} ${H}`}
+          width="100%"
+          height={height}
+          role="img"
+          aria-label="Tendencia general del promedio de calificaciones a lo largo del tiempo"
+          style={{ display: 'block', overflow: 'visible' }}
+        >
+          <defs>
+            <linearGradient id="generalAreaFill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={ACCENT_COLOR} stopOpacity="0.22" />
+              <stop offset="60%" stopColor={ACCENT_COLOR} stopOpacity="0.06" />
+              <stop offset="100%" stopColor={ACCENT_COLOR} stopOpacity="0" />
+            </linearGradient>
+          </defs>
+
+          {/* Y-axis grid lines (subtle dashed) */}
+          {[2, 4, 6, 8, 10].map((tick) => {
+            const y = padYTop + innerH - ((tick - yMin) / (yMax - yMin)) * innerH;
+            return (
+              <g key={tick}>
+                <line
+                  x1={padXLeft}
+                  x2={W - padXRight}
+                  y1={y}
+                  y2={y}
+                  stroke="rgba(125, 90, 60, 0.08)"
+                  strokeWidth="1"
+                  strokeDasharray="2 3"
+                />
+                <text
+                  x={padXLeft - 6}
+                  y={y + 3}
+                  textAnchor="end"
+                  fontSize="9"
+                  fill="rgba(125, 90, 60, 0.55)"
+                  fontFamily="inherit"
+                >
+                  {tick}
+                </text>
+              </g>
+            );
+          })}
+
+          {/* Reference line at "approved" threshold (7) */}
+          {(() => {
+            const y = padYTop + innerH - ((7 - yMin) / (yMax - yMin)) * innerH;
+            return (
+              <line
+                x1={padXLeft}
+                x2={W - padXRight}
+                y1={y}
+                y2={y}
+                stroke="rgba(34, 139, 80, 0.32)"
+                strokeWidth="1"
+                strokeDasharray="4 4"
+              />
+            );
+          })()}
+
+          {/* Reinforced baseline (y=0) */}
+          <line
+            x1={padXLeft}
+            x2={W - padXRight}
+            y1={baselineYSvg}
+            y2={baselineYSvg}
+            stroke="rgba(125, 90, 60, 0.25)"
+            strokeWidth="1.5"
+          />
+
+          {/* Area fill under the curve */}
+          <path
+            d={areaPathD}
+            fill="url(#generalAreaFill)"
+            className="general-trend-area"
+          />
+
+          {/* The smooth curve with draw-in animation */}
+          <path
+            d={linePathD}
+            fill="none"
+            stroke={ACCENT_COLOR}
+            strokeWidth="3"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            pathLength="100"
+            className="general-trend-path"
+          />
+
+          {/* Data points with halos */}
+          {points.map((p, i) => {
+            const band = gradeBand(p.value);
+            const fill = band === 'high' ? '#22c55e' : band === 'mid' ? '#d99126' : '#b83232';
+            return (
+              <g
+                key={i}
+                className="general-trend-point"
+                style={{ animationDelay: `${1000 + i * 80}ms` }}
+              >
+                <circle cx={p.x} cy={p.y} r="12" fill={ACCENT_COLOR} fillOpacity="0.18" />
+                <circle cx={p.x} cy={p.y} r="7" fill={fill} stroke="white" strokeWidth="2" />
+                <title>
+                  {`${formatDate(p.date)} · ${p.value.toFixed(2)} (${p.count} ${p.count === 1 ? 'nota' : 'notas'})`}
+                </title>
+              </g>
+            );
+          })}
+
+          {/* First and last date labels (x-axis) */}
+          <text
+            x={firstPoint.x}
+            y={H - 8}
+            textAnchor="start"
+            fontSize="9"
+            fill="rgba(125, 90, 60, 0.6)"
+            fontFamily="inherit"
+          >
+            {formatDateShort(firstPoint.date)}
+          </text>
+          <text
+            x={lastPoint.x}
+            y={H - 8}
+            textAnchor="end"
+            fontSize="9"
+            fill="rgba(125, 90, 60, 0.6)"
+            fontFamily="inherit"
+          >
+            {formatDateShort(lastPoint.date)}
+          </text>
+        </svg>
+      </Box>
+
+      <HStack justify="flex-end" mt={2} fontSize="xs" color="onSurfaceVariant">
+        <Text>
+          {aggregated.length} {aggregated.length === 1 ? 'fecha' : 'fechas'} · {totalGrades} calificaciones
+        </Text>
+      </HStack>
+    </Box>
+  );
+}
+
+// ─── Sub-component: Single subject card ─────────────────────────
+function SubjectCard({ subject, index }) {
+  const TrendIcon = trendIcon(subject.grades);
+  const band = gradeBand(subject.average);
+  const colors = GRADE_COLORS[band];
+  const trendColor =
+    subject.grades.length < 2
+      ? '#8a5a14'
+      : subject.grades[subject.grades.length - 1].value - subject.grades[0].value > 0.5
+        ? '#1f6b3d'
+        : subject.grades[subject.grades.length - 1].value - subject.grades[0].value < -0.5
+          ? '#8a2424'
+          : '#8a5a14';
+
+  return (
+    <Box
+      bg="white"
+      borderRadius="32px"
+      p={{ base: 4, md: 6 }}
+      boxShadow="warmSm"
+      border="1px solid"
+      borderColor="rgba(125, 90, 60, 0.08)"
+      opacity={0}
+      sx={{
+        '@media (prefers-reduced-motion: no-preference)': {
+          animation: `${fadeInUp.toString()} 480ms cubic-bezier(0.23, 1, 0.32, 1) forwards`,
+          animationDelay: `${index * 70}ms`,
+        },
+        '@media (prefers-reduced-motion: reduce)': {
+          opacity: 1,
+          animation: 'none',
+        },
+      }}
+    >
+      <HStack justify="space-between" mb={4} align="flex-start" flexWrap="wrap" gap={2}>
+        <VStack align="flex-start" spacing={1}>
+          <Heading
+            as="h3"
+            fontSize={{ base: 'lg', md: 'xl' }}
+            color="onSurface"
+            fontWeight={600}
+          >
+            {subject.name}
+          </Heading>
+          <HStack spacing={1.5} color={trendColor} fontSize="sm">
+            <Box as={TrendIcon} aria-hidden="true" />
+            <Text>
+              {subject.grades.length} {subject.grades.length === 1 ? 'calificación' : 'calificaciones'}
+            </Text>
+          </HStack>
+        </VStack>
+        <VStack align="flex-end" spacing={1}>
+          <Text fontSize="xs" color="onSurfaceVariant" textTransform="uppercase" letterSpacing="0.08em">
+            Promedio
+          </Text>
+          <Box
+            px={3}
+            py={1.5}
+            borderRadius="pill"
+            bg={colors.bg}
+            color={colors.fg}
+            border="1px solid"
+            borderColor={colors.border}
+            fontWeight={700}
+            fontSize="lg"
+            lineHeight="1"
+            minW="60px"
+            textAlign="center"
+          >
+            {subject.average !== null ? subject.average.toFixed(2) : '—'}
+          </Box>
+        </VStack>
+      </HStack>
+
+      {/* Per-subject mini chart (prominent) */}
+      <Box
+        mb={4}
+        bg="#FFFBF6"
+        borderRadius="16px"
+        p={3}
+        border="1px solid"
+        borderColor="rgba(125, 90, 60, 0.06)"
+      >
+        <MiniLineChart grades={subject.grades} height={CHART_HEIGHT_PER_SUBJECT} />
+      </Box>
+
+      {/* Grade badges (chronological) */}
+      <Box>
+        <Text fontSize="xs" color="onSurfaceVariant" mb={2} textTransform="uppercase" letterSpacing="0.06em" fontWeight={600}>
+          Detalle por fecha
+        </Text>
+        <SimpleGrid columns={{ base: 1, sm: 2, md: 3 }} spacing={2}>
+          {subject.grades.map((g, i) => {
+            const b = gradeBand(g.value);
+            const c = GRADE_COLORS[b];
+            return (
+              <Tooltip
+                key={g.id || i}
+                label={`${GRADE_TYPE_LABELS[g.type] || g.type}: ${g.value.toFixed(2)} — ${formatDate(g.date)}${g.description ? ` — ${g.description}` : ''}`}
+                placement="top"
+                hasArrow
+                bg="rgba(45, 27, 8, 0.92)"
+                color="white"
+                fontSize="xs"
+                px={3}
+                py={2}
+                borderRadius="8px"
+                openDelay={250}
+              >
+                <HStack
+                  spacing={2}
+                  p={2.5}
+                  borderRadius="12px"
+                  bg={c.bg}
+                  border="1px solid"
+                  borderColor={c.border}
+                  cursor="default"
+                  transition="transform 160ms cubic-bezier(0.23, 1, 0.32, 1)"
+                  _hover={{ transform: 'translateY(-1px)' }}
+                >
+                  <Text fontWeight={700} color={c.fg} fontSize="md" minW="32px">
+                    {g.value.toFixed(2)}
+                  </Text>
+                  <VStack align="flex-start" spacing={0} flex={1} minW={0}>
+                    <Text fontSize="xs" color={c.fg} fontWeight={600} isTruncated w="full">
+                      {GRADE_TYPE_LABELS[g.type] || g.type}
+                    </Text>
+                    <Text fontSize="xs" color="onSurfaceVariant" isTruncated w="full">
+                      {formatDate(g.date)}
+                    </Text>
+                  </VStack>
+                </HStack>
+              </Tooltip>
+            );
+          })}
+        </SimpleGrid>
+      </Box>
+    </Box>
+  );
+}
+
+// ─── Main component ─────────────────────────────────────────────
+export default function GradeEvolutionView({ data, loading, error, onRetry }) {
+  if (loading) {
+    return (
+      <Stack spacing={4}>
+        <SkeletonText noOfLines={1} skeletonHeight="32px" width="60%" />
+        <Skeleton height="200px" borderRadius="20px" />
+        <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={4}>
+          {[1, 2].map((i) => (
+            <Box key={i} bg="white" borderRadius="32px" p={6} boxShadow="warmSm">
+              <Skeleton height="24px" width="40%" mb={3} />
+              <Skeleton height="160px" mb={3} borderRadius="16px" />
+              <SimpleGrid columns={3} spacing={2}>
+                <Skeleton height="50px" borderRadius="12px" />
+                <Skeleton height="50px" borderRadius="12px" />
+                <Skeleton height="50px" borderRadius="12px" />
+              </SimpleGrid>
+            </Box>
+          ))}
+        </SimpleGrid>
+      </Stack>
+    );
+  }
+
+  if (error) {
+    return <ErrorAlert message="No se pudo cargar la evolución de calificaciones" onRetry={onRetry} />;
+  }
+
+  if (!data || !data.subjects || data.subjects.length === 0) {
+    return (
+      <EmptyState
+        title="Sin calificaciones aún"
+        description="Cuando se registren calificaciones para este estudiante, vas a ver su evolución acá."
+        icon="📊"
+      />
+    );
+  }
+
+  const totalGrades = data.subjects.reduce((acc, s) => acc + s.grades.length, 0);
+  const generalAverage = (() => {
+    const allValues = data.subjects.flatMap((s) => s.grades.map((g) => g.value));
+    if (allValues.length === 0) return null;
+    return Math.round((allValues.reduce((a, b) => a + b, 0) / allValues.length) * 100) / 100;
+  })();
+
+  return (
+    <VStack align="stretch" spacing={6}>
+      {/* Summary header */}
+      <Box
+        bg="white"
+        borderRadius="32px"
+        p={{ base: 4, md: 6 }}
+        boxShadow="warmSm"
+        border="1px solid"
+        borderColor="rgba(125, 90, 60, 0.08)"
+        opacity={0}
+        sx={{
+          '@media (prefers-reduced-motion: no-preference)': {
+            animation: `${fadeInUp.toString()} 380ms cubic-bezier(0.23, 1, 0.32, 1) forwards`,
+          },
+          '@media (prefers-reduced-motion: reduce)': { opacity: 1, animation: 'none' },
+        }}
+      >
+        <HStack justify="space-between" flexWrap="wrap" gap={3} mb={4}>
+          <VStack align="flex-start" spacing={1}>
+            <Text fontSize="xs" color="onSurfaceVariant" textTransform="uppercase" letterSpacing="0.08em" fontWeight={600}>
+              Evolución académica
+            </Text>
+            <Heading as="h2" fontSize={{ base: 'xl', md: '2xl' }} color="onSurface" fontWeight={700}>
+              {data.student.first_name} {data.student.last_name}
+            </Heading>
+          </VStack>
+          <HStack spacing={6} flexWrap="wrap">
+            <VStack align="flex-end" spacing={0}>
+              <Text fontSize="xs" color="onSurfaceVariant" textTransform="uppercase" letterSpacing="0.06em">
+                Materias
+              </Text>
+              <Text fontSize="2xl" fontWeight={700} color="onSurface" lineHeight="1">
+                {data.subjects.length}
+              </Text>
+            </VStack>
+            <VStack align="flex-end" spacing={0}>
+              <Text fontSize="xs" color="onSurfaceVariant" textTransform="uppercase" letterSpacing="0.06em">
+                Calificaciones
+              </Text>
+              <Text fontSize="2xl" fontWeight={700} color="onSurface" lineHeight="1">
+                {totalGrades}
+              </Text>
+            </VStack>
+            {generalAverage !== null && (
+              <VStack align="flex-end" spacing={0}>
+                <Text fontSize="xs" color="onSurfaceVariant" textTransform="uppercase" letterSpacing="0.06em">
+                  Promedio general
+                </Text>
+                <Text
+                  fontSize="2xl"
+                  fontWeight={700}
+                  lineHeight="1"
+                  color={gradeBand(generalAverage) === 'high' ? '#1f6b3d' : gradeBand(generalAverage) === 'mid' ? '#8a5a14' : '#8a2424'}
+                >
+                  {generalAverage.toFixed(2)}
+                </Text>
+              </VStack>
+            )}
+          </HStack>
+        </HStack>
+
+        {/* Prominent general trend chart */}
+        <GeneralTrendChart subjects={data.subjects} height={CHART_HEIGHT_GENERAL} />
+      </Box>
+
+      {/* Subject cards */}
+      <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={4}>
+        {data.subjects.map((subject, idx) => (
+          <SubjectCard key={subject.id} subject={subject} index={idx} />
+        ))}
+      </SimpleGrid>
+    </VStack>
+  );
+}

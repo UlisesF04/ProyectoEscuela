@@ -25,4 +25,10 @@ export const gradesService = {
     const { data: res } = await api.get(`/grades/subjects/${subjectId}`);
     return res.data;
   },
+
+  // C-07: Evolución de calificaciones (padre/docente/admin)
+  async getStudentEvolution(studentId) {
+    const { data: res } = await api.get(`/students/${studentId}/evolution`);
+    return res.data;
+  },
 };

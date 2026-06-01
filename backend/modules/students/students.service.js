@@ -1,8 +1,9 @@
 const studentRepository = require('../../repositories/studentRepository');
 const parentStudentRepository = require('../../repositories/parentStudentRepository');
 const userRepository = require('../../repositories/userRepository');
-const { Student, Course, User, ParentStudent } = require('../../models');
+const { Student, Course, Subject, User, ParentStudent, TeacherSubject, Grade } = require('../../models');
 const AppError = require('../../utils/AppError');
+const { Op } = require('sequelize');
 
 const studentsService = {
   async createStudent(data) {
@@ -201,6 +202,103 @@ const studentsService = {
         : null,
       relationship: link.relationship,
     }));
+  },
+
+  // ─── C-07: Evolución de calificaciones ───────────────────────
+  // Reglas aplicadas:
+  //   RN-03 → padre solo si está vinculado (parent_student)
+  //   RN-04 → docente solo de las materias que tiene asignadas (teacher_subject)
+  //   admin  → sin restricciones
+  async getEvolutionForStudent(studentId, requester) {
+    // 1. Verificar que el estudiante existe
+    const student = await studentRepository.findById(studentId);
+    if (!student) {
+      throw new AppError('Estudiante no encontrado', 404);
+    }
+
+    // 2. Chequeo de permisos
+    //    allowedSubjectIds === null significa "sin filtro" (admin)
+    //    allowedSubjectIds === [] significa "sin materias asignadas" → 403
+    let allowedSubjectIds = null;
+
+    if (requester.role === 'padre') {
+      const link = await ParentStudent.findOne({
+        where: { user_id: requester.id, student_id: studentId },
+      });
+      if (!link) {
+        throw new AppError(
+          'No tienes permiso para ver la evolución de este estudiante',
+          403
+        );
+      }
+    } else if (requester.role === 'docente') {
+      const assignments = await TeacherSubject.findAll({
+        where: { user_id: requester.id },
+        attributes: ['subject_id'],
+      });
+      allowedSubjectIds = assignments.map((a) => a.subject_id);
+      if (allowedSubjectIds.length === 0) {
+        throw new AppError(
+          'No tenés materias asignadas. No podés ver la evolución de calificaciones.',
+          403
+        );
+      }
+    }
+    // Si es admin, allowedSubjectIds queda en null → no se filtra
+
+    // 3. Query de calificaciones con include de materia
+    const where = { student_id: studentId };
+    if (allowedSubjectIds !== null) {
+      where.subject_id = { [Op.in]: allowedSubjectIds };
+    }
+
+    const grades = await Grade.findAll({
+      where,
+      include: [{ model: Subject, as: 'Subject' }],
+      order: [['date', 'ASC']],
+    });
+
+    // 4. Agrupar por materia
+    const subjectMap = new Map();
+    for (const g of grades) {
+      const sid = g.subject_id;
+      if (!subjectMap.has(sid)) {
+        subjectMap.set(sid, {
+          id: sid,
+          name: g.Subject ? g.Subject.name : 'Sin nombre',
+          grades: [],
+        });
+      }
+      const numericGrade = parseFloat(g.grade);
+      subjectMap.get(sid).grades.push({
+        id: g.id,
+        value: numericGrade,
+        type: g.type,
+        date: g.date,
+        description: g.description,
+      });
+    }
+
+    // 5. Calcular promedio por materia y ordenar
+    const subjects = Array.from(subjectMap.values())
+      .map((s) => {
+        const total = s.grades.reduce((acc, g) => acc + g.value, 0);
+        const average =
+          s.grades.length > 0
+            ? Math.round((total / s.grades.length) * 100) / 100
+            : null;
+        return { ...s, average };
+      })
+      .sort((a, b) => a.name.localeCompare(b.name));
+
+    return {
+      student: {
+        id: student.id,
+        first_name: student.first_name,
+        last_name: student.last_name,
+      },
+      subjects,
+    };
   },
 };
 
