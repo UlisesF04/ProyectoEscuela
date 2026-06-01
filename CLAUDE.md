@@ -110,7 +110,7 @@ Antes de proponer cualquier change, leé los archivos relevantes para el dominio
 
 ### FASE 4 — Recursos Humanos
 
-- [x] C-09 `teacher-leaves-module` — BAJO — depende de C-04 ✅ 2026-06-01
+- [ ] C-09 `teacher-leaves-module` — BAJO — depende de C-04 🔴 post-C13: usar vistas existentes MyLeavesPage/LeavesPage
 
 ### FASE 5 — Automatización Inteligente
 

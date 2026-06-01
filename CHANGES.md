@@ -293,7 +293,7 @@ Incluye el agente de notificaciones (diferenciador del proyecto). Sin él, el si
 > Gestión de licencias docentes: solicitud, aprobación/rechazo y consulta.
 
 ### [C-09] `teacher-leaves-module`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` completado — 2026-06-01
 - **Scope**:
   - Módulo backend `modules/teacher-leaves/`: CRUD licencias docentes
   - Modelo Sequelize `TeacherLeave` con CHECK(end_date >= start_date), cálculo automático de days_used
