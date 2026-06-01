@@ -242,7 +242,7 @@ Incluye el agente de notificaciones (diferenciador del proyecto). Sin él, el si
   - `knowledge-base/04_modelo_de_datos.md` §grades
 
 ### [C-07] `grades-evolution`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` completado — 2026-06-01 (archivado en openspec)
 - **Scope**:
   - Módulo backend `modules/grades/`: nuevo endpoint `GET /api/v1/students/:id/evolution`
   - Query que agrupa calificaciones por materia y período (trimestre), ordenadas cronológicamente

@@ -102,7 +102,7 @@ Antes de proponer cualquier change, leé los archivos relevantes para el dominio
 
 - [x] C-05 `attendance-module` — MEDIO — depende de C-04 ✅ 2026-05-27
 - [x] C-06 `grades-module` — MEDIO — depende de C-04 ✅ 2026-05-29
-- [ ] C-07 `grades-evolution` — BAJO — depende de C-06
+- [x] C-07 `grades-evolution` — BAJO — depende de C-06 ✅ 2026-06-01 (archivado en openspec)
 
 ### FASE 3 — Portal Parental
 

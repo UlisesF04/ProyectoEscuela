@@ -1,49 +1,28 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
+  Badge,
   Box,
   Heading,
   Text,
   HStack,
   VStack,
-  Badge,
   SimpleGrid,
   Skeleton,
   SkeletonText,
   Stack,
   Tooltip,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalCloseButton,
+  useDisclosure,
+  Portal,
 } from '@chakra-ui/react';
-import { keyframes } from '@emotion/react';
 import { FiTrendingUp, FiTrendingDown, FiMinus } from 'react-icons/fi';
 import EmptyState from './EmptyState';
 import ErrorAlert from './ErrorAlert';
-
-// ─── Animations (transform + opacity only, GPU-accelerated) ─────
-// Custom ease-out: cubic-bezier(0.23, 1, 0.32, 1) (Emil's "strong ease-out")
-const fadeInUp = keyframes`
-  from {
-    opacity: 0;
-    transform: translateY(8px) scale(0.98);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-`;
-
-const drawLine = keyframes`
-  from { stroke-dashoffset: 100; }
-  to { stroke-dashoffset: 0; }
-`;
-
-const popIn = keyframes`
-  from { opacity: 0; transform: scale(0); }
-  to { opacity: 1; transform: scale(1); }
-`;
-
-const areaFadeIn = keyframes`
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
-`;
 
 // ─── Helpers ────────────────────────────────────────────────────
 const GRADE_TYPE_LABELS = {
@@ -132,21 +111,56 @@ function formatDateShort(dateStr) {
   return `${d}/${m}`;
 }
 
+// ─── Custom tooltip for chart points ─────────────────────────
+function GradeTooltip({ data }) {
+  if (!data) return null;
+  return (
+    <Portal>
+      <Box
+        position="fixed"
+        left={`${data.x + 12}px`}
+        top={`${data.y - 10}px`}
+        bg="rgba(45, 27, 8, 0.92)"
+        color="white"
+        borderRadius="8px"
+        px={3}
+        py={2}
+        fontSize="xs"
+        zIndex={9999}
+        pointerEvents="none"
+        whiteSpace="nowrap"
+      >
+        <Text fontWeight={600}>{data.value.toFixed(2)}</Text>
+        <Text>{GRADE_TYPE_LABELS[data.type] || data.type} · {formatDate(data.date)}</Text>
+        {data.description && <Text color="rgba(255,255,255,0.7)">{data.description}</Text>}
+      </Box>
+    </Portal>
+  );
+}
+
 // ─── Sub-component: Smooth curve chart (Catmull-Rom + area fill) ─
-function MiniLineChart({ grades, height = CHART_HEIGHT_PER_SUBJECT, accentColor = ACCENT_COLOR, gradientId = 'miniAreaFill' }) {
+function MiniLineChart({ grades, height = CHART_HEIGHT_PER_SUBJECT, accentColor = ACCENT_COLOR, gradientId = 'miniAreaFill', onGradeClick, subjectName }) {
   // ViewBox 400x160 (2.5:1) — renders proportional to a 160px-tall card chart
-  // without `preserveAspectRatio="none"`, so circles stay circular.
   const W = 400;
   const H = 160;
-  const padXLeft = 24; // room for y-axis labels
+  const padXLeft = 24;
   const padXRight = 12;
   const padYTop = 16;
-  const padYBottom = 28; // room for first/last date labels
+  const padYBottom = 28;
   const innerW = W - padXLeft - padXRight;
   const innerH = H - padYTop - padYBottom;
-  const baselineYSvg = padYTop + innerH; // y in SVG = y=0 in data
+  const baselineYSvg = padYTop + innerH;
   const yMin = 0;
   const yMax = 10;
+
+  const [animReady, setAnimReady] = useState(false);
+  const [hoveredIdx, setHoveredIdx] = useState(null);
+  const [tooltipData, setTooltipData] = useState(null);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setAnimReady(true), 50);
+    return () => clearTimeout(timer);
+  }, []);
 
   const points = useMemo(() => {
     if (grades.length === 0) return [];
@@ -174,51 +188,13 @@ function MiniLineChart({ grades, height = CHART_HEIGHT_PER_SUBJECT, accentColor 
     );
   }
 
-  // Catmull-Rom smooth curve through all points (falls back to straight line for ≤2)
   const linePathD = buildCatmullRomPath(points);
   const areaPathD = buildAreaPath(linePathD, points, baselineYSvg);
-
   const firstPoint = points[0];
   const lastPoint = points[points.length - 1];
 
   return (
     <Box w="full" position="relative">
-      <style>
-        {`
-          @media (prefers-reduced-motion: no-preference) {
-            .evolution-area {
-              opacity: 0;
-              transform-origin: center bottom;
-              transform-box: fill-box;
-              animation: ${areaFadeIn.toString()} 700ms cubic-bezier(0.23, 1, 0.32, 1) 700ms forwards;
-            }
-            .evolution-path {
-              stroke-dasharray: 100;
-              stroke-dashoffset: 100;
-              animation: ${drawLine.toString()} 1100ms cubic-bezier(0.23, 1, 0.32, 1) 200ms forwards;
-            }
-            .evolution-point {
-              opacity: 0;
-              transform-origin: center;
-              transform-box: fill-box;
-              animation: ${popIn.toString()} 360ms cubic-bezier(0.23, 1, 0.32, 1) forwards;
-            }
-            .evolution-point {
-              transition: transform 180ms cubic-bezier(0.23, 1, 0.32, 1);
-              cursor: pointer;
-            }
-            .evolution-point:hover {
-              transform: scale(1.18);
-            }
-          }
-          @media (prefers-reduced-motion: reduce) {
-            .evolution-path { stroke-dasharray: none; stroke-dashoffset: 0; }
-            .evolution-point { opacity: 1; transform: none; transition: none; }
-            .evolution-area { opacity: 1; transform: none; animation: none; }
-          }
-        `}
-      </style>
-
       <svg
         viewBox={`0 0 ${W} ${H}`}
         width="100%"
@@ -235,7 +211,7 @@ function MiniLineChart({ grades, height = CHART_HEIGHT_PER_SUBJECT, accentColor 
           </linearGradient>
         </defs>
 
-        {/* Y-axis grid lines (subtle dashed) */}
+        {/* Y-axis grid lines */}
         {[2, 4, 6, 8, 10].map((tick) => {
           const y = padYTop + innerH - ((tick - yMin) / (yMax - yMin)) * innerH;
           return (
@@ -263,7 +239,7 @@ function MiniLineChart({ grades, height = CHART_HEIGHT_PER_SUBJECT, accentColor 
           );
         })}
 
-        {/* Reinforced baseline (y=0) */}
+        {/* Baseline (y=0) */}
         <line
           x1={padXLeft}
           x2={W - padXRight}
@@ -277,10 +253,13 @@ function MiniLineChart({ grades, height = CHART_HEIGHT_PER_SUBJECT, accentColor 
         <path
           d={areaPathD}
           fill={`url(#${gradientId})`}
-          className="evolution-area"
+          style={{
+            opacity: animReady ? undefined : 0,
+            transition: 'opacity 700ms cubic-bezier(0.23, 1, 0.32, 1) 700ms',
+          }}
         />
 
-        {/* The smooth curve with draw-in animation */}
+        {/* Smooth curve with stroke-dashoffset transition */}
         <path
           d={linePathD}
           fill="none"
@@ -289,29 +268,45 @@ function MiniLineChart({ grades, height = CHART_HEIGHT_PER_SUBJECT, accentColor 
           strokeLinecap="round"
           strokeLinejoin="round"
           pathLength="100"
-          className="evolution-path"
+          strokeDasharray="100"
+          strokeDashoffset={animReady ? 0 : 100}
+          style={{ transition: 'stroke-dashoffset 1100ms cubic-bezier(0.23, 1, 0.32, 1) 200ms' }}
         />
 
-        {/* Data points: halo + solid, with band-based fill, hover scale */}
+        {/* Data points with staggered fade-in */}
         {points.map((p, i) => {
           const band = gradeBand(p.grade.value);
           const fill = band === 'high' ? '#22c55e' : band === 'mid' ? '#d99126' : '#b83232';
+          const isHovered = hoveredIdx === i;
           return (
             <g
               key={i}
-              className="evolution-point"
-              style={{ animationDelay: `${800 + i * 70}ms` }}
+              style={{
+                opacity: animReady ? 1 : 0,
+                transition: `opacity 360ms cubic-bezier(0.23, 1, 0.32, 1) ${800 + i * 70}ms`,
+                cursor: 'pointer',
+              }}
+              onMouseEnter={(e) => { setHoveredIdx(i); setTooltipData({ x: e.clientX, y: e.clientY, value: p.grade.value, type: p.grade.type, date: p.grade.date, description: p.grade.description }); }}
+              onMouseMove={(e) => { setTooltipData(prev => prev ? { ...prev, x: e.clientX, y: e.clientY } : null); }}
+              onMouseLeave={() => { setHoveredIdx(null); setTooltipData(null); }}
+              onClick={() => onGradeClick?.(p.grade)}
             >
-              <circle cx={p.x} cy={p.y} r="11" fill={accentColor} fillOpacity="0.18" />
-              <circle cx={p.x} cy={p.y} r="6.5" fill={fill} stroke="white" strokeWidth="2" />
-              <title>
-                {`${formatDate(p.grade.date)} · ${p.grade.value.toFixed(2)} (${GRADE_TYPE_LABELS[p.grade.type] || p.grade.type})`}
-              </title>
+              <circle
+                cx={p.x} cy={p.y} r="11"
+                fill={accentColor}
+                fillOpacity="0.18"
+                style={{ transition: 'transform 180ms cubic-bezier(0.23, 1, 0.32, 1)', transform: isHovered ? 'scale(1.18)' : 'scale(1)', transformOrigin: `${p.x}px ${p.y}px` }}
+              />
+              <circle
+                cx={p.x} cy={p.y} r="6.5"
+                fill={fill} stroke="white" strokeWidth="2"
+                style={{ transition: 'transform 180ms cubic-bezier(0.23, 1, 0.32, 1)', transform: isHovered ? 'scale(1.18)' : 'scale(1)', transformOrigin: `${p.x}px ${p.y}px` }}
+              />
             </g>
           );
         })}
 
-        {/* First and last date labels (x-axis) */}
+        {/* Date labels */}
         {points.length >= 2 && (
           <>
             <text
@@ -337,6 +332,7 @@ function MiniLineChart({ grades, height = CHART_HEIGHT_PER_SUBJECT, accentColor 
           </>
         )}
       </svg>
+      <GradeTooltip data={tooltipData} />
     </Box>
   );
 }
@@ -366,7 +362,15 @@ function GeneralTrendChart({ subjects, height = CHART_HEIGHT_GENERAL }) {
       }));
   }, [subjects]);
 
-  // ViewBox 600x160 (3.75:1) — fits a wider summary header without distortion
+  const [animReady, setAnimReady] = useState(false);
+  const [hoveredIdx, setHoveredIdx] = useState(null);
+  const [tooltipData, setTooltipData] = useState(null);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setAnimReady(true), 50);
+    return () => clearTimeout(timer);
+  }, []);
+
   const W = 600;
   const H = 160;
   const padXLeft = 28;
@@ -387,7 +391,7 @@ function GeneralTrendChart({ subjects, height = CHART_HEIGHT_GENERAL }) {
   const firstPoint = aggregated[0];
   const lastPoint = aggregated[aggregated.length - 1];
 
-  // Single point: show a centered dot only (no curve possible with 1 sample)
+  // Single point: show a centered dot only
   if (aggregated.length === 1) {
     const cx = padXLeft + innerW / 2;
     const cy = padYTop + innerH - ((aggregated[0].value - yMin) / (yMax - yMin)) * innerH;
@@ -488,38 +492,6 @@ function GeneralTrendChart({ subjects, height = CHART_HEIGHT_GENERAL }) {
       </HStack>
 
       <Box w="full" position="relative">
-        <style>
-          {`
-            @media (prefers-reduced-motion: no-preference) {
-              .general-trend-area {
-                opacity: 0;
-                transform-origin: center bottom;
-                transform-box: fill-box;
-                animation: ${areaFadeIn.toString()} 800ms cubic-bezier(0.23, 1, 0.32, 1) 900ms forwards;
-              }
-              .general-trend-path {
-                stroke-dasharray: 100;
-                stroke-dashoffset: 100;
-                animation: ${drawLine.toString()} 1300ms cubic-bezier(0.23, 1, 0.32, 1) 200ms forwards;
-              }
-              .general-trend-point {
-                opacity: 0;
-                transform-origin: center;
-                transform-box: fill-box;
-                animation: ${popIn.toString()} 360ms cubic-bezier(0.23, 1, 0.32, 1) forwards;
-                transition: transform 180ms cubic-bezier(0.23, 1, 0.32, 1);
-                cursor: pointer;
-              }
-              .general-trend-point:hover { transform: scale(1.18); }
-            }
-            @media (prefers-reduced-motion: reduce) {
-              .general-trend-path { stroke-dasharray: none; stroke-dashoffset: 0; }
-              .general-trend-point { opacity: 1; transform: none; transition: none; }
-              .general-trend-area { opacity: 1; transform: none; animation: none; }
-            }
-          `}
-        </style>
-
         <svg
           viewBox={`0 0 ${W} ${H}`}
           width="100%"
@@ -536,7 +508,7 @@ function GeneralTrendChart({ subjects, height = CHART_HEIGHT_GENERAL }) {
             </linearGradient>
           </defs>
 
-          {/* Y-axis grid lines (subtle dashed) */}
+          {/* Y-axis grid lines */}
           {[2, 4, 6, 8, 10].map((tick) => {
             const y = padYTop + innerH - ((tick - yMin) / (yMax - yMin)) * innerH;
             return (
@@ -580,7 +552,7 @@ function GeneralTrendChart({ subjects, height = CHART_HEIGHT_GENERAL }) {
             );
           })()}
 
-          {/* Reinforced baseline (y=0) */}
+          {/* Baseline (y=0) */}
           <line
             x1={padXLeft}
             x2={W - padXRight}
@@ -594,10 +566,13 @@ function GeneralTrendChart({ subjects, height = CHART_HEIGHT_GENERAL }) {
           <path
             d={areaPathD}
             fill="url(#generalAreaFill)"
-            className="general-trend-area"
+            style={{
+              opacity: animReady ? undefined : 0,
+              transition: 'opacity 800ms cubic-bezier(0.23, 1, 0.32, 1) 900ms',
+            }}
           />
 
-          {/* The smooth curve with draw-in animation */}
+          {/* Smooth curve */}
           <path
             d={linePathD}
             fill="none"
@@ -606,29 +581,43 @@ function GeneralTrendChart({ subjects, height = CHART_HEIGHT_GENERAL }) {
             strokeLinecap="round"
             strokeLinejoin="round"
             pathLength="100"
-            className="general-trend-path"
+            strokeDasharray="100"
+            strokeDashoffset={animReady ? 0 : 100}
+            style={{ transition: 'stroke-dashoffset 1300ms cubic-bezier(0.23, 1, 0.32, 1) 200ms' }}
           />
 
-          {/* Data points with halos */}
+          {/* Data points with staggered fade-in */}
           {points.map((p, i) => {
             const band = gradeBand(p.value);
             const fill = band === 'high' ? '#22c55e' : band === 'mid' ? '#d99126' : '#b83232';
+            const isHovered = hoveredIdx === i;
             return (
               <g
                 key={i}
-                className="general-trend-point"
-                style={{ animationDelay: `${1000 + i * 80}ms` }}
+                style={{
+                  opacity: animReady ? 1 : 0,
+                  transition: `opacity 360ms cubic-bezier(0.23, 1, 0.32, 1) ${1000 + i * 80}ms`,
+                  cursor: 'pointer',
+                }}
+                onMouseEnter={(e) => { setHoveredIdx(i); setTooltipData({ x: e.clientX, y: e.clientY, value: p.value, type: 'promedio', date: p.date, description: `${p.count} ${p.count===1?'nota':'notas'}` }); }}
+                onMouseMove={(e) => { setTooltipData(prev => prev ? { ...prev, x: e.clientX, y: e.clientY } : null); }}
+                onMouseLeave={() => { setHoveredIdx(null); setTooltipData(null); }}
               >
-                <circle cx={p.x} cy={p.y} r="12" fill={ACCENT_COLOR} fillOpacity="0.18" />
-                <circle cx={p.x} cy={p.y} r="7" fill={fill} stroke="white" strokeWidth="2" />
-                <title>
-                  {`${formatDate(p.date)} · ${p.value.toFixed(2)} (${p.count} ${p.count === 1 ? 'nota' : 'notas'})`}
-                </title>
+                <circle
+                  cx={p.x} cy={p.y} r="12"
+                  fill={ACCENT_COLOR} fillOpacity="0.18"
+                  style={{ transition: 'transform 180ms cubic-bezier(0.23, 1, 0.32, 1)', transform: isHovered ? 'scale(1.18)' : 'scale(1)', transformOrigin: `${p.x}px ${p.y}px` }}
+                />
+                <circle
+                  cx={p.x} cy={p.y} r="7"
+                  fill={fill} stroke="white" strokeWidth="2"
+                  style={{ transition: 'transform 180ms cubic-bezier(0.23, 1, 0.32, 1)', transform: isHovered ? 'scale(1.18)' : 'scale(1)', transformOrigin: `${p.x}px ${p.y}px` }}
+                />
               </g>
             );
           })}
 
-          {/* First and last date labels (x-axis) */}
+          {/* Date labels */}
           <text
             x={firstPoint.x}
             y={H - 8}
@@ -651,6 +640,7 @@ function GeneralTrendChart({ subjects, height = CHART_HEIGHT_GENERAL }) {
           </text>
         </svg>
       </Box>
+      <GradeTooltip data={tooltipData} />
 
       <HStack justify="flex-end" mt={2} fontSize="xs" color="onSurfaceVariant">
         <Text>
@@ -675,6 +665,15 @@ function SubjectCard({ subject, index }) {
           ? '#8a2424'
           : '#8a5a14';
 
+  const [visible, setVisible] = useState(false);
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [selectedGrade, setSelectedGrade] = useState(null);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setVisible(true), index * 70);
+    return () => clearTimeout(timer);
+  }, [index]);
+
   return (
     <Box
       bg="white"
@@ -683,16 +682,10 @@ function SubjectCard({ subject, index }) {
       boxShadow="warmSm"
       border="1px solid"
       borderColor="rgba(125, 90, 60, 0.08)"
-      opacity={0}
-      sx={{
-        '@media (prefers-reduced-motion: no-preference)': {
-          animation: `${fadeInUp.toString()} 480ms cubic-bezier(0.23, 1, 0.32, 1) forwards`,
-          animationDelay: `${index * 70}ms`,
-        },
-        '@media (prefers-reduced-motion: reduce)': {
-          opacity: 1,
-          animation: 'none',
-        },
+      style={{
+        opacity: visible ? 1 : 0,
+        transform: visible ? 'translateY(0) scale(1)' : 'translateY(8px) scale(0.98)',
+        transition: 'opacity 480ms cubic-bezier(0.23, 1, 0.32, 1), transform 480ms cubic-bezier(0.23, 1, 0.32, 1)',
       }}
     >
       <HStack justify="space-between" mb={4} align="flex-start" flexWrap="wrap" gap={2}>
@@ -744,7 +737,12 @@ function SubjectCard({ subject, index }) {
         border="1px solid"
         borderColor="rgba(125, 90, 60, 0.06)"
       >
-        <MiniLineChart grades={subject.grades} height={CHART_HEIGHT_PER_SUBJECT} />
+        <MiniLineChart
+          grades={subject.grades}
+          height={CHART_HEIGHT_PER_SUBJECT}
+          subjectName={subject.name}
+          onGradeClick={(grade) => { setSelectedGrade(grade); onOpen(); }}
+        />
       </Box>
 
       {/* Grade badges (chronological) */}
@@ -798,6 +796,50 @@ function SubjectCard({ subject, index }) {
           })}
         </SimpleGrid>
       </Box>
+
+      <Modal isOpen={isOpen} onClose={onClose} isCentered size="sm">
+        <ModalOverlay bg="rgba(0,0,0,0.4)" />
+        <ModalContent bg="#FFFBF6" borderRadius="24px" p={2}>
+          <ModalCloseButton color="#2D1B08" _hover={{ bg: 'rgba(125,90,60,0.1)' }} />
+          <ModalHeader color="#2D1B08" fontSize="lg" fontWeight={700} pb={0}>
+            Detalle de nota
+          </ModalHeader>
+          <ModalBody pb={6}>
+            {selectedGrade && (
+              <VStack align="stretch" spacing={3} mt={2}>
+                <Box>
+                  <Text fontSize="xs" color="onSurfaceVariant" textTransform="uppercase" letterSpacing="0.06em" fontWeight={600} mb={0.5}>Materia</Text>
+                  <Text fontSize="md" fontWeight={600} color="#2D1B08">{subject.name}</Text>
+                </Box>
+                <HStack spacing={4}>
+                  <Box>
+                    <Text fontSize="xs" color="onSurfaceVariant" textTransform="uppercase" letterSpacing="0.06em" fontWeight={600} mb={0.5}>Nota</Text>
+                    <Text fontSize="2xl" fontWeight={700} color={gradeBand(selectedGrade.value) === 'high' ? '#1f6b3d' : gradeBand(selectedGrade.value) === 'mid' ? '#8a5a14' : '#8a2424'}>
+                      {selectedGrade.value.toFixed(2)}
+                    </Text>
+                  </Box>
+                  <Box>
+                    <Text fontSize="xs" color="onSurfaceVariant" textTransform="uppercase" letterSpacing="0.06em" fontWeight={600} mb={0.5}>Tipo</Text>
+                    <Badge px={3} py={1.5} borderRadius="pill" fontSize="sm" colorScheme={selectedGrade.type === 'examen' ? 'orange' : selectedGrade.type === 'trabajo' ? 'blue' : selectedGrade.type === 'tarea' ? 'green' : selectedGrade.type === 'oral' ? 'purple' : 'gray'}>
+                      {GRADE_TYPE_LABELS[selectedGrade.type] || selectedGrade.type}
+                    </Badge>
+                  </Box>
+                </HStack>
+                <Box>
+                  <Text fontSize="xs" color="onSurfaceVariant" textTransform="uppercase" letterSpacing="0.06em" fontWeight={600} mb={0.5}>Fecha</Text>
+                  <Text fontSize="sm" color="#2D1B08">{formatDate(selectedGrade.date)}</Text>
+                </Box>
+                {selectedGrade.description && (
+                  <Box>
+                    <Text fontSize="xs" color="onSurfaceVariant" textTransform="uppercase" letterSpacing="0.06em" fontWeight={600} mb={0.5}>Descripción</Text>
+                    <Text fontSize="sm" color="#2D1B08" lineHeight="tall">{selectedGrade.description}</Text>
+                  </Box>
+                )}
+              </VStack>
+            )}
+          </ModalBody>
+        </ModalContent>
+      </Modal>
     </Box>
   );
 }
@@ -857,12 +899,8 @@ export default function GradeEvolutionView({ data, loading, error, onRetry }) {
         boxShadow="warmSm"
         border="1px solid"
         borderColor="rgba(125, 90, 60, 0.08)"
-        opacity={0}
-        sx={{
-          '@media (prefers-reduced-motion: no-preference)': {
-            animation: `${fadeInUp.toString()} 380ms cubic-bezier(0.23, 1, 0.32, 1) forwards`,
-          },
-          '@media (prefers-reduced-motion: reduce)': { opacity: 1, animation: 'none' },
+        style={{
+          transition: 'opacity 380ms cubic-bezier(0.23, 1, 0.32, 1), transform 380ms cubic-bezier(0.23, 1, 0.32, 1)',
         }}
       >
         <HStack justify="space-between" flexWrap="wrap" gap={3} mb={4}>
