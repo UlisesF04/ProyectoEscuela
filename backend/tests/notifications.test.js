@@ -4,7 +4,7 @@ process.env.SERVICE_API_KEY = 'test-service-key-123';
 
 // Load .env for local database connection
 const path = require('path');
-require('dotenv').config({ path: path.resolve(__dirname, '..', '..', '.env') });
+require('dotenv').config({ path: path.resolve(__dirname, '..', '.env') });
 
 const app = require('../app');
 const http = require('http');

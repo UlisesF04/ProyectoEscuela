@@ -1,6 +1,6 @@
 // Load .env for local database connection
 const path = require('path');
-require('dotenv').config({ path: path.resolve(__dirname, '..', '..', '.env') });
+require('dotenv').config({ path: path.resolve(__dirname, '..', '.env') });
 
 const { sequelize, User, Student, Course, Subject, TeacherSubject, ParentStudent } = require('../models');
 

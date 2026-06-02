@@ -16,6 +16,7 @@ import AssignmentsPage from '../pages/admin/AssignmentsPage';
 import LeavesPage from '../pages/admin/LeavesPage';
 import NotificationLogsPage from '../pages/admin/NotificationLogsPage';
 import ConfigurationPage from '../pages/admin/ConfigurationPage';
+import ChatPage from '../pages/admin/ChatPage';
 
 // Preceptor
 import PreceptorLayout from '../pages/preceptor/PreceptorLayout';
@@ -86,6 +87,7 @@ export default function AppRoutes() {
         <Route path="assignments" element={<AssignmentsPage />} />
         <Route path="leaves" element={<LeavesPage />} />
         <Route path="notifications" element={<NotificationLogsPage />} />
+        <Route path="chat" element={<ChatPage />} />
         <Route path="config" element={<ConfigurationPage />} />
       </Route>
 
@@ -103,6 +105,7 @@ export default function AppRoutes() {
         <Route path="attendance/history" element={<AttendanceHistoryPage />} />
         <Route path="justify" element={<JustificacionesPage />} />
         <Route path="leaves" element={<PreceptorMyLeavesPage />} />
+        <Route path="chat" element={<ChatPage />} />
       </Route>
 
       {/* Docente routes */}
@@ -119,6 +122,7 @@ export default function AppRoutes() {
         <Route path="evolution" element={<StudentEvolutionPage />} />
         <Route path="leaves" element={<MyLeavesPage />} />
         <Route path="profile" element={<ProfileSection />} />
+        <Route path="chat" element={<ChatPage />} />
       </Route>
 
       {/* Padre routes */}

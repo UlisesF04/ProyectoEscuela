@@ -14,6 +14,7 @@ const gradesRoutes = require('./modules/grades/grades.routes');
 const licencesRoutes = require('./modules/licences/licences.routes');
 const notificationsRoutes = require('./modules/notifications/notifications.routes');
 const configRoutes = require('./modules/config/config.routes');
+const chatRoutes = require('./modules/chat/chat.routes');
 const path = require('path');
 
 const app = express();
@@ -86,6 +87,9 @@ app.use('/api/v1/notifications', notificationsRoutes);
 
 // Config routes (admin)
 app.use('/api/v1/config', configRoutes);
+
+// Chat routes (admin, preceptor, docente)
+app.use('/api/v1/chats', chatRoutes);
 
 // 404 handler
 app.use((req, res) => {

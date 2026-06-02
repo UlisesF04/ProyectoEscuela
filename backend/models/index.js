@@ -10,6 +10,8 @@ const Grade = require('./Grade');
 const Licence = require('./Licence');
 const NotificationLog = require('./NotificationLog');
 const Setting = require('./Setting');
+const Chat = require('./Chat');
+const Message = require('./Message');
 
 // ─── User associations ─────────────────────────────────────────
 User.hasMany(TeacherSubject, { foreignKey: 'user_id' });
@@ -53,6 +55,14 @@ Grade.belongsTo(User, { foreignKey: 'created_by', as: 'createdBy' });
 // ─── Licence associations ──────────────────────────────────────
 Licence.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 
+// ─── Chat associations ─────────────────────────────────────────
+Chat.belongsTo(User, { foreignKey: 'user1_id', as: 'user1' });
+Chat.belongsTo(User, { foreignKey: 'user2_id', as: 'user2' });
+Chat.hasMany(Message, { foreignKey: 'chat_id', onDelete: 'CASCADE' });
+
+Message.belongsTo(Chat, { foreignKey: 'chat_id' });
+Message.belongsTo(User, { foreignKey: 'sender_id', as: 'sender' });
+
 module.exports = {
   sequelize,
   User,
@@ -66,4 +76,6 @@ module.exports = {
   Licence,
   NotificationLog,
   Setting,
+  Chat,
+  Message,
 };

@@ -8,6 +8,7 @@ import {
   FiCalendar,
   FiBell,
   FiSettings,
+  FiMessageSquare,
 } from 'react-icons/fi';
 
 const sections = [
@@ -18,6 +19,7 @@ const sections = [
   { id: 'assignments', label: 'Docentes', icon: FiUserPlus, path: '/admin/assignments' },
   { id: 'leaves', label: 'Licencias', icon: FiCalendar, path: '/admin/leaves' },
   { id: 'notifications', label: 'Notificaciones', icon: FiBell, path: '/admin/notifications' },
+  { id: 'chat', label: 'Chat Interno', icon: FiMessageSquare, path: '/admin/chat' },
   { id: 'config', label: 'Configuración', icon: FiSettings, path: '/admin/config' },
 ];
 
