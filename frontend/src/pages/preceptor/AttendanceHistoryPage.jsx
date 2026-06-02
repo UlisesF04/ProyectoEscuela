@@ -1,12 +1,14 @@
 import {
-  Box, Heading, Select, Input, Text, SimpleGrid, Stat, StatLabel, StatNumber,
+  Box, Heading, Input, Text, SimpleGrid, Stat, StatLabel, StatNumber,
 } from '@chakra-ui/react';
 import { useState, useEffect } from 'react';
+import DatePicker from '../../components/DatePicker';
 import { adminService } from '../../services/adminService';
 import { attendanceService } from '../../services/attendanceService';
 import DataTable from '../../components/DataTable';
 import LoadingSkeleton from '../../components/LoadingSkeleton';
 import ErrorAlert from '../../components/ErrorAlert';
+import CustomSelect from '../../components/CustomSelect';
 
 const statusConfig = {
   presente: { colorScheme: 'green', label: 'Presente' },
@@ -81,25 +83,19 @@ export default function AttendanceHistoryPage() {
       <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4} mb={6}>
         <Box>
           <Text fontSize="xs" fontWeight={600} color="onSurfaceVariant" mb={1} textTransform="uppercase" letterSpacing="wider">Curso</Text>
-          <Select
+          <CustomSelect
             placeholder="Seleccionar curso"
             value={selectedCourseId}
-            onChange={(e) => setSelectedCourseId(e.target.value)}
-            borderRadius="input"
+            onChange={setSelectedCourseId}
           >
             {courses.map((c) => (
               <option key={c.id} value={c.id}>{c.name}</option>
             ))}
-          </Select>
+          </CustomSelect>
         </Box>
         <Box>
           <Text fontSize="xs" fontWeight={600} color="onSurfaceVariant" mb={1} textTransform="uppercase" letterSpacing="wider">Fecha</Text>
-          <Input
-            type="date"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            borderRadius="input"
-          />
+          <DatePicker value={selectedDate} onChange={setSelectedDate} />
         </Box>
       </SimpleGrid>
 

@@ -3,9 +3,10 @@ import {
   Table, Thead, Tbody, Tr, Th, Td, TableContainer,
   FormControl, FormLabel, Input, useToast, Card, CardBody, Divider,
 } from '@chakra-ui/react';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { FiUpload, FiDownload, FiFileText } from 'react-icons/fi';
 import LoadingSkeleton from '../../components/LoadingSkeleton';
+import FileUpload from '../../components/FileUpload';
 import ErrorAlert from '../../components/ErrorAlert';
 import EmptyState from '../../components/EmptyState';
 import { licencesService } from '../../services/licencesService';
@@ -43,7 +44,6 @@ export default function MyLeavesPage() {
   const [saving, setSaving] = useState(false);
   const [title, setTitle] = useState('');
   const [file, setFile] = useState(null);
-  const fileRef = useRef();
   const toast = useToast();
 
   const fetchLicences = useCallback(() => {
@@ -77,7 +77,6 @@ export default function MyLeavesPage() {
       });
       setTitle('');
       setFile(null);
-      if (fileRef.current) fileRef.current.value = '';
       fetchLicences();
     } catch (err) {
       toast({
@@ -148,18 +147,7 @@ export default function MyLeavesPage() {
               <FormLabel fontSize="sm" color="onSurfaceVariant">
                 Archivo adjunto <Box as="span" color="onSurfaceVariant" fontWeight="normal">(opcional)</Box>
               </FormLabel>
-              <Input
-                ref={fileRef}
-                type="file"
-                onChange={(e) => setFile(e.target.files[0] || null)}
-                padding={2}
-                borderRadius="input"
-                borderColor="outlineVariant"
-                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-              />
-              <Text fontSize="xs" color="onSurfaceVariant" mt={1}>
-                Formatos aceptados: PDF, DOC, DOCX, JPG, PNG. Máx 10 MB.
-              </Text>
+              <FileUpload value={file} onChange={setFile} accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" hint="PDF, DOC, DOCX, JPG, PNG - Máx 10 MB" />
             </FormControl>
 
             <Button

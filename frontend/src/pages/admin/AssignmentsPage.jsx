@@ -1,6 +1,6 @@
 import {
   Box, Heading, Button, Modal, ModalOverlay, ModalContent, ModalHeader,
-  ModalBody, ModalCloseButton, Select, useDisclosure, VStack, HStack,
+  ModalBody, ModalCloseButton, useDisclosure, VStack, HStack,
   Text, Badge, useToast, Spacer, List, ListItem, ListIcon, IconButton,
 } from '@chakra-ui/react';
 import { useState, useEffect } from 'react';
@@ -9,6 +9,7 @@ import DataTable from '../../components/DataTable';
 import LoadingSkeleton from '../../components/LoadingSkeleton';
 import ErrorAlert from '../../components/ErrorAlert';
 import EmptyState from '../../components/EmptyState';
+import CustomSelect from '../../components/CustomSelect';
 import { adminService } from '../../services/adminService';
 
 export default function AssignmentsPage() {
@@ -200,27 +201,25 @@ export default function AssignmentsPage() {
                   Asignar nueva materia
                 </Text>
                 <VStack spacing={3} align="stretch">
-                  <Select
+                  <CustomSelect
                     placeholder="Seleccionar curso"
                     value={selectedCourseId}
-                    onChange={(e) => handleCourseChange(e.target.value)}
-                    borderRadius="input"
+                    onChange={handleCourseChange}
                   >
                     {courses.map((c) => (
                       <option key={c.id} value={c.id}>{c.name}</option>
                     ))}
-                  </Select>
-                  <Select
+                  </CustomSelect>
+                  <CustomSelect
                     placeholder="Seleccionar materia"
                     value={selectedSubjectId}
-                    onChange={(e) => setSelectedSubjectId(e.target.value)}
+                    onChange={setSelectedSubjectId}
                     isDisabled={!selectedCourseId || subjects.length === 0}
-                    borderRadius="input"
                   >
                     {subjects.map((s) => (
                       <option key={s.id} value={s.id}>{s.name}</option>
                     ))}
-                  </Select>
+                  </CustomSelect>
                   <Button
                     leftIcon={<FiCheck />}
                     colorScheme="brand"

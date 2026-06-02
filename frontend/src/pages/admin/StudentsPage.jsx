@@ -2,7 +2,7 @@ import {
   Box, Heading, Button, HStack, VStack, Badge,
   Modal, ModalOverlay, ModalContent, ModalHeader, ModalCloseButton,
   ModalBody, ModalFooter, FormControl, FormLabel, FormErrorMessage,
-  Input, Select, useToast, Text, Divider, Spinner, Center, Flex, Avatar,
+  Input, useToast, Text, Divider, Spinner, Center, Flex, Avatar,
   AlertDialog, AlertDialogOverlay, AlertDialogContent,
   AlertDialogHeader, AlertDialogBody, AlertDialogFooter, IconButton,
 } from '@chakra-ui/react';
@@ -12,6 +12,7 @@ import {
 } from 'react-icons/fi';
 import DataTable from '../../components/DataTable';
 import ErrorAlert from '../../components/ErrorAlert';
+import CustomSelect from '../../components/CustomSelect';
 import { adminService } from '../../services/adminService';
 
 const RELATION_OPTIONS = [
@@ -282,11 +283,10 @@ export default function StudentsPage() {
       </Heading>
 
       <HStack spacing={4} mb={6} flexWrap="wrap">
-        <Select
+        <CustomSelect
           value={courseFilter}
-          onChange={(e) => setCourseFilter(e.target.value)}
+          onChange={setCourseFilter}
           maxW="240px"
-          bg="white"
           placeholder="Todos los cursos"
         >
           {courses.map((c) => (
@@ -294,7 +294,7 @@ export default function StudentsPage() {
               {c.name} — {c.level} ({c.year})
             </option>
           ))}
-        </Select>
+        </CustomSelect>
         <Button
           leftIcon={<FiPlus />}
           colorScheme="brand"
@@ -373,10 +373,9 @@ export default function StudentsPage() {
               </FormControl>
               <FormControl isInvalid={!!formErrors.course_id}>
                 <FormLabel fontSize="sm">Curso</FormLabel>
-                <Select
+                <CustomSelect
                   value={formData.course_id}
-                  onChange={(e) => setFormData({ ...formData, course_id: e.target.value })}
-                  bg="white"
+                  onChange={(val) => setFormData({ ...formData, course_id: val })}
                   placeholder="Seleccionar curso"
                 >
                   {courses.map((c) => (
@@ -384,7 +383,7 @@ export default function StudentsPage() {
                       {c.name} — {c.level} ({c.year})
                     </option>
                   ))}
-                </Select>
+                </CustomSelect>
                 <FormErrorMessage>{formErrors.course_id}</FormErrorMessage>
               </FormControl>
             </VStack>
@@ -438,17 +437,16 @@ export default function StudentsPage() {
               </FormControl>
               <FormControl isInvalid={!!formErrors.course_id}>
                 <FormLabel fontSize="sm">Curso</FormLabel>
-                <Select
+                <CustomSelect
                   value={editFormData.course_id}
-                  onChange={(e) => setEditFormData({ ...editFormData, course_id: e.target.value })}
-                  bg="white"
+                  onChange={(val) => setEditFormData({ ...editFormData, course_id: val })}
                 >
                   {courses.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.name} — {c.level} ({c.year})
                     </option>
                   ))}
-                </Select>
+                </CustomSelect>
                 <FormErrorMessage>{formErrors.course_id}</FormErrorMessage>
               </FormControl>
             </VStack>
@@ -575,16 +573,15 @@ export default function StudentsPage() {
               <HStack spacing={3} align="flex-end">
                 <FormControl>
                   <FormLabel fontSize="sm">Parentesco</FormLabel>
-                  <Select
+                  <CustomSelect
                     value={parentRelationship}
-                    onChange={(e) => setParentRelationship(e.target.value)}
-                    bg="white"
+                    onChange={setParentRelationship}
                     placeholder="Seleccionar parentesco"
                   >
                     {RELATION_OPTIONS.map((r) => (
                       <option key={r.value} value={r.value}>{r.label}</option>
                     ))}
-                  </Select>
+                  </CustomSelect>
                 </FormControl>
                 <Button
                   colorScheme="brand"

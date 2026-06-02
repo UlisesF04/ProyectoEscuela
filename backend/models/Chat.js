@@ -20,6 +20,26 @@ Chat.init({
     type: DataTypes.DATE,
     allowNull: true,
   },
+  deleted_by_user1: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false,
+  },
+  deleted_by_user2: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false,
+  },
+  cleared_at_user1: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    defaultValue: null,
+  },
+  cleared_at_user2: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    defaultValue: null,
+  },
 }, {
   sequelize,
   modelName: 'Chat',

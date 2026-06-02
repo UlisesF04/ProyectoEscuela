@@ -5,13 +5,13 @@ import {
   Text,
   HStack,
   VStack,
-  Select,
   FormControl,
   FormLabel,
 } from '@chakra-ui/react';
 import GradeEvolutionView from '../../components/grade-evolution-view';
 import { teacherService } from '../../services/teacherService';
 import { gradesService } from '../../services/gradesService';
+import CustomSelect from '../../components/CustomSelect';
 
 export default function StudentEvolutionPage() {
   const [courses, setCourses] = useState([]);
@@ -137,12 +137,10 @@ export default function StudentEvolutionPage() {
           <FormLabel fontSize="xs" color="onSurfaceVariant" mb={1} textTransform="uppercase" letterSpacing="0.06em" fontWeight={600}>
             Curso
           </FormLabel>
-          <Select
+          <CustomSelect
             value={selectedCourseId}
-            onChange={(e) => setSelectedCourseId(e.target.value)}
+            onChange={setSelectedCourseId}
             isDisabled={loadingCourses || courses.length === 0}
-            borderRadius="input"
-            bg="white"
           >
             {courses.length === 0 && !loadingCourses && (
               <option value="">No tenés cursos asignados</option>
@@ -152,19 +150,17 @@ export default function StudentEvolutionPage() {
                 {course.name} {course.year ? `(${course.year})` : ''} {course.division ? `· ${course.division}` : ''}
               </option>
             ))}
-          </Select>
+          </CustomSelect>
         </FormControl>
 
         <FormControl flex={1} minW="200px">
           <FormLabel fontSize="xs" color="onSurfaceVariant" mb={1} textTransform="uppercase" letterSpacing="0.06em" fontWeight={600}>
             Alumno
           </FormLabel>
-          <Select
+          <CustomSelect
             value={selectedStudentId}
-            onChange={(e) => setSelectedStudentId(e.target.value)}
+            onChange={setSelectedStudentId}
             isDisabled={availableStudents.length === 0}
-            borderRadius="input"
-            bg="white"
           >
             {availableStudents.length === 0 && (
               <option value="">Sin alumnos en este curso</option>
@@ -174,7 +170,7 @@ export default function StudentEvolutionPage() {
                 {s.first_name} {s.last_name} {s.dni ? `· DNI ${s.dni}` : ''}
               </option>
             ))}
-          </Select>
+          </CustomSelect>
         </FormControl>
       </HStack>
 

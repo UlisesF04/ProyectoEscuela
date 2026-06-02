@@ -1,5 +1,5 @@
 import {
-  Box, Heading, Select, Button, HStack, FormControl, FormLabel,
+  Box, Heading, Button, HStack, FormControl, FormLabel,
   Modal, ModalOverlay, ModalContent, ModalHeader, ModalCloseButton,
   ModalBody, ModalFooter, Input, NumberInput, NumberInputField,
   useToast, VStack, Text, Badge,
@@ -9,8 +9,10 @@ import { FiPlus, FiSave } from 'react-icons/fi';
 import LoadingSkeleton from '../../components/LoadingSkeleton';
 import ErrorAlert from '../../components/ErrorAlert';
 import EmptyState from '../../components/EmptyState';
+import DatePicker from '../../components/DatePicker';
 import { gradesService } from '../../services/gradesService';
 import { teacherService } from '../../services/teacherService';
+import CustomSelect from '../../components/CustomSelect';
 
 const TYPE_OPTIONS = [
   { value: 'examen', label: 'Examen' },
@@ -122,19 +124,19 @@ export default function GradesPage() {
       <HStack spacing={4} mb={6} flexWrap="wrap">
         <FormControl w="200px">
           <FormLabel fontSize="sm" color="onSurfaceVariant">Curso</FormLabel>
-          <Select value={selectedCourseId} onChange={(e) => handleCourseChange(e.target.value)} borderRadius="input">
+          <CustomSelect value={selectedCourseId} onChange={handleCourseChange}>
             {courses.map((c) => (
               <option key={c.id} value={c.id}>{c.name}</option>
             ))}
-          </Select>
+          </CustomSelect>
         </FormControl>
         <FormControl w="220px">
           <FormLabel fontSize="sm" color="onSurfaceVariant">Materia</FormLabel>
-          <Select value={selectedSubjectId} onChange={(e) => setSelectedSubjectId(e.target.value)} borderRadius="input">
+          <CustomSelect value={selectedSubjectId} onChange={setSelectedSubjectId}>
             {subjects.map((s) => (
               <option key={s.id} value={s.id}>{s.name}</option>
             ))}
-          </Select>
+          </CustomSelect>
         </FormControl>
       </HStack>
 
@@ -188,15 +190,15 @@ export default function GradesPage() {
               </FormControl>
               <FormControl isRequired>
                 <FormLabel fontSize="sm" color="onSurfaceVariant">Tipo</FormLabel>
-                <Select value={gradeType} onChange={(e) => setGradeType(e.target.value)} borderRadius="input">
+                <CustomSelect value={gradeType} onChange={setGradeType}>
                   {TYPE_OPTIONS.map((t) => (
                     <option key={t.value} value={t.value}>{t.label}</option>
                   ))}
-                </Select>
+                </CustomSelect>
               </FormControl>
               <FormControl isRequired>
                 <FormLabel fontSize="sm" color="onSurfaceVariant">Fecha</FormLabel>
-                <Input type="date" value={gradeDate} onChange={(e) => setGradeDate(e.target.value)} borderRadius="input" />
+                <DatePicker value={gradeDate} onChange={setGradeDate} />
               </FormControl>
             </VStack>
           </ModalBody>

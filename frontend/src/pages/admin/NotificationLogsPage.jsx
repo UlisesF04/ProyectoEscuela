@@ -1,9 +1,11 @@
 import {
-  Box, Heading, HStack, Select, Input, Badge, Text,
+  Box, Heading, HStack, Input, Badge, Text,
 } from '@chakra-ui/react';
 import { useState, useEffect, useCallback } from 'react';
 import DataTable from '../../components/DataTable';
+import DatePicker from '../../components/DatePicker';
 import ErrorAlert from '../../components/ErrorAlert';
+import CustomSelect from '../../components/CustomSelect';
 import { notificationsService } from '../../services/notificationsService';
 
 const channelColors = {
@@ -116,60 +118,44 @@ export default function NotificationLogsPage() {
           <Text fontSize="xs" fontWeight={600} color="onSurfaceVariant" mb={1} textTransform="uppercase" letterSpacing="wider">
             Tipo Alerta
           </Text>
-          <Select
+          <CustomSelect
             value={alertTypeFilter}
-            onChange={(e) => setAlertTypeFilter(e.target.value)}
+            onChange={setAlertTypeFilter}
             placeholder="Todos"
-            borderRadius="input"
             size="sm"
             w="180px"
           >
             {Object.entries(alertTypeLabels).map(([value, label]) => (
               <option key={value} value={value}>{label}</option>
             ))}
-          </Select>
+          </CustomSelect>
         </Box>
         <Box>
           <Text fontSize="xs" fontWeight={600} color="onSurfaceVariant" mb={1} textTransform="uppercase" letterSpacing="wider">
             Estado
           </Text>
-          <Select
+          <CustomSelect
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
+            onChange={setStatusFilter}
             placeholder="Todos"
-            borderRadius="input"
             size="sm"
             w="140px"
           >
             <option value="enviado">Enviado</option>
             <option value="fallido">Fallido</option>
-          </Select>
+          </CustomSelect>
         </Box>
         <Box>
           <Text fontSize="xs" fontWeight={600} color="onSurfaceVariant" mb={1} textTransform="uppercase" letterSpacing="wider">
             Desde
           </Text>
-          <Input
-            type="date"
-            value={dateFrom}
-            onChange={(e) => setDateFrom(e.target.value)}
-            borderRadius="input"
-            size="sm"
-            w="160px"
-          />
+          <DatePicker value={dateFrom} onChange={setDateFrom} placeholder="Desde" size="sm" w="160px" />
         </Box>
         <Box>
           <Text fontSize="xs" fontWeight={600} color="onSurfaceVariant" mb={1} textTransform="uppercase" letterSpacing="wider">
             Hasta
           </Text>
-          <Input
-            type="date"
-            value={dateTo}
-            onChange={(e) => setDateTo(e.target.value)}
-            borderRadius="input"
-            size="sm"
-            w="160px"
-          />
+          <DatePicker value={dateTo} onChange={setDateTo} placeholder="Hasta" size="sm" w="160px" />
         </Box>
       </HStack>
 

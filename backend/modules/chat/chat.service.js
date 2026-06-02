@@ -25,13 +25,29 @@ const chatService = {
       defaults: { user1_id: user1Id, user2_id: user2Id },
     });
 
+    if (!created) {
+      const updateFields = {};
+      if (chat.user1_id === userId && chat.deleted_by_user1) {
+        updateFields.deleted_by_user1 = false;
+      }
+      if (chat.user2_id === userId && chat.deleted_by_user2) {
+        updateFields.deleted_by_user2 = false;
+      }
+      if (Object.keys(updateFields).length > 0) {
+        await chat.update(updateFields);
+      }
+    }
+
     return { chat, created };
   },
 
   async getMyChats(userId) {
     const chats = await Chat.findAll({
       where: {
-        [Op.or]: [{ user1_id: userId }, { user2_id: userId }],
+        [Op.or]: [
+          { user1_id: userId, deleted_by_user1: false },
+          { user2_id: userId, deleted_by_user2: false },
+        ],
       },
       include: [
         {
@@ -70,8 +86,20 @@ const chatService = {
       throw new AppError('No tienes acceso a este chat', 403);
     }
 
+    let clearedAt = null;
+    if (chat.user1_id === userId) {
+      clearedAt = chat.cleared_at_user1;
+    } else {
+      clearedAt = chat.cleared_at_user2;
+    }
+
+    const whereClause = { chat_id: chatId };
+    if (clearedAt) {
+      whereClause.created_at = { [Op.gt]: clearedAt };
+    }
+
     const messages = await Message.findAll({
-      where: { chat_id: chatId },
+      where: whereClause,
       include: [
         {
           model: User,
@@ -145,7 +173,15 @@ const chatService = {
       throw new AppError('No tienes acceso a este chat', 403);
     }
 
-    await chat.destroy();
+    const updateFields = {};
+    if (chat.user1_id === userId) {
+      updateFields.deleted_by_user1 = true;
+      updateFields.cleared_at_user1 = new Date();
+    } else {
+      updateFields.deleted_by_user2 = true;
+      updateFields.cleared_at_user2 = new Date();
+    }
+    await chat.update(updateFields);
   },
 
   async getAvailableUsers(userId) {

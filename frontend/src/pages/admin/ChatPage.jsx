@@ -133,7 +133,7 @@ export default function ChatPage() {
 
   const handleDeleteChat = async (chat) => {
     const confirmed = window.confirm(
-      `¿Eliminar conversación con ${chat.participant.name}? Los mensajes se borrarán permanentemente.`
+      `¿Eliminar conversación con ${chat.participant.name}? Solo se eliminará para vos, el otro usuario seguirá viéndola.`
     );
     if (!confirmed) return;
 
@@ -158,7 +158,7 @@ export default function ChatPage() {
   };
 
   return (
-    <Box h="calc(100vh - 120px)" display="flex" flexDirection="column">
+    <Box h="calc(100vh - 48px)" display="flex" flexDirection="column">
       <Heading as="h1" size="lg" mb={4} fontFamily="heading">
         Chat Interno
       </Heading>

@@ -1,5 +1,5 @@
 import {
-  Box, Heading, Select, Input, Button, HStack, Text, SimpleGrid,
+  Box, Heading, Input, Button, HStack, Text, SimpleGrid,
   Stat, StatLabel, StatNumber, useToast, VStack,
 } from '@chakra-ui/react';
 import { useState, useEffect } from 'react';
@@ -7,6 +7,8 @@ import { FiSave } from 'react-icons/fi';
 import AttendanceGrid from '../../components/AttendanceGrid';
 import LoadingSkeleton from '../../components/LoadingSkeleton';
 import ErrorAlert from '../../components/ErrorAlert';
+import CustomSelect from '../../components/CustomSelect';
+import DatePicker from '../../components/DatePicker';
 import { adminService } from '../../services/adminService';
 import { attendanceService } from '../../services/attendanceService';
 
@@ -115,28 +117,21 @@ export default function AttendanceRegisterPage() {
             <Text fontSize="xs" fontWeight={600} color="onSurfaceVariant" mb={1} textTransform="uppercase" letterSpacing="wider">
               Curso
             </Text>
-            <Select
+            <CustomSelect
               placeholder="Seleccionar curso"
               value={selectedCourseId}
-              onChange={(e) => handleCourseChange(e.target.value)}
-              borderRadius="input"
+              onChange={handleCourseChange}
             >
               {courses.map((c) => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
-            </Select>
+            </CustomSelect>
           </Box>
           <Box>
             <Text fontSize="xs" fontWeight={600} color="onSurfaceVariant" mb={1} textTransform="uppercase" letterSpacing="wider">
               Fecha
             </Text>
-            <Input
-              type="date"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              borderRadius="input"
-              w="180px"
-            />
+            <DatePicker value={selectedDate} onChange={setSelectedDate} w="180px" />
           </Box>
         </HStack>
 

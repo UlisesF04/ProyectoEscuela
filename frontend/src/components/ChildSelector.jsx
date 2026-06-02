@@ -1,4 +1,5 @@
-import { Tabs, TabList, Tab, Select, Box } from '@chakra-ui/react';
+import { Tabs, TabList, Tab, Box } from '@chakra-ui/react';
+import CustomSelect from '../components/CustomSelect';
 
 export default function ChildSelector({ children = [], selectedChild, onChange }) {
   if (!children || children.length === 0) return null;
@@ -26,13 +27,12 @@ export default function ChildSelector({ children = [], selectedChild, onChange }
 
   return (
     <Box mb={4}>
-      <Select
+      <CustomSelect
         value={selectedChild?.id || ''}
-        onChange={(e) => {
-          const child = children.find((c) => c.id === parseInt(e.target.value));
+        onChange={(val) => {
+          const child = children.find((c) => c.id === parseInt(val));
           if (child) onChange(child);
         }}
-        borderRadius="input"
       >
         <option value="">Seleccionar hijo...</option>
         {children.map((child) => (
@@ -40,7 +40,7 @@ export default function ChildSelector({ children = [], selectedChild, onChange }
             {child.first_name} {child.last_name} - {child.course?.name || ''}
           </option>
         ))}
-      </Select>
+      </CustomSelect>
     </Box>
   );
 }

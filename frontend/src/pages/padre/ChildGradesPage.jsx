@@ -6,7 +6,6 @@ import {
   Text,
   VStack,
   HStack,
-  Select,
   SimpleGrid,
 } from '@chakra-ui/react';
 import ChildSelector from '../../components/ChildSelector';
@@ -14,6 +13,7 @@ import { parentService } from '../../services/parentService';
 import { gradesService } from '../../services/gradesService';
 import LoadingSkeleton from '../../components/LoadingSkeleton';
 import DataTable from '../../components/DataTable';
+import CustomSelect from '../../components/CustomSelect';
 
 const GRADE_TYPE_LABELS = {
   examen: 'Examen',
@@ -247,12 +247,10 @@ export default function ChildGradesPage() {
                   >
                     Materia
                   </Text>
-                  <Select
+                  <CustomSelect
                     id="filter-materia"
                     value={subjectFilter}
-                    onChange={(e) => setSubjectFilter(e.target.value)}
-                    borderRadius="input"
-                    bg="white"
+                    onChange={setSubjectFilter}
                     isDisabled={availableSubjects.length === 0}
                   >
                     <option value="all">Todas</option>
@@ -261,7 +259,7 @@ export default function ChildGradesPage() {
                         {name}
                       </option>
                     ))}
-                  </Select>
+                  </CustomSelect>
                 </Box>
 
                 <Box>
@@ -278,12 +276,10 @@ export default function ChildGradesPage() {
                   >
                     Tipo de nota
                   </Text>
-                  <Select
+                  <CustomSelect
                     id="filter-tipo"
                     value={typeFilter}
-                    onChange={(e) => setTypeFilter(e.target.value)}
-                    borderRadius="input"
-                    bg="white"
+                    onChange={setTypeFilter}
                   >
                     <option value="all">Todos</option>
                     {TYPE_OPTIONS.map((t) => (
@@ -291,7 +287,7 @@ export default function ChildGradesPage() {
                         {GRADE_TYPE_LABELS[t]}
                       </option>
                     ))}
-                  </Select>
+                  </CustomSelect>
                 </Box>
 
                 <Box>
@@ -308,12 +304,10 @@ export default function ChildGradesPage() {
                   >
                     Periodo
                   </Text>
-                  <Select
+                  <CustomSelect
                     id="filter-periodo"
                     value={periodFilter}
-                    onChange={(e) => setPeriodFilter(e.target.value)}
-                    borderRadius="input"
-                    bg="white"
+                    onChange={setPeriodFilter}
                   >
                     <option value="all">Todos</option>
                     {PERIOD_OPTIONS.map((p) => (
@@ -321,7 +315,7 @@ export default function ChildGradesPage() {
                         {p.label}
                       </option>
                     ))}
-                  </Select>
+                  </CustomSelect>
                 </Box>
               </SimpleGrid>
 

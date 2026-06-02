@@ -2,13 +2,14 @@ import {
   Box, Heading, Button, HStack, VStack, Badge,
   Modal, ModalOverlay, ModalContent, ModalHeader, ModalCloseButton,
   ModalBody, ModalFooter, FormControl, FormLabel, FormErrorMessage,
-  Input, Select, useToast, Text, Divider, Spinner, Center, Flex,
+  Input, useToast, Text, Divider, Spinner, Center, Flex,
 } from '@chakra-ui/react';
 import { useState, useEffect, useRef } from 'react';
 import { FiPlus, FiEdit2, FiBookOpen, FiBook, FiX } from 'react-icons/fi';
 import DataTable from '../../components/DataTable';
 import ErrorAlert from '../../components/ErrorAlert';
 import LoadingSkeleton from '../../components/LoadingSkeleton';
+import CustomSelect from '../../components/CustomSelect';
 import { adminService } from '../../services/adminService';
 
 const emptyForm = { name: '', year: '', division: '', level: '' };
@@ -269,16 +270,15 @@ export default function CoursesPage() {
               </HStack>
               <FormControl isInvalid={!!formErrors.level}>
                 <FormLabel fontSize="sm">Nivel</FormLabel>
-                <Select
+                <CustomSelect
                   value={formData.level}
-                  onChange={(e) => setFormData({ ...formData, level: e.target.value })}
-                  bg="white"
+                  onChange={(val) => setFormData({ ...formData, level: val })}
                   placeholder="Seleccionar nivel"
                 >
                   {LEVEL_OPTIONS.map((l) => (
                     <option key={l.value} value={l.value}>{l.label}</option>
                   ))}
-                </Select>
+                </CustomSelect>
                 <FormErrorMessage>{formErrors.level}</FormErrorMessage>
               </FormControl>
             </VStack>
@@ -334,15 +334,14 @@ export default function CoursesPage() {
               </HStack>
               <FormControl isInvalid={!!formErrors.level}>
                 <FormLabel fontSize="sm">Nivel</FormLabel>
-                <Select
+                <CustomSelect
                   value={editFormData.level}
-                  onChange={(e) => setEditFormData({ ...editFormData, level: e.target.value })}
-                  bg="white"
+                  onChange={(val) => setEditFormData({ ...editFormData, level: val })}
                 >
                   {LEVEL_OPTIONS.map((l) => (
                     <option key={l.value} value={l.value}>{l.label}</option>
                   ))}
-                </Select>
+                </CustomSelect>
                 <FormErrorMessage>{formErrors.level}</FormErrorMessage>
               </FormControl>
             </VStack>

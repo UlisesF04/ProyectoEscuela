@@ -1,5 +1,5 @@
 import {
-  Box, Heading, Button, Input, Select, HStack, VStack,
+  Box, Heading, Button, Input, HStack, VStack,
   Modal, ModalOverlay, ModalContent, ModalHeader, ModalCloseButton,
   ModalBody, ModalFooter, FormControl, FormLabel, FormErrorMessage,
   AlertDialog, AlertDialogOverlay, AlertDialogContent,
@@ -8,10 +8,11 @@ import {
 } from '@chakra-ui/react';
 import { useState, useEffect, useMemo, useRef } from 'react';
 import {
-  FiPlus, FiEdit2, FiTrash2, FiToggleRight, FiSearch, FiUserPlus,
+  FiPlus, FiEdit2, FiTrash2, FiToggleRight, FiSearch, FiUserPlus, FiRefreshCw,
 } from 'react-icons/fi';
 import DataTable from '../../components/DataTable';
 import ErrorAlert from '../../components/ErrorAlert';
+import CustomSelect from '../../components/CustomSelect';
 import { adminService } from '../../services/adminService';
 
 const roleColors = {
@@ -200,6 +201,16 @@ export default function UsersPage() {
     }
   };
 
+  const handleReactivate = async (user) => {
+    try {
+      await adminService.updateUser(user.id, { is_active: true });
+      toast({ title: 'Usuario reactivado', description: 'El usuario fue reactivado correctamente.', status: 'success', duration: 3000, isClosable: true, position: 'top-right' });
+      fetchUsers();
+    } catch (err) {
+      toast({ title: 'Error', description: err?.response?.data?.message || err.message, status: 'error', duration: 5000, isClosable: true, position: 'top-right' });
+    }
+  };
+
   const columns = [
     {
       key: 'is_active',
@@ -261,17 +272,16 @@ export default function UsersPage() {
             bg="white"
           />
         </InputGroup>
-        <Select
+        <CustomSelect
           value={roleFilter}
-          onChange={(e) => setRoleFilter(e.target.value)}
+          onChange={setRoleFilter}
           maxW="200px"
-          bg="white"
           placeholder="Todos los roles"
         >
           {ROLE_OPTIONS.map((r) => (
             <option key={r.value} value={r.value}>{r.label}</option>
           ))}
-        </Select>
+        </CustomSelect>
         <Button
           leftIcon={<FiPlus />}
           colorScheme="brand"
@@ -300,7 +310,10 @@ export default function UsersPage() {
           { label: 'Editar', icon: FiEdit2, onClick: () => openEditModal(user), variant: 'ghost' },
           ...(user.is_active
             ? [{ label: 'Desactivar', icon: FiToggleRight, onClick: () => openDeleteDialog(user, 'deactivate'), colorScheme: 'orange', variant: 'ghost' }]
-            : [{ label: 'Eliminar', icon: FiTrash2, onClick: () => openDeleteDialog(user, 'permanent'), colorScheme: 'red', variant: 'ghost' }]
+            : [
+                { label: 'Reactivar', icon: FiRefreshCw, onClick: () => handleReactivate(user), colorScheme: 'green', variant: 'ghost' },
+                { label: 'Eliminar', icon: FiTrash2, onClick: () => openDeleteDialog(user, 'permanent'), colorScheme: 'red', variant: 'ghost' },
+              ]
           ),
         ]}
       />
@@ -347,16 +360,15 @@ export default function UsersPage() {
               </FormControl>
               <FormControl isInvalid={!!formErrors.role}>
                 <FormLabel fontSize="sm">Rol</FormLabel>
-                <Select
+                <CustomSelect
                   value={formData.role}
-                  onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                  bg="white"
+                  onChange={(val) => setFormData({ ...formData, role: val })}
                   placeholder="Seleccionar rol"
                 >
                   {ROLE_OPTIONS.map((r) => (
                     <option key={r.value} value={r.value}>{r.label}</option>
                   ))}
-                </Select>
+                </CustomSelect>
                 <FormErrorMessage>{formErrors.role}</FormErrorMessage>
               </FormControl>
               <FormControl isInvalid={!!formErrors.password}>
