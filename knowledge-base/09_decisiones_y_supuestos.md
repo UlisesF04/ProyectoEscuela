@@ -67,10 +67,12 @@
 | Aspecto | Detalle |
 |---------|---------|
 | **Decisión** | El agente de notificaciones corre como un proceso Python independiente, no como una tarea dentro del backend Node.js |
-| **Contexto** | Las notificaciones requieren evaluar condiciones contra la BD, procesar datos y enviar mensajes vía Twilio. |
+| **Contexto** | Las notificaciones requieren evaluar condiciones contra la BD, procesar datos y enviar emails. |
 | **Alternativas** | **A)** node-cron dentro del backend Express — mismo lenguaje, mismo código base. **B)** Worker Node.js separado — mismo lenguaje que el backend, proceso independiente. **C)** Worker Python separado — requiere mantener dos runtimes. |
-| **Justificación** | Python tiene mejor ecosistema para procesamiento de datos (Pandas, SQL directo) y la integración con Twilio vía SDK Python es madura. Separar el agente evita que tareas pesadas (consultas complejas, loops de alumnos) bloqueen el event loop de Node.js. |
+| **Justificación** | Python tiene mejor ecosistema para procesamiento de datos (Pandas, SQL directo) y la integración con Resend vía SDK Python es simple y no requiere aprobación externa. Separar el agente evita que tareas pesadas (consultas complejas, loops de alumnos) bloqueen el event loop de Node.js. |
 | **Trade-offs aceptados** | Mantener dos runtimes (Node + Python). El agente consulta la BD directamente vía SQL en lugar de usar la API REST, lo que duplica la lógica de acceso a datos. |
+
+> **Decisión reevaluada:** originalmente Twilio WhatsApp, reemplazado por Resend email por simplicidad (Jun 2026)
 
 ---
 
@@ -106,14 +108,14 @@
 | **Riesgo si es falso** | Si los docentes/preceptores necesitan mantener sesión abierta por más de un día (ej: trabajan desde casa después del horario escolar), la expiración de 8h será frustrante y requerirá re-logueo constante. |
 | **Cómo validar** | Encuestar a usuarios reales sobre su patrón de uso esperado. |
 
-### SU-03 — Los padres tienen acceso a internet y WhatsApp
+### SU-03 — Los padres tienen acceso a internet y email
 
 | Aspecto | Detalle |
 |---------|---------|
-| **Supuesto** | Todos los padres/tutores tienen un smartphone con acceso a internet y WhatsApp activo |
-| **Origen** | El canal de notificaciones es exclusivamente WhatsApp vía Twilio. La web app requiere internet. |
-| **Riesgo si es falso** | Padres sin smartphone o sin datos móviles quedarían excluidos de las notificaciones y del acceso al sistema. |
-| **Cómo validar** | Relevar el porcentaje de familias con acceso a WhatsApp en la institución objetivo. Considerar un canal alternativo (SMS o llamada telefónica) para casos sin datos. |
+| **Supuesto** | Todos los padres/tutores tienen acceso a internet y una dirección de email activa |
+| **Origen** | El canal de notificaciones es email vía Resend. La web app requiere internet. |
+| **Riesgo si es falso** | Padres sin acceso a email quedarían excluidos de las notificaciones y del acceso al sistema. |
+| **Cómo validar** | Relevar el porcentaje de familias con acceso a email en la institución objetivo. Considerar un canal alternativo (SMS o llamada telefónica) para casos sin datos. |
 
 ### SU-04 — El preceptor registra asistencias una vez por día
 

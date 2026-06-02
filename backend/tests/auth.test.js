@@ -3,7 +3,7 @@ process.env.NODE_ENV = 'test';
 
 // Load .env for local database connection
 const path = require('path');
-require('dotenv').config({ path: path.resolve(__dirname, '..', '.env') });
+require('dotenv').config({ path: path.resolve(__dirname, '..', '..', '.env') });
 
 const app = require('../app');
 const http = require('http');

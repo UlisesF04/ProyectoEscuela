@@ -69,7 +69,7 @@ C-13 frontend-redesign es paralelo a toda la Fase 2-6 y depende solo de C-04.
 
 `C-01 → C-02 → C-03 → C-04 → C-10 → C-11`
 
-Incluye el agente de notificaciones (diferenciador del proyecto). Sin él, el sistema es un CRUD escolar más.
+Incluye el agente de notificaciones automatizadas. Sin él, el sistema es un CRUD escolar más.
 
 > C-13 frontend-redesign está fuera del camino crítico y corre en paralelo desde GATE 3.
 
@@ -98,7 +98,7 @@ Incluye el agente de notificaciones (diferenciador del proyecto). Sin él, el si
   - Scaffolding de monorepo: `frontend/`, `backend/`, `agent/`, `openspec/`, `docs/`
   - `backend/package.json` con Express 4, Sequelize 6, jsonwebtoken, bcrypt, express-validator, express-rate-limit, cors, morgan
   - `frontend/package.json` con React 18, Vite, Chakra UI 2.x, React Router v6, axios
-  - `agent/requirements.txt` con APScheduler, psycopg2-binary, twilio, pandas
+  - `agent/requirements.txt` con APScheduler, psycopg2-binary, resend, pandas
   - `backend/config/database.js` — conexión PostgreSQL con Sequelize
   - `backend/app.js` — esqueleto Express con middlewares base (CORS, JSON parser, morgan, error handler)
   - `frontend/src/main.jsx` — esqueleto Vite + Chakra Provider + React Router
@@ -295,61 +295,63 @@ Incluye el agente de notificaciones (diferenciador del proyecto). Sin él, el si
 ### [C-09] `teacher-leaves-module`
 - **Estado**: `[x]` completado — 2026-06-01
 - **Scope**:
-  - Módulo backend `modules/teacher-leaves/`: CRUD licencias docentes
-  - Modelo Sequelize `TeacherLeave` con CHECK(end_date >= start_date), cálculo automático de days_used
-  - `POST /api/v1/teacher-leaves` — solicitud de licencia (docente), estado inicial 'pendiente'
-  - `PUT /api/v1/teacher-leaves/:id/status` — aprobar/rechazar (solo admin, RN-19)
-  - `GET /api/v1/teacher-leaves/me` — historial del docente autenticado con resumen de días
-  - `GET /api/v1/teacher-leaves` — todas las licencias (admin)
-  - Validaciones: end_date >= start_date (RN-20), solo admin puede cambiar status, solo docente puede crear
-  - Frontend: adaptar `pages/docente/MyLeavesPage.jsx` y `pages/admin/LeavesPage.jsx` (ya existen del C-13) con datos reales
-  - Tests: solicitud exitosa, fechas inválidas, aprobación por no-admin 403, licencia ya procesada 409
-  - Reglas de negocio: RN-19, RN-20
-  - 🔴 **Post-rediseño C-13**: Las vistas frontend ya existen (MyLeavesPage, LeavesPage). NO crear nuevas páginas — conectar endpoints a las existentes y respetar paleta Cozy Chocolate Cream, componentes compartidos, y layout DashboardLayout.
+  - Module backend `modules/licences/`: CRUD de licencias (título + archivo adjunto)
+  - Modelo Sequelize `Licence` con campos: title, file_data, file_name, file_mime, file_size (sin fechas ni estados de aprobación)
+  - `POST /api/v1/licences` — crear licencia con título + archivo opcional (docente, preceptor, padre)
+  - `GET /api/v1/licences/me` — historial del usuario autenticado
+  - `GET /api/v1/licences/admin` — todas las licencias (admin)
+  - `GET /api/v1/licences/from-parents` — justificaciones de padres (preceptor)
+  - `GET /api/v1/licences/:id/download` — descargar archivo adjunto
+  - Configuración Multer para subida de archivos (JPG/PNG/PDF, ≤ 5MB)
+  - Frontend: `pages/docente/MyLeavesPage.jsx`, `pages/admin/LeavesPage.jsx`, `pages/preceptor/MyLeavesPage.jsx`, `pages/preceptor/JustificacionesPage.jsx` conectados con datos reales
+  - Sin migración formal (usa sync({ alter: true }))
+  - Sin flujo de aprobación (el docente registra, no necesita aprobación)
+  - 🔴 **Post-rediseño C-13**: Las vistas frontend ya existen (MyLeavesPage, LeavesPage, JustificacionesPage). NO crear nuevas páginas — conectar endpoints a las existentes y respetar paleta Cozy Chocolate Cream, componentes compartidos, y layout DashboardLayout.
 - **Dependencias**: `C-04`
-- **Governance**: BAJO (CRUD simple con estados, sin integraciones externas)
+- **Governance**: BAJO (solo subida de archivos con título, sin lógica de negocio compleja)
 - **Leer antes**:
-  - `knowledge-base/06_funcionalidades.md` §Épica 8: Licencias Docentes
-  - `knowledge-base/07_flujos_principales.md` §Flujo 7: Ciclo de vida de una licencia docente
+  - `knowledge-base/07_flujos_principales.md` §Flujo 7: Registro de licencia docente
   - `knowledge-base/05_reglas_de_negocio.md` §Licencias Docentes (RN-LI)
-  - `knowledge-base/04_modelo_de_datos.md` §teacher_leaves
+  - `knowledge-base/04_modelo_de_datos.md` §licences
 
 ---
 
 ## FASE 5 — Automatización Inteligente
 
-> Agente Python de notificaciones vía WhatsApp. Diferenciador clave del proyecto.
+> Agente Python de notificaciones vía email.
 
 ### [C-10] `notification-agent`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` completado — 2026-06-02
 - **Scope**:
   - `agent/main.py` — scheduler APScheduler con ejecución diaria (18:00 hs, lunes a viernes)
-  - `agent/config.py` — variables de entorno: DATABASE_URL, TWILIO_*, AUSENCIA_UMBRAL
+  - `agent/config.py` — variables de entorno: DATABASE_URL, RESEND_API_KEY, AUSENCIA_UMBRAL
   - `agent/tasks/db_reader.py` — consultas SQL directas a PostgreSQL con psycopg2:
     - Alumnos con ≥ X inasistencias no justificadas (excluye ya notificados hoy RN-16)
     - Alumnos con ≥ 20% inasistencias sobre total del trimestre
     - Calificaciones < 4 registradas hoy
     - Tareas con vencimiento ≤ 2 días + no entregadas
     - Licencias aprobadas con vencimiento ≤ 3 días
-  - `agent/tasks/notifier.py` — envío de WhatsApp vía Twilio SDK, registro en notification_logs
+  - `agent/tasks/notifier.py` — envío de email vía Resend SDK (templates HTML), registro en notification_logs
+  - `agent/templates/` — templates HTML para notificaciones por email
+  - Verificación de email del padre como canal de contacto obligatorio (en lugar de WhatsApp)
   - `agent/tasks/alert_engine.py` — evaluación de condiciones y orquestación de las 5 alertas
   - Endpoint interno `POST /api/v1/notifications/trigger` (backend) para trigger manual con SERVICE_API_KEY
   - Modelo Sequelize `NotificationLog` con índices para consultas del agente
   - Migración 003: tabla `notification_logs`
-  - `requirements.txt` actualizado con psycopg2-binary, twilio, apscheduler, pandas
-  - Tests: consultas SQL, envío mockeado de Twilio, anti-spam (misma alerta no se reenvía en 24h)
+  - `requirements.txt` actualizado con psycopg2-binary, resend, apscheduler, pandas
+  - Tests: consultas SQL, envío mockeado de Resend, anti-spam (misma alerta no se reenvía en 24h)
   - Reglas de negocio: RN-16, RN-17, RN-18
   - Archivo `agent/scheduler/README.md` con instrucciones de ejecución y monitoreo
   - 🔴 **Post-rediseño C-13**: Si se agregan vistas frontend para logs/notificaciones, deben usar `pages/admin/NotificationLogsPage.jsx` (ya existe del C-13), paleta Cozy Chocolate Cream, componentes compartidos, y layout DashboardLayout.
 - **Dependencias**: `C-04` (necesita datos de usuarios, estudiantes y vínculos parentales)
-- **Governance**: ALTO (integración externa Twilio, comunicación con familias, datos sensibles)
+- **Governance**: MEDIO (integración email vía Resend, comunicación con familias)
 - **Leer antes**:
   - `knowledge-base/07_flujos_principales.md` §Flujo 4: Notificación automática de inasistencias críticas
   - `knowledge-base/06_funcionalidades.md` §Épica 7: Notificaciones Automáticas
   - `knowledge-base/05_reglas_de_negocio.md` §Notificaciones (RN-NO)
   - `knowledge-base/08_arquitectura_propuesta.md` §Lógica del agente automatizado, §DD-06
   - `knowledge-base/11_despliegue_y_devops.md` §Componente 3: Agente Python
-  - `knowledge-base/10_preguntas_abiertas.md` Riesgo: aprobación Twilio WhatsApp Business
+  - `knowledge-base/10_preguntas_abiertas.md` Configuración de API key de Resend
 
 ---
 

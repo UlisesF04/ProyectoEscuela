@@ -102,7 +102,7 @@ Cada flujo se documenta extremo a extremo, mostrando la interacción entre compo
 
 ---
 
-## Flujo 4: Notificación automática de inasistencias críticas (Bot)
+## Flujo 4: Notificación automática de inasistencias críticas (Email)
 
 **Disparador**: Ejecución del ciclo diario del agente Python (post-jornada escolar)
 **Actor**: Bot Automatizado (actor no humano)
@@ -115,18 +115,18 @@ Cada flujo se documenta extremo a extremo, mostrando la interacción entre compo
    - Query: excluye alumnos ya notificados hoy del mismo tipo (RN-16)
 3. **Agente** para cada alumno que cumple la condición:
    - Busca en `parent_student` los padres/tutores vinculados
-   - Busca `phone_whatsapp` del padre en `users`
+    - Busca email del padre en `users`
 4. **Agente** ejecuta tarea `notifier.py`:
-   - Construye mensaje: "Su hijo/a [nombre] acumula [N] inasistencias no justificadas. Comuníquese con la institución."
-   - Envía vía Twilio WhatsApp API
+   - Construye email con HTML template (React Email o HTML inline): asunto "Alerta de inasistencias - [nombre del alumno]", cuerpo con detalle de faltas
+   - Envía vía Resend API
 5. **Agente** registra resultado en `notification_logs`:
-   - Si Twilio responde OK → status = 'enviado'
-   - Si Twilio devuelve error → status = 'fallido'
+   - Si Resend responde OK → status = 'enviado'
+   - Si Resend devuelve error → status = 'fallido'
 6. **Agente** repite pasos 3-5 para las otras alertas (CALIFICACION_BAJA, TAREA_PENDIENTE, RIESGO_REGULARIDAD, LICENCIA_DOCENTE_VENCIMIENTO)
 
 **Máquina de estados del envío**:
 ```
-[Evaluación] → [Condición cumple] → [Envío Twilio] → [Éxito] → log='enviado'
+[Evaluación] → [Condición cumple] → [Envío Email via Resend] → [Éxito] → log='enviado'
                                                     → [Fallo] → log='fallido'
                                                     → [Ya notificado hoy] → skip
 ```
@@ -135,8 +135,8 @@ Cada flujo se documenta extremo a extremo, mostrando la interacción entre compo
 | Condición | Manejo |
 |-----------|--------|
 | Error de conexión a BD | Log de error + reintento en próximo ciclo |
-| Twilio rechaza el mensaje | Log con status 'fallido' + código de error Twilio |
-| Padre sin WhatsApp registrado | Skip + log informativo (sin alerta) |
+| Resend rechaza el email | Log con status 'fallido' + código de error Resend |
+| Padre sin email registrado | Skip + log informativo (sin alerta) |
 | Múltiples alumnos críticos | Procesamiento secuencial con timeout entre mensajes |
 
 ---
@@ -207,34 +207,30 @@ Cada flujo se documenta extremo a extremo, mostrando la interacción entre compo
 
 ---
 
-## Flujo 7: Ciclo de vida de una licencia docente
+## Flujo 7: Registro de licencia docente
 
-**Disparador**: Un docente necesita solicitar una licencia
-**Actores**: Docente, Administrador
+**Disparador**: Un docente necesita registrar una licencia o un padre quiere subir un certificado de inasistencia
+**Actor**: Docente, Preceptor, Padre
 
 **Pasos**:
-1. **Docente** accede al formulario de licencias
-2. **Docente** completa: tipo (Enfermedad/Personal/Gremial), fecha inicio, fecha fin
-3. **Frontend** valida: `end_date >= start_date` (RN-20)
-4. **Frontend** envía `POST /api/v1/teacher-leaves`:
-   - Body: `{ leave_type, start_date, end_date, notes }`
-5. **Backend** — Calcula `days_used = end_date - start_date + 1`
-6. **Backend** — Crea licencia con `status = 'pendiente'`
-7. **Backend** devuelve 201
-8. **Administrador** accede al panel de licencias pendientes
-9. **Admin** ve la solicitud con detalle (docente, fechas, días)
-10. **Admin** aprueba o rechaza → `PUT /api/v1/teacher-leaves/:id/status`
-    - Body: `{ status: 'aprobada' | 'rechazada' }`
-11. **Backend** — Service `teacherLeaveService.updateStatus()`:
-    - Verifica que quien aprueba es admin (RN-19)
-    - Cambia estado y registra `approved_by = req.user.id`
-    - Si ya estaba aprobada/rechazada → HTTP 409
-12. **Backend** devuelve 200
-13. **Docente** puede consultar el resultado en su panel (US-022)
+1. **Usuario** accede al formulario de licencias/justificaciones
+2. **Usuario** completa: título o motivo, y opcionalmente adjunta un archivo (JPG/PNG/PDF, ≤ 5MB)
+3. **Frontend** valida tipo y tamaño del archivo
+4. **Frontend** envía `POST /api/v1/licences` con `multipart/form-data`:
+   - Body: `{ title, file }` (file opcional)
+5. **Backend** — authMiddleware + roleMiddleware (docente, preceptor o padre)
+6. **Backend** — Service `licenceService.create()`:
+   - Crea registro en `licences` con `user_id`, `title` y datos del archivo
+7. **Backend** devuelve 201 con la licencia creada
+8. **Frontend** actualiza el listado
+9. **Admin** puede ver todas las licencias en `/admin/leaves`
+10. **Preceptor** puede ver las justificaciones de padres en una sección separada
+11. **Cualquier usuario** puede descargar el archivo de su propia licencia
 
 **Casos de error**:
 | Condición | Código | Manejo |
 |-----------|:------:|--------|
-| Fecha fin < fecha inicio | 400 | "La fecha de fin no puede ser anterior a la fecha de inicio" |
-| Licencia ya procesada | 409 | "Esta licencia ya fue aprobada/rechazada" |
-| Usuario no es admin | 403 | "Solo el administrador puede aprobar licencias" (RN-19) |
+| Archivo > 5MB | 400 | "El archivo no debe superar los 5MB" |
+| Tipo de archivo no permitido | 400 | (validación cliente, Multer lo maneja) |
+| Token expirado | 401 | Redirección al login |
+| Rol no autorizado (ej: admin creando licencia) | 403 | Redirección a /unauthorized |

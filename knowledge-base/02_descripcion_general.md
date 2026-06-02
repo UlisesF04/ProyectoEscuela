@@ -15,7 +15,7 @@
 | Autenticación | JWT + bcrypt | — | Stateless, adecuado para REST. bcrypt rounds = 12 |
 | Base de datos | PostgreSQL | 15.x | Relacional ACID, modelo de datos con relaciones complejas |
 | Agente automatizado | Python | 3.11.x | Ecosistema maduro para procesamiento y automatización |
-| Agente librerías | Pandas, APScheduler, Twilio SDK | — | Procesamiento, scheduler CRON, WhatsApp API |
+| Agente librerías | Pandas, APScheduler, Resend SDK | — | Procesamiento, scheduler CRON, Email API (Resend) |
 | Control de versiones | Git + GitHub | — | Monorepo con carpetas /frontend, /backend, /agent |
 | CI/CD | GitHub Actions | — | Tests automáticos + despliegue continuo |
 
@@ -34,8 +34,8 @@
 [Base de Datos — PostgreSQL 15 / Railway]
      ▲
      │  Consulta directa (SQL)
-[Agente Python — APScheduler + Twilio / Railway Worker]
-     │  WhatsApp Business API (Twilio)
+[Agente Python — APScheduler + Resend / Railway Worker]
+     │  Email API (Resend)
      ▼
 [Padres y Docentes — WhatsApp]
 ```
@@ -50,7 +50,7 @@
 
 | Servicio | Propósito | Tipo | Estado |
 |----------|-----------|------|--------|
-| Twilio | Envío de notificaciones WhatsApp | SDK Python + REST API | Sandbox → Producción |
+| Resend | Envío de notificaciones email | SDK Python + REST API | Free tier: 100 emails/día |
 | Cloudinary o Railway Volumes | Almacenamiento de certificados de justificación | HTTP upload + URL | A definir |
 | Vercel | Hosting del frontend (SPA) | Deploy automático desde GitHub | Configurado |
 | Railway | Hosting del backend + BD PostgreSQL + agente worker | Deploy automático desde GitHub | Configurado |

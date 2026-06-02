@@ -12,6 +12,8 @@ const subjectsRoutes = require('./modules/subjects/subjects.routes');
 const attendancesRoutes = require('./modules/attendances/attendances.routes');
 const gradesRoutes = require('./modules/grades/grades.routes');
 const licencesRoutes = require('./modules/licences/licences.routes');
+const notificationsRoutes = require('./modules/notifications/notifications.routes');
+const configRoutes = require('./modules/config/config.routes');
 const path = require('path');
 
 const app = express();
@@ -78,6 +80,12 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Licences routes
 app.use('/api/v1/licences', licencesRoutes);
+
+// Notifications routes
+app.use('/api/v1/notifications', notificationsRoutes);
+
+// Config routes (admin)
+app.use('/api/v1/config', configRoutes);
 
 // 404 handler
 app.use((req, res) => {

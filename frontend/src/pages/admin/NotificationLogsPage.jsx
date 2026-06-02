@@ -1,25 +1,43 @@
 import {
   Box, Heading, HStack, Select, Input, Badge, Text,
 } from '@chakra-ui/react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import DataTable from '../../components/DataTable';
 import ErrorAlert from '../../components/ErrorAlert';
-import api from '../../services/api';
+import { notificationsService } from '../../services/notificationsService';
 
 const channelColors = {
-  SMS: 'blue',
-  Email: 'purple',
-  WhatsApp: 'green',
+  email: 'purple',
+  sms: 'blue',
+  whatsapp: 'green',
 };
 
 const statusColors = {
-  Enviado: 'green',
   enviado: 'green',
   sent: 'green',
-  Fallido: 'red',
   fallido: 'red',
   failed: 'red',
 };
+
+function getStatusColor(status) {
+  return statusColors[status?.toLowerCase()] || 'gray';
+}
+
+function getChannelColor(channel) {
+  return channelColors[channel?.toLowerCase()] || 'gray';
+}
+
+const alertTypeLabels = {
+  AUSENCIAS_CRITICAS: 'Inasistencias Críticas',
+  RIESGO_REGULARIDAD: 'Riesgo de Regularidad',
+  CALIFICACION_BAJA: 'Nota Baja',
+  TAREA_PENDIENTE: 'Tarea Pendiente',
+  LICENCIA_DOCENTE_VENCIMIENTO: 'Licencia por Vencer',
+};
+
+function formatAlertType(type) {
+  return alertTypeLabels[type] || type || '—';
+}
 
 export default function NotificationLogsPage() {
   const [notifications, setNotifications] = useState([]);
@@ -30,47 +48,48 @@ export default function NotificationLogsPage() {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
 
-  const fetchNotifications = () => {
+  const fetchNotifications = useCallback(() => {
     setLoading(true);
     setError(null);
     const params = {};
     if (alertTypeFilter) params.alert_type = alertTypeFilter;
     if (statusFilter) params.status = statusFilter;
-    if (dateFrom) params.date_from = dateFrom;
-    if (dateTo) params.date_to = dateTo;
+    if (dateFrom) params.from = dateFrom;
+    if (dateTo) params.to = dateTo;
 
-    api.get('/notifications', { params })
-      .then((res) => setNotifications(res.data?.data || []))
+    notificationsService.getAll(params)
+      .then((data) => setNotifications(data || []))
       .catch((err) => setError(err))
       .finally(() => setLoading(false));
-  };
+  }, [alertTypeFilter, statusFilter, dateFrom, dateTo]);
 
-  useEffect(() => { fetchNotifications(); }, [alertTypeFilter, statusFilter, dateFrom, dateTo]);
+  useEffect(() => { fetchNotifications(); }, [fetchNotifications]);
 
   const columns = [
     {
-      key: 'created_at', label: 'Fecha',
-      render: (n) => n.created_at ? new Date(n.created_at).toLocaleString() : '—',
+      key: 'sent_at', label: 'Fecha',
+      render: (n) => n.sent_at ? new Date(n.sent_at).toLocaleString() : '—',
     },
     {
-      key: 'recipient', label: 'Destinatario',
-      render: (n) => n.recipient_name || n.recipient_email || n.recipient || '—',
+      key: 'recipient_email', label: 'Destinatario',
+      render: (n) => n.recipient_name || n.recipient_email || '—',
     },
     {
-      key: 'student', label: 'Alumno',
-      render: (n) => n.Student ? `${n.Student.first_name} ${n.Student.last_name}` : n.student_name || '—',
+      key: 'student_name', label: 'Alumno',
+      render: (n) => n.student_name || '—',
     },
     {
-      key: 'alert_type', label: 'Tipo Alerta',
-      render: (n) => {
-        const labels = { absence: 'Inasistencia', low_grade: 'Nota Baja', overdue_task: 'Tarea Vencida' };
-        return labels[n.alert_type] || n.alert_type || '—';
-      },
+      key: 'type', label: 'Tipo',
+      render: (n) => (
+        <Badge variant="subtle" colorScheme="brand" fontSize="xs">
+          {formatAlertType(n.type || n.alert_type)}
+        </Badge>
+      ),
     },
     {
       key: 'channel', label: 'Canal',
       render: (n) => (
-        <Badge variant="subtle" colorScheme={channelColors[n.channel] || 'gray'} fontSize="xs">
+        <Badge variant="subtle" colorScheme={getChannelColor(n.channel)} fontSize="xs">
           {n.channel || '—'}
         </Badge>
       ),
@@ -78,7 +97,7 @@ export default function NotificationLogsPage() {
     {
       key: 'status', label: 'Estado',
       render: (n) => (
-        <Badge variant="subtle" colorScheme={statusColors[n.status] || 'gray'} fontSize="xs">
+        <Badge variant="subtle" colorScheme={getStatusColor(n.status)} fontSize="xs">
           {n.status || '—'}
         </Badge>
       ),
@@ -103,11 +122,11 @@ export default function NotificationLogsPage() {
             placeholder="Todos"
             borderRadius="input"
             size="sm"
-            w="160px"
+            w="180px"
           >
-            <option value="absence">Inasistencia</option>
-            <option value="low_grade">Nota Baja</option>
-            <option value="overdue_task">Tarea Vencida</option>
+            {Object.entries(alertTypeLabels).map(([value, label]) => (
+              <option key={value} value={value}>{label}</option>
+            ))}
           </Select>
         </Box>
         <Box>
@@ -122,8 +141,8 @@ export default function NotificationLogsPage() {
             size="sm"
             w="140px"
           >
-            <option value="Enviado">Enviado</option>
-            <option value="Fallido">Fallido</option>
+            <option value="enviado">Enviado</option>
+            <option value="fallido">Fallido</option>
           </Select>
         </Box>
         <Box>

@@ -257,21 +257,21 @@ Prioridad épica: **Alta**
 ### US-017 — Recibir alerta de inasistencias críticas
 
 **Como** padre
-**Quiero** recibir una notificación por WhatsApp cuando mi hijo acumule faltas críticas
+**Quiero** recibir una notificación por email cuando mi hijo acumule faltas críticas
 **Para** poder intervenir a tiempo
 
 **Criterios de aceptación**:
-- [ ] CA-01: Alumno alcanza umbral configurado → padre recibe WhatsApp con conteo de faltas
+- [ ] CA-01: Alumno alcanza umbral configurado → padre recibe email con conteo de faltas
 - [ ] CA-02: Misma condición sin cambios al día siguiente → no se reenvía (anti-spam RN-16)
-- [ ] CA-03: Error de Twilio → registro en notification_logs con estado 'fallido' (RN-17)
+- [ ] CA-03: Error de envío de email → registro en notification_logs con estado 'fallido' (RN-17)
 
 **Reglas relacionadas**: RN-16, RN-17, RN-18
-**Responsable**: Agente Python + Twilio
+**Responsable**: Agente Python + Resend (email)
 
 ### US-018 — Recibir alerta de calificación baja
 
 **Como** padre
-**Quiero** recibir una notificación por WhatsApp cuando mi hijo obtenga una calificación reprobatoria
+**Quiero** recibir una notificación por email cuando mi hijo obtenga una calificación reprobatoria
 **Para** estar informado sin necesidad de entrar al sistema
 
 **Criterios de aceptación**:

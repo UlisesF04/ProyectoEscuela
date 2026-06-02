@@ -10,7 +10,7 @@
 | Asistencias | `attendances` | Registro diario de asistencia con justificaciones |
 | Calificaciones | `grades` | Notas por alumno, materia y período |
 | Tareas y entregas | `tasks`, `task_submissions` | Actividades con seguimiento de entrega |
-| Licencias | `teacher_leaves` | Solicitudes de licencia docente |
+| Licencias | `licences` | Registro de licencias con adjuntos |
 | Notificaciones | `notification_logs` | Auditoría de envíos del agente automatizado |
 
 ## ERD — Diagrama de Entidad-Relación
@@ -26,7 +26,7 @@ users (1) ────< parent_student >──── (1) students
   │                              │
   │                              └──< tasks >──── task_submissions >────┘
   │                                                      │
-  ├──< teacher_leaves >──── (solicitante)                │
+  ├──< licences >──── (solicitante)                │
   │                                                      │
   └──< attendances >─────────────────────────────────────┘
          (registered_by)
@@ -41,7 +41,7 @@ courses (1) ────< students (course_id)
 |-----------|:-----------:|-----------|:-----------:|-------------|
 | users | 1 ── N | teacher_subject | N | Un docente puede enseñar varias materias |
 | users | 1 ── N | parent_student | N | Un padre puede tener varios hijos vinculados |
-| users | 1 ── N | teacher_leaves | N | Un docente puede tener múltiples licencias |
+| users | 1 ── N | licences | N | Un usuario puede tener múltiples licencias |
 | users | 1 ── N | attendances | N | Un preceptor registra muchas asistencias |
 | users | 1 ── N | grades | N | Un docente carga muchas calificaciones |
 | users | 1 ── N | tasks | N | Un docente crea muchas tareas |
@@ -69,7 +69,7 @@ courses (1) ────< students (course_id)
 | role | ENUM | NOT NULL | admin, preceptor, docente, padre |
 | first_name | VARCHAR(100) | NOT NULL | Nombre |
 | last_name | VARCHAR(100) | NOT NULL | Apellido |
-| phone_whatsapp | VARCHAR(20) | NULLABLE | Número para notificaciones Twilio |
+| phone_whatsapp | VARCHAR(20) | NULLABLE | Número de WhatsApp (heredado, actualmente notificaciones vía email) |
 | is_active | BOOLEAN | DEFAULT true | Soft-delete / desactivación |
 | created_at | TIMESTAMP | DEFAULT NOW() | Fecha de creación |
 | updated_at | TIMESTAMP | DEFAULT NOW() | Fecha de última modificación |
@@ -219,23 +219,22 @@ courses (1) ────< students (course_id)
 
 ---
 
-### teacher_leaves
+### licences
 
 | Atributo | Tipo | Constraints | Descripción |
 |----------|------|-------------|-------------|
 | id | SERIAL | PK | |
-| user_id | INTEGER | FK → users(id), NOT NULL | Docente solicitante |
-| leave_type | VARCHAR(100) | NULLABLE | Enfermedad, Personal, Gremial, etc. |
-| start_date | DATE | NOT NULL | Fecha de inicio |
-| end_date | DATE | NOT NULL, CHECK(end_date >= start_date) | Fecha de fin |
-| days_used | INTEGER | NOT NULL | Calculado automáticamente |
-| status | ENUM | DEFAULT 'pendiente' | pendiente, aprobada, rechazada |
-| approved_by | INTEGER | FK → users(id), NULLABLE | Admin que aprobó/rechazó |
-| notes | TEXT | NULLABLE | Observaciones |
+| user_id | INTEGER | FK → users(id), NOT NULL | Usuario que creó la licencia |
+| title | VARCHAR(255) | NOT NULL | Título o motivo |
+| file_url | VARCHAR(500) | NULLABLE | URL externa del archivo (futuro) |
+| file_name | VARCHAR(255) | NULLABLE | Nombre original del archivo |
+| file_mime | VARCHAR(100) | NULLABLE | Tipo MIME (image/jpeg, application/pdf) |
+| file_size | INTEGER | NULLABLE | Tamaño en bytes |
+| file_data | BLOB('long') | NULLABLE | Datos binarios del archivo |
 | created_at | TIMESTAMP | DEFAULT NOW() | |
 | updated_at | TIMESTAMP | DEFAULT NOW() | |
 
-**Índices**: INDEX(user_id), INDEX(status)
+**Índices**: INDEX(user_id)
 
 ---
 

@@ -8,6 +8,8 @@ const ParentStudent = require('./ParentStudent');
 const Attendance = require('./Attendance');
 const Grade = require('./Grade');
 const Licence = require('./Licence');
+const NotificationLog = require('./NotificationLog');
+const Setting = require('./Setting');
 
 // ─── User associations ─────────────────────────────────────────
 User.hasMany(TeacherSubject, { foreignKey: 'user_id' });
@@ -62,4 +64,6 @@ module.exports = {
   Attendance,
   Grade,
   Licence,
+  NotificationLog,
+  Setting,
 };

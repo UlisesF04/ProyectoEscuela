@@ -18,7 +18,7 @@
 - **Infraestructura**: Vercel (frontend SPA) + Railway (backend + BD + agente Worker)
 - **CI/CD**: GitHub Actions (tests + lint + build automáticos)
 - **Testing**: Backend: `npm test` (integración con PostgreSQL real en contenedor) / Frontend: `npm run lint` + `npm run build`
-- **Agente automatizado**: Python 3.11.x — APScheduler + Twilio SDK + psycopg2
+- **Agente automatizado**: Python 3.11.x — APScheduler + Resend SDK + psycopg2
 
 ---
 
@@ -114,7 +114,7 @@ Antes de proponer cualquier change, leé los archivos relevantes para el dominio
 
 ### FASE 5 — Automatización Inteligente
 
-- [ ] C-10 `notification-agent` — ALTO — depende de C-04 🔴 post-C13: usar vista existente NotificationLogsPage si aplica
+- [x] C-10 `notification-agent` — MEDIO — depende de C-04 ✅ 2026-06-02
 
 ### FASE 6 — Cierre y Calidad
 

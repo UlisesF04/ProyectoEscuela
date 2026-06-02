@@ -8,7 +8,7 @@
 | Preceptor | Personal no académico encargado de la regularidad y asistencia. | Web app (panel de asistencias) | Crítico |
 | Docente | Personal académico responsable de materias y cursos asignados. | Web app (panel docente) | Crítico |
 | Padre / Tutor | Responsable legal del alumno. Monitoreo de desempeño. | Web app + WhatsApp (notificaciones) | Crítico |
-| Bot Automatizado | Proceso automático que evalúa condiciones y notifica. | Sin interfaz — ejecución CRON + Twilio API | Alta |
+| Bot Automatizado | Proceso automático que evalúa condiciones y notifica. | Sin interfaz — ejecución CRON + Resend API | Alta |
 
 ## Matriz RBAC — Permisos por rol
 

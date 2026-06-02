@@ -43,7 +43,7 @@
 |:---------:|----------|:-------:|------------------|
 | **Alta** | ¿La institución requiere registro de asistencia por materia (cada hora) o un único registro diario por alumno? | Sprint 3 — Diseño de `attendances` | Preceptor + Equipo técnico |
 | **Alta** | ¿La escala de calificación es numérica 1-10 o conceptual? | Sprint 4 — Diseño de `grades` | Docente + Administrador |
-| **Alta** | ¿Hay padres sin acceso a WhatsApp? ¿Se necesita un canal alternativo (SMS)? | Sprint 5 — Diseño de notificaciones | Administrador |
+| **Alta** | ¿Hay padres sin acceso a email? ¿Se necesita un canal alternativo? | Sprint 5 — Diseño de notificaciones | Administrador |
 | **Alta** | ¿Chakra UI v2 o v3? Depende de lo ya instalado en `package.json` y la decisión del equipo | Sprint 1 — Setup frontend | Equipo técnico |
 | **Media** | ¿Se necesita multi-tenancy (varias escuelas) en el futuro? Si sí, hay que agregar entidad `schools` ahora para evitar migración dolorosa | Post-MVP — Arquitectura | Product Owner |
 | **Media** | ¿El umbral de ausencias críticas (RN-18) es por ciclo lectivo completo o por trimestre? | Sprint 5 — Agente notificaciones | Administrador |
@@ -58,7 +58,6 @@
 
 | Riesgo | Probabilidad | Impacto | Mitigación |
 |--------|:-----------:|:-------:|------------|
-| El agente Twilio no consigue habilitación en producción (WhatsApp Business requiere aprobación de Meta) | Media | Alto | Iniciar el proceso de aprobación de Twilio WhatsApp Business al inicio del proyecto. Tener plan B con SMS |
+| Los emails de Resend caen en spam | Baja | Medio | Configurar SPF/DKIM en el dominio. Usar la API de Resend que optimiza deliverability. Incluir nota en onboarding para revisar carpeta de spam |
 | Breaking changes de Chakra UI v3 si se migra desde v2 | Alta | Medio | Definir la versión temprano. Si ya se usó v3, no mezclar APIs de v2 |
-| El equipo (4 personas) no tiene experiencia con Python + Twilio | Media | Alto | Incluir tiempo de aprendizaje en la planificación del Sprint 5. Hacer un spike técnico antes |
-| Los padres no verifican las notificaciones de WhatsApp porque llegan de un número desconocido | Baja | Alto | Configurar el nombre empresarial de Twilio. Incluir instrucciones en la primera comunicación |
+| El equipo (4 personas) no tiene experiencia con Python + Resend | Baja | Bajo | SDK simple, API REST documentada |

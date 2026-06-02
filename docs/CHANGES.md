@@ -1,7 +1,7 @@
 # Mapa de Changes — Optimización de la Gestión Académica y Comunicación Escolar
 
 > Generado a partir del análisis de `docs/Descripcion.txt`, `docs/Integrador.txt` y `docs/Historias_de_usuario.txt`.
-> Stack: React 19 + Chakra UI v3 / Node.js 20 + Express + Sequelize / PostgreSQL 15 / Python 3.11 + Twilio
+> Stack: React 19 + Chakra UI v3 / Node.js 20 + Express + Sequelize / PostgreSQL 15 / Python 3.11 + Resend
 
 ---
 
@@ -200,7 +200,7 @@
 
 ## [12]. `agente-notificaciones`
 
-**Funcionalidad**: Agente automatizado en Python que evalúa periódicamente condiciones críticas contra la BD y envía notificaciones WhatsApp vía Twilio. Implementa 5 alertas: ausencias críticas (umbral configurable RN-18), riesgo de regularidad (≥20% inasistencias), calificación baja (< 4), tarea próxima a vencer (≤ 2 días), vencimiento de licencia docente (≤ 3 días). Incluye registro de auditoría en `notification_logs`, supresión de duplicados por día (RN-16) y ejecución programada con APScheduler.
+**Funcionalidad**: Agente automatizado en Python que evalúa periódicamente condiciones críticas contra la BD y envía notificaciones email vía Resend. Implementa 5 alertas: ausencias críticas (umbral configurable RN-18), riesgo de regularidad (≥20% inasistencias), calificación baja (< 4), tarea próxima a vencer (≤ 2 días), vencimiento de licencia docente (≤ 3 días). Incluye registro de auditoría en `notification_logs`, supresión de duplicados por día (RN-16) y ejecución programada con APScheduler.
 
 **Historias**: US-017, US-018, US-019
 
@@ -210,7 +210,7 @@
 
 **Complejidad**: Alta
 
-**Advertencia**: Change de mayor riesgo técnico. Implica integrar Twilio (sandbox → producción), acceder a PostgreSQL desde Python con SQL directo, y desplegar un worker independiente en Railway con scheduler CRON.
+**Advertencia**: Implica integrar Resend para envío de emails, acceder a PostgreSQL desde Python con SQL directo, y desplegar un worker independiente en Railway con scheduler CRON.
 
 ---
 

@@ -13,7 +13,7 @@ Este proyecto es una solución integral donde los empleados de una escuela carga
 - **Frontend:** React.js, Chakra UI, React Router, Context API, Vite.
 - **Backend:** Node.js, Express.js, Sequelize ORM, PostgreSQL, JWT para autenticación.
 - **Base de datos:** PostgreSQL (Railway o Render recomendados para despliegue cloud).
-- **Agente automatizado:** Python, Pandas, Schedule o CRON, Twilio para WhatsApp.
+- **Agente automatizado:** Python, Pandas, Schedule o CRON, Resend para email.
 - **Infraestructura:** Vercel (frontend), Railway o Render (backend), GitHub.
 
 ---
@@ -91,7 +91,7 @@ Este proyecto es una solución integral donde los empleados de una escuela carga
 
 ### Semana 4: Agente Automatizado
 - Script Python con Pandas para leer inasistencias
-- Integración Twilio para enviar WhatsApp
+- Integración Resend para enviar emails
 - Automatización de consultas/notificaciones (Schedule/CRON)
 - Modularidad para agregar funciones future
 

@@ -26,7 +26,7 @@ The frontend SHALL have a `package.json` with React 18.x, Vite, Chakra UI 2.x, R
 - **THEN** all dependencies SHALL install without errors
 
 ### Requirement: Agent requirements.txt
-The agent SHALL have a `requirements.txt` with APScheduler, psycopg2-binary, twilio, and pandas.
+The agent SHALL have a `requirements.txt` with APScheduler, psycopg2-binary, resend, and pandas.
 
 #### Scenario: Agent dependencies are installable
 - **WHEN** running `pip install -r agent/requirements.txt`
@@ -54,11 +54,11 @@ The agent SHALL have a `main.py` entry point with an APScheduler that runs a pla
 - **THEN** the scheduler SHALL start without import errors
 
 ### Requirement: .env.example
-The project SHALL have a `.env.example` file at the root with all environment variables documented: database connection vars, JWT_SECRET, Twilio credentials, SERVICE_API_KEY, FRONTEND_URL, PORT, NODE_ENV, and CLOUDINARY_URL.
+The project SHALL have a `.env.example` file at the root with all environment variables documented: database connection vars, JWT_SECRET, Resend credentials, SERVICE_API_KEY, FRONTEND_URL, PORT, NODE_ENV, and CLOUDINARY_URL.
 
 #### Scenario: env.example contains all variables
 - **WHEN** reading `.env.example`
-- **THEN** it SHALL contain `DATABASE_URL`, `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `JWT_SECRET`, `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_WHATSAPP_FROM`, `SERVICE_API_KEY`, `FRONTEND_URL`, `PORT`, `NODE_ENV`, and `CLOUDINARY_URL`
+- **THEN** it SHALL contain `DATABASE_URL`, `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `JWT_SECRET`, `RESEND_API_KEY`, `FROM_EMAIL`, `SERVICE_API_KEY`, `FRONTEND_URL`, `PORT`, `NODE_ENV`, and `CLOUDINARY_URL`
 
 ### Requirement: Vercel configuration
 The project SHALL have a `vercel.json` in the root that rewrites all routes to `index.html` for SPA client-side routing.

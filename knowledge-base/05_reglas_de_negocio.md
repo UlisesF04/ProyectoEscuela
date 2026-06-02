@@ -61,8 +61,7 @@ Cada regla posee un código único `RN-XX` para trazabilidad con las historias d
 
 | ID | Regla | Justificación |
 |----|-------|---------------|
-| RN-19 | Solo el administrador puede aprobar o rechazar una licencia. El docente solicita pero no puede modificar su estado. | Separación de responsabilidades: quien solicita no puede auto-aprobarse. |
-| RN-20 | La fecha de fin de una licencia no puede ser anterior a la fecha de inicio. El sistema calcula automáticamente `days_used`. | Consistencia lógica y preventiva de errores de carga. El cálculo automático evita errores humanos. |
+| RN-19 | Un docente, preceptor o padre puede crear un registro de licencia con título y archivo adjunto opcional. No requiere aprobación. La licencia queda registrada inmediatamente. | El flujo real de la institución no requiere aprobación — el docente registra su licencia y ya. |
 
 ---
 
@@ -75,5 +74,5 @@ Cada regla posee un código único `RN-XX` para trazabilidad con las historias d
 | Calificaciones | RN-CA | 3 |
 | Tareas | RN-TA | 3 |
 | Notificaciones | RN-NO | 3 |
-| Licencias Docentes | RN-LI | 2 |
-| **Total** | | **20** |
+| Licencias Docentes | RN-LI | 1 |
+| **Total** | | **19** |

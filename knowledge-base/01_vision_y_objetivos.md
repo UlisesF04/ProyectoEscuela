@@ -28,7 +28,7 @@ Transformar la comunicación escolar de un modelo pasivo y reactivo a uno activo
 - Creación de tareas con generación automática de entregas por alumno
 - Registro de estado de entregas (pendiente/entregada/tarde)
 - Dashboard parental (consulta de notas, asistencias y tareas de los hijos)
-- Agente automatizado de notificaciones vía WhatsApp (Twilio) con 5 tipos de alerta
+- Agente automatizado de notificaciones vía email (Resend) con 5 tipos de alerta
 - Solicitud, aprobación/rechazo y consulta de licencias docentes
 
 ## Fuera de alcance (MVP)

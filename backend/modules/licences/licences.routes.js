@@ -35,6 +35,7 @@ router.post(
 
 router.get(
   '/:id/download',
+  roleMiddleware('admin', 'docente', 'preceptor', 'padre'),
   controller.download,
 );
 

@@ -62,9 +62,7 @@ El proyecto sigue una arquitectura de **3 artefactos desplegables de forma indep
 |----------|--------|
 | `DATABASE_URL` | Generada por Railway PostgreSQL add-on |
 | `JWT_SECRET` | Configuración manual (secreta, > 32 caracteres) |
-| `TWILIO_ACCOUNT_SID` | Configuración manual |
-| `TWILIO_AUTH_TOKEN` | Configuración manual |
-| `TWILIO_WHATSAPP_FROM` | Configuración manual |
+| `RESEND_API_KEY` | Configuración manual |
 | `CLOUDINARY_URL` | Configuración manual (opcional) |
 | `SERVICE_API_KEY` | Configuración manual |
 | `FRONTEND_URL` | URL de Vercel (para CORS) |
@@ -85,9 +83,8 @@ El proyecto sigue una arquitectura de **3 artefactos desplegables de forma indep
 | Variable | Propósito |
 |----------|-----------|
 | `DATABASE_URL` | Conexión a PostgreSQL (misma BD que el backend) |
-| `TWILIO_ACCOUNT_SID` | Autenticación Twilio |
-| `TWILIO_AUTH_TOKEN` | Autenticación Twilio |
-| `TWILIO_WHATSAPP_FROM` | Número emisor |
+| `RESEND_API_KEY` | Autenticación Resend |
+| `FROM_EMAIL` | Dirección remitente (ej: noreply@escuela.edu) |
 | `AUSENCIA_UMBRAL` | Umbral configurable de inasistencias (defecto: 10) |
 
 ### Alternativa: GitHub Actions CRON
@@ -112,9 +109,8 @@ jobs:
       - run: python agent/main.py
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
-          TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
-          TWILIO_WHATSAPP_FROM: ${{ secrets.TWILIO_WHATSAPP_FROM }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          FROM_EMAIL: ${{ secrets.FROM_EMAIL }}
 ```
 
 ## CI/CD con GitHub Actions
