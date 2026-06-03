@@ -10,37 +10,44 @@ const router = Router();
 const courseValidations = [
   body('name')
     .notEmpty().withMessage('El nombre del curso es obligatorio')
-    .isLength({ min: 2 }).withMessage('El nombre debe tener al menos 2 caracteres'),
+    .isLength({ min: 2 }).withMessage('El nombre debe tener al menos 2 caracteres')
+    .trim().escape(),
   body('year')
     .notEmpty().withMessage('El año es obligatorio')
     .isInt({ min: 1900, max: 2100 }).withMessage('El año debe estar entre 1900 y 2100'),
   body('division')
     .optional()
-    .isString().withMessage('La división debe ser un texto'),
+    .isString().withMessage('La división debe ser un texto')
+    .trim().escape(),
   body('level')
     .optional()
-    .isString().withMessage('El nivel debe ser un texto'),
+    .isString().withMessage('El nivel debe ser un texto')
+    .trim().escape(),
 ];
 
 const updateCourseValidations = [
   body('name')
     .optional()
-    .isLength({ min: 2 }).withMessage('El nombre debe tener al menos 2 caracteres'),
+    .isLength({ min: 2 }).withMessage('El nombre debe tener al menos 2 caracteres')
+    .trim().escape(),
   body('year')
     .optional()
     .isInt({ min: 1900, max: 2100 }).withMessage('El año debe estar entre 1900 y 2100'),
   body('division')
     .optional()
-    .isString().withMessage('La división debe ser un texto'),
+    .isString().withMessage('La división debe ser un texto')
+    .trim().escape(),
   body('level')
     .optional()
-    .isString().withMessage('El nivel debe ser un texto'),
+    .isString().withMessage('El nivel debe ser un texto')
+    .trim().escape(),
 ];
 
 const subjectValidations = [
   body('name')
     .notEmpty().withMessage('El nombre de la materia es obligatorio')
-    .isLength({ min: 2 }).withMessage('El nombre debe tener al menos 2 caracteres'),
+    .isLength({ min: 2 }).withMessage('El nombre debe tener al menos 2 caracteres')
+    .trim().escape(),
 ];
 
 const idValidation = [

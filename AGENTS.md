@@ -118,7 +118,7 @@ Antes de proponer cualquier change, leé los archivos relevantes para el dominio
 
 ### FASE 6 — Cierre y Calidad
 
-- [ ] C-11 `admin-dashboard-and-polish` — BAJO — depende de C-10 🔴 post-C13: vistas ya existen, conectar con datos reales
+- [x] C-11 `admin-dashboard-and-polish` — BAJO — depende de C-10 ✅ 2026-06-02 (archivado en openspec)
 - [ ] C-12 `devops-deployment` — BAJO — depende de C-01
 
 ### FASE 7 — Rediseño Frontend
@@ -133,7 +133,15 @@ Antes de proponer cualquier change, leé los archivos relevantes para el dominio
   - [x] C-13.6 `responsive`
   - [x] C-13.7 `missing-views`
 
-**Camino crítico**: `C-01 → C-02 → C-03 → C-04 → C-10 → C-11` (C-13 fuera del camino crítico, corre en paralelo)
+### FASE 8 — Auditoría y Seguridad Pre-Producción
+
+- [x] C-14 `production-audit-remediation` — CRITICO — depende de C-01..C-13 ✅ 2026-06-03 (archivado en openspec)
+  - [x] C-14.0 `blockers` — 13 críticos
+  - [x] C-14.1 `preventivos` — 21 altos
+  - [x] C-14.2 `performance-e-integridad` — 23 medios/bajos
+
+**Camino crítico**: `C-01 → C-02 → C-03 → C-04 → C-10 → C-11 → C-14` (C-13 fuera del camino crítico, corre en paralelo)
+⚠️ C-14 COMPLETADO. El proyecto está listo para deploy.
 Todos los changes pendientes deben revisar frontend y rutas contra el diseño de C-13.
 
 ---

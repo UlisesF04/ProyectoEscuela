@@ -23,6 +23,11 @@ Message.init({
   timestamps: true,
   createdAt: 'created_at',
   updatedAt: false,
+  indexes: [
+    { fields: ['chat_id'] },
+    { fields: ['sender_id'] },
+    { fields: ['chat_id', 'created_at'] },
+  ],
 });
 
 module.exports = Message;

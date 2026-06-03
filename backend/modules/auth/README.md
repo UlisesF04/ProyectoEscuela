@@ -1,1 +1,0 @@
-Módulo de autenticación del backend. Aquí van controladores, rutas y modelos de autenticación.

@@ -7,8 +7,8 @@ export const chatService = {
   },
 
   async createChat(participantId) {
-    const { data: res } = await api.post('/chats', { participant_id: participantId });
-    return { chat: res.data, created: res.status === 201, message: res.message };
+    const response = await api.post('/chats', { participant_id: participantId });
+    return { chat: response.data, created: response.status === 201, message: response.message };
   },
 
   async getChatMessages(chatId) {

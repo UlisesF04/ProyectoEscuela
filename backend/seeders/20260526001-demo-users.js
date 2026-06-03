@@ -1,10 +1,23 @@
 'use strict';
 
+// ⚠️ IMPORTANTE: Este seeder es SOLO para desarrollo local.
+// En producción, el seeder retorna inmediatamente gracias al guard NODE_ENV.
+// La contraseña por defecto se puede override con DEMO_PASSWORD env var.
+
 const bcrypt = require('bcrypt');
 
 module.exports = {
   up: async (queryInterface, Sequelize) => {
-    const passwordHash = await bcrypt.hash('password123', 12);
+    if (process.env.NODE_ENV === 'production') {
+      console.warn('⚠️ Seeders no deben ejecutarse en producción. Saltando.');
+      return;
+    }
+    const demoPassword = process.env.DEMO_PASSWORD;
+    if (!demoPassword) {
+      console.error('FATAL: Variable DEMO_PASSWORD no configurada. Seeders abortados.');
+      return;
+    }
+    const passwordHash = await bcrypt.hash(demoPassword, 12);
 
     await queryInterface.bulkInsert('users', [
       {

@@ -8,7 +8,9 @@ logger = logging.getLogger(__name__)
 class Notifier:
     def __init__(self, api_key: str, from_email: str):
         self.from_email = from_email
-        resend.api_key = api_key
+        self.api_key = api_key
+        if resend.api_key != self.api_key:
+            resend.api_key = self.api_key
 
     def send_ausencias_criticas(
         self, parent_email: str, parent_name: str,
@@ -100,7 +102,8 @@ class Notifier:
         return self._send_email(user_email, subject, html)
 
     def _send_email(self, to_email: str, subject: str, html_body: str) -> bool:
-        logger.info("Enviando email a %s | Asunto: %s", to_email, subject)
+        logger.info("Enviando email (destinatario oculto) | Asunto: %s", subject)
+        logger.debug("Preparando envío de email")
         try:
             response = resend.Emails.send({
                 "from": self.from_email,
@@ -108,8 +111,10 @@ class Notifier:
                 "subject": subject,
                 "html": html_body,
             })
-            logger.info("Email enviado OK a %s | Response: %s", to_email, response)
+            logger.info("Email enviado OK")
+            logger.debug("Respuesta de API de email recibida")
             return True
         except Exception as e:
-            logger.error("Error enviando email a %s: %s", to_email, e, exc_info=True)
+            logger.error("Error enviando email (detalles ocultos)")
+            logger.debug("Error en envío de email (tipo: %s)", type(e).__name__)
             return False

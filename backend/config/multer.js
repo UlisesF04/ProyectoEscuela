@@ -12,9 +12,12 @@ const storage = multer.diskStorage({
     cb(null, UPLOAD_DIR);
   },
   filename: (req, file, cb) => {
-    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-    const ext = path.extname(file.originalname);
-    cb(null, `cert-${uniqueSuffix}${ext}`);
+    const crypto = require('crypto');
+    const ext = path.extname(file.originalname).toLowerCase();
+    const allowedExts = ['.jpg', '.jpeg', '.png', '.pdf'];
+    const safeExt = allowedExts.includes(ext) ? ext : '.bin';
+    const uniqueName = crypto.randomUUID();
+    cb(null, `cert-${uniqueName}${safeExt}`);
   },
 });
 

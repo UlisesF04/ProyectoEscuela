@@ -3,7 +3,7 @@ import { Spinner, Center } from '@chakra-ui/react';
 import { useAuth } from '../context/AuthContext';
 
 export default function ProtectedRoute({ children, requiredRoles }) {
-  const { user, token, loading } = useAuth();
+  const { user, loading } = useAuth();
 
   if (loading) {
     return (
@@ -13,7 +13,7 @@ export default function ProtectedRoute({ children, requiredRoles }) {
     );
   }
 
-  if (!token) {
+  if (!user) {
     return <Navigate to="/login" replace />;
   }
 

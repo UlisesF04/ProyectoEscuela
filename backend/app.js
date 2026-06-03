@@ -1,5 +1,11 @@
+// ─── Cargar variables de entorno ANTES que cualquier require ──
+const path = require('path');
+const dotenv = require('dotenv');
+dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
+
 const express = require('express');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const { sequelize } = require('./models');
@@ -14,26 +20,65 @@ const gradesRoutes = require('./modules/grades/grades.routes');
 const licencesRoutes = require('./modules/licences/licences.routes');
 const notificationsRoutes = require('./modules/notifications/notifications.routes');
 const configRoutes = require('./modules/config/config.routes');
+const adminStatsRoutes = require('./modules/admin-stats/admin-stats.routes');
 const chatRoutes = require('./modules/chat/chat.routes');
-const path = require('path');
+const helmet = require('helmet');
+const compression = require('compression');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// ─── Validación de variables de entorno al startup ─────────────
+if (process.env.NODE_ENV === 'production') {
+  const requiredEnv = ['JWT_SECRET', 'DATABASE_URL', 'FRONTEND_URL'];
+  const missingEnv = requiredEnv.filter(v => !process.env[v]);
+  if (missingEnv.length > 0) {
+    console.error(`FATAL: Variables de entorno requeridas faltantes: ${missingEnv.join(', ')}`);
+    process.exit(1);
+  }
+}
+
 // ─── Middlewares globales ───────────────────────────────────────
 
+// Security headers
+app.use(helmet());
+
+// Compression
+app.use(compression());
+
 // CORS
-app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+const allowedOrigins = process.env.FRONTEND_URL
+  ? process.env.FRONTEND_URL.split(',').map(s => s.trim())
+  : (process.env.NODE_ENV === 'production'
+      ? (() => { throw new Error('FRONTEND_URL es requerida en producción'); })()
+      : ['http://localhost:5173']);
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, curl, etc.)
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      const error = new Error('Origen no permitido por CORS');
+      error.statusCode = 403;
+      callback(error, false);
+    }
+  },
   credentials: true,
-}));
+};
+app.use(cors(corsOptions));
 
 // Body parser
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+
+// Cookie parser (for httpOnly JWT)
+app.use(cookieParser());
 
 // HTTP request logger
-app.use(morgan('dev'));
+app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev', {
+  skip: (req) => req.url === '/api/v1/health',
+}));
 
 // Rate limiting global: 500 requests / 15 min (SPA-friendly)
 const globalLimiter = rateLimit({
@@ -76,9 +121,6 @@ app.use('/api/v1/attendances', attendancesRoutes);
 // Grades routes (teacher/admin management)
 app.use('/api/v1/grades', gradesRoutes);
 
-// Static files – uploads
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
 // Licences routes
 app.use('/api/v1/licences', licencesRoutes);
 
@@ -87,6 +129,9 @@ app.use('/api/v1/notifications', notificationsRoutes);
 
 // Config routes (admin)
 app.use('/api/v1/config', configRoutes);
+
+// Admin stats routes (admin)
+app.use('/api/v1/admin/stats', adminStatsRoutes);
 
 // Chat routes (admin, preceptor, docente)
 app.use('/api/v1/chats', chatRoutes);
@@ -107,7 +152,11 @@ app.use(errorMiddleware);
 if (require.main === module) {
   (async () => {
     try {
-      await sequelize.sync({ alter: true });
+      if (process.env.NODE_ENV === 'development') {
+        await sequelize.sync({ alter: true });
+      } else {
+        await sequelize.sync();
+      }
       console.log('✓ Base de datos sincronizada');
     } catch (err) {
       console.error('✗ Error al sincronizar la base de datos:', err.message);

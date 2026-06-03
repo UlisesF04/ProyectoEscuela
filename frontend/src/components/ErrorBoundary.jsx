@@ -13,14 +13,17 @@ export default class ErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    console.error('ErrorBoundary caught:', error, errorInfo);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('ErrorBoundary caught:', error, errorInfo);
+    }
   }
 
   render() {
     if (this.state.hasError) {
       return (
         <ErrorFallback
-          onRetry={() => this.setState({ hasError: false, error: null })}
+          homePath={this.props.homePath || '/admin'}
+          onRetry={() => window.location.reload()}
         />
       );
     }
@@ -28,7 +31,7 @@ export default class ErrorBoundary extends React.Component {
   }
 }
 
-function ErrorFallback({ onRetry }) {
+function ErrorFallback({ onRetry, homePath }) {
   const navigate = useNavigate();
 
   return (
@@ -45,10 +48,21 @@ function ErrorFallback({ onRetry }) {
       <Text color="onSurfaceVariant" mb={6}>
         Ocurrió un error inesperado. Por favor intentá de nuevo.
       </Text>
-      <Button onClick={onRetry} colorScheme="brand" mr={3}>
+      <Button
+        onClick={onRetry}
+        colorScheme="brand"
+        mr={3}
+        _active={{ transform: 'scale(0.97)' }}
+        transition="transform 160ms ease-out"
+      >
         Reintentar
       </Button>
-      <Button variant="ghost" onClick={() => navigate('/')}>
+      <Button
+        variant="ghost"
+        onClick={() => navigate(homePath)}
+        _active={{ transform: 'scale(0.97)' }}
+        transition="transform 160ms ease-out"
+      >
         Volver al inicio
       </Button>
     </Box>

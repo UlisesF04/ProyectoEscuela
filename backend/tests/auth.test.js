@@ -1,5 +1,6 @@
 // Set test environment so rate limiter uses higher limits
 process.env.NODE_ENV = 'test';
+process.env.JWT_SECRET = 'test-jwt-secret-for-testing-only';
 
 // Load .env for local database connection
 const path = require('path');
@@ -48,21 +49,33 @@ async function runTests() {
     });
   });
 
-  function fetchJson(method, urlPath, body, headers = {}) {
+  function fetchJson(method, urlPath, body, headers = {}, cookies = '') {
     return new Promise((resolve, reject) => {
       const url = `${baseUrl}${urlPath}`;
       const options = {
         method,
-        headers: { 'Content-Type': 'application/json', ...headers },
+        headers: {
+          'Content-Type': 'application/json',
+          ...headers,
+          ...(cookies ? { Cookie: cookies } : {}),
+        },
       };
       const req = http.request(url, options, (res) => {
         let data = '';
         res.on('data', (chunk) => (data += chunk));
         res.on('end', () => {
+          const setCookies = res.headers['set-cookie'] || [];
+          let authTokenCookie = '';
+          for (const sc of setCookies) {
+            if (sc.startsWith('authToken=')) {
+              authTokenCookie = sc.split(';')[0];
+              break;
+            }
+          }
           try {
-            resolve({ status: res.statusCode, body: JSON.parse(data) });
+            resolve({ status: res.statusCode, body: JSON.parse(data), cookies: setCookies, authTokenCookie });
           } catch {
-            resolve({ status: res.statusCode, body: data });
+            resolve({ status: res.statusCode, body: data, cookies: setCookies, authTokenCookie });
           }
         });
       });
@@ -81,7 +94,7 @@ async function runTests() {
       password: 'password123',
     });
     assert(res.status === 200, 'Login returns 200');
-    assert(!!res.body.token, 'Response contains token');
+    assert(!!res.authTokenCookie, 'Response sets authToken cookie');
     assert(res.body.user?.role === 'admin', 'User role is admin');
     assert(!!res.body.user?.first_name, 'Response includes first_name');
     assert(!!res.body.user?.last_name, 'Response includes last_name');
@@ -217,16 +230,13 @@ async function runTests() {
   console.log('\n── GET /me con Token Válido ──');
 
   try {
-    // First login to get a valid token
     const loginRes = await fetchJson('POST', '/auth/login', {
       email: 'admin@escuela.edu',
       password: 'password123',
     });
-    const token = loginRes.body.token;
+    const cookie = loginRes.authTokenCookie;
 
-    const res = await fetchJson('GET', '/auth/me', null, {
-      Authorization: `Bearer ${token}`,
-    });
+    const res = await fetchJson('GET', '/auth/me', null, {}, cookie);
     assert(res.status === 200, 'GET /me returns 200');
     assert(res.body.email === 'admin@escuela.edu', 'Returns correct email');
     assert(res.body.role === 'admin', 'Returns correct role');
@@ -243,11 +253,9 @@ async function runTests() {
       email: 'admin@escuela.edu',
       password: 'password123',
     });
-    const token = loginRes.body.token;
+    const cookie = loginRes.authTokenCookie;
 
-    const res = await fetchJson('POST', '/auth/logout', null, {
-      Authorization: `Bearer ${token}`,
-    });
+    const res = await fetchJson('POST', '/auth/logout', null, {}, cookie);
     assert(res.status === 200, 'Logout returns 200');
     assert(!!res.body.message, 'Response has message');
   } catch (err) {

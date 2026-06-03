@@ -51,6 +51,13 @@ Chat.init({
       fields: ['user1_id', 'user2_id'],
     },
   ],
+  validate: {
+    differentUsers() {
+      if (this.user1_id === this.user2_id) {
+        throw new Error('Un chat debe ser entre dos usuarios diferentes');
+      }
+    },
+  },
 });
 
 module.exports = Chat;

@@ -1,1 +1,0 @@
-Hooks reutilizables de React para lógica compartida entre componentes (por ejemplo, manejo de formularios, estado global, etc).

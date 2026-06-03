@@ -55,6 +55,9 @@ Grade.belongsTo(User, { foreignKey: 'created_by', as: 'createdBy' });
 // ─── Licence associations ──────────────────────────────────────
 Licence.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 
+// ─── NotificationLog associations ──────────────────────────────
+NotificationLog.belongsTo(Student, { foreignKey: 'student_id' });
+
 // ─── Chat associations ─────────────────────────────────────────
 Chat.belongsTo(User, { foreignKey: 'user1_id', as: 'user1' });
 Chat.belongsTo(User, { foreignKey: 'user2_id', as: 'user2' });

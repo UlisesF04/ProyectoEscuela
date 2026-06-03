@@ -14,6 +14,10 @@ const Course = sequelize.define('Course', {
   year: {
     type: DataTypes.INTEGER,
     allowNull: false,
+    validate: {
+      min: 1900,
+      max: 2100,
+    },
   },
   division: {
     type: DataTypes.STRING(10),
@@ -27,6 +31,8 @@ const Course = sequelize.define('Course', {
   tableName: 'courses',
   timestamps: true,
   underscored: true,
+  paranoid: true,
+  deletedAt: 'deleted_at',
 });
 
 module.exports = Course;

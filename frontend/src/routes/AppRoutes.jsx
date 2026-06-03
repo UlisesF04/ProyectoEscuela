@@ -51,7 +51,7 @@ function DashboardRedirect({ user }) {
 }
 
 export default function AppRoutes() {
-  const { user, token, loading } = useAuth();
+  const { user, loading } = useAuth();
 
   // Mientras restauramos sesión del localStorage, mostramos un spinner
   if (loading) {
@@ -67,7 +67,7 @@ export default function AppRoutes() {
       {/* Public routes */}
       <Route
         path="/login"
-        element={token ? <DashboardRedirect user={user} /> : <Login />}
+        element={user ? <DashboardRedirect user={user} /> : <Login />}
       />
       <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
@@ -145,7 +145,7 @@ export default function AppRoutes() {
       <Route
         path="/"
         element={
-          token ? <DashboardRedirect user={user} /> : <Navigate to="/login" replace />
+          user ? <DashboardRedirect user={user} /> : <Navigate to="/login" replace />
         }
       />
       <Route path="*" element={<NotFoundPage />} />

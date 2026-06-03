@@ -47,7 +47,7 @@ router.post(
   roleMiddleware(...CHAT_ROLES),
   validationMiddleware([
     param('id').isInt({ min: 1 }),
-    body('content').notEmpty().withMessage('El mensaje no puede estar vacío'),
+    body('content').notEmpty().withMessage('El mensaje no puede estar vacío').trim().escape(),
   ]),
   chatController.sendMessage
 );

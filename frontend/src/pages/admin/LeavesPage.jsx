@@ -8,6 +8,7 @@ import LoadingSkeleton from '../../components/LoadingSkeleton';
 import ErrorAlert from '../../components/ErrorAlert';
 import EmptyState from '../../components/EmptyState';
 import { licencesService } from '../../services/licencesService';
+import api from '../../services/api';
 
 function formatDate(dateStr) {
   return new Date(dateStr).toLocaleDateString('es-AR', {
@@ -18,7 +19,11 @@ function formatDate(dateStr) {
 async function handleDownload(id, fileName, toast) {
   try {
     const response = await licencesService.download(id);
-    const url = URL.createObjectURL(new Blob([response.data]));
+    const contentType = response.headers['content-type'];
+    if (!contentType || (!contentType.startsWith('application/') && !contentType.startsWith('image/'))) {
+      throw new Error('Tipo de archivo inesperado');
+    }
+    const url = window.URL.createObjectURL(new Blob([response.data], { type: contentType }));
     const link = document.createElement('a');
     link.href = url;
     link.download = fileName || 'licencia';
@@ -51,6 +56,9 @@ export default function LeavesPage() {
   }, []);
 
   useEffect(() => { fetchLicences(); }, [fetchLicences]);
+  useEffect(() => {
+    api.post('/admin/stats/page-visit', { page: '/admin/leaves' }).catch(() => {});
+  }, []);
 
   const columns = [
     {

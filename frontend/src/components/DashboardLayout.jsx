@@ -31,6 +31,7 @@ import {
   FiChevronLeft,
   FiChevronRight,
   FiMenu,
+  FiX,
 } from 'react-icons/fi';
 
 const roleLabels = {
@@ -88,17 +89,17 @@ export default function DashboardLayout({ sections = [], role }) {
     return location.pathname.startsWith(path);
   };
 
-  const sidebarContent = (
+  const renderSidebarContent = (expanded, showCloseBtn = false) => (
     <>
       {/* User info */}
-      <VStack p={collapsed ? 3 : 4} spacing={3} align={collapsed ? 'center' : 'flex-start'}>
+      <VStack p={expanded ? 4 : 3} spacing={3} align={expanded ? 'flex-start' : 'center'}>
         <HStack spacing={3} w="full">
           <Avatar
             size="sm"
             name={`${user?.first_name} ${user?.last_name}`}
             bg={roleInfo.color}
           />
-          <Collapse in={!collapsed} animateOpacity style={{ flex: 1, minWidth: 0 }}>
+          <Collapse in={expanded} animateOpacity style={{ flex: 1, minWidth: 0 }}>
             <Box flex={1} minW={0}>
               <Text fontSize="sm" fontWeight={600} color="white" isTruncated>
                 {user?.first_name} {user?.last_name}
@@ -108,6 +109,21 @@ export default function DashboardLayout({ sections = [], role }) {
               </Badge>
             </Box>
           </Collapse>
+          {showCloseBtn && (
+            <IconButton
+              icon={<FiX />}
+              variant="ghost"
+              onClick={() => setMobileOpen(false)}
+              ml="auto"
+              color="whiteAlpha.700"
+              _hover={{ color: 'white', bg: 'whiteAlpha.100' }}
+              size="sm"
+              minW="32px"
+              minH="32px"
+              borderRadius="full"
+              aria-label="Cerrar menú"
+            />
+          )}
         </HStack>
       </VStack>
 
@@ -121,7 +137,7 @@ export default function DashboardLayout({ sections = [], role }) {
             <Button
               key={section.id}
               variant="ghost"
-              justifyContent={collapsed ? 'center' : 'flex-start'}
+              justifyContent={expanded ? 'flex-start' : 'center'}
               leftIcon={section.icon ? <Icon as={section.icon} boxSize={5} /> : undefined}
               onClick={() => {
                 navigate(section.path);
@@ -133,12 +149,12 @@ export default function DashboardLayout({ sections = [], role }) {
               _active={{ transform: 'scale(0.97)' }}
               transition="all 160ms ease-out"
               h={10}
-              px={collapsed ? 0 : 3}
+              px={expanded ? 3 : 0}
               fontSize="sm"
-              title={collapsed ? section.label : ''}
+              title={expanded ? '' : section.label}
               borderRadius="pill"
             >
-              {collapsed ? null : section.label}
+              {expanded ? section.label : null}
             </Button>
           );
         })}
@@ -150,7 +166,7 @@ export default function DashboardLayout({ sections = [], role }) {
       <VStack p={2} spacing={1}>
         <Button
           variant="ghost"
-          justifyContent={collapsed ? 'center' : 'flex-start'}
+          justifyContent={expanded ? 'flex-start' : 'center'}
           leftIcon={<Icon as={FiLogOut} boxSize={5} />}
           onClick={handleLogout}
           color="whiteAlpha.600"
@@ -159,12 +175,12 @@ export default function DashboardLayout({ sections = [], role }) {
           transition="all 160ms ease-out"
           w="full"
           h={10}
-          px={collapsed ? 0 : 3}
+          px={expanded ? 3 : 0}
           fontSize="sm"
-          title={collapsed ? 'Cerrar sesión' : ''}
+          title={expanded ? '' : 'Cerrar sesión'}
           borderRadius="pill"
         >
-          {collapsed ? null : 'Cerrar sesión'}
+          {expanded ? 'Cerrar sesión' : null}
         </Button>
       </VStack>
     </>
@@ -187,18 +203,27 @@ export default function DashboardLayout({ sections = [], role }) {
         align="center"
         justify="space-between"
       >
-        <IconButton
-          icon={<FiMenu />}
-          variant="ghost"
-          onClick={() => setMobileOpen(true)}
-          aria-label="Abrir menú"
-          size="lg"
-          minW="44px"
-          minH="44px"
-        />
-        <Text fontSize="sm" fontWeight={600} color="onSurface">
-          {sections.find((s) => isActive(s.path))?.label || 'Dashboard'}
-        </Text>
+        <HStack spacing={2} flex={1} minW={0}>
+          <Box
+            transition="all 200ms ease-out"
+            opacity={mobileOpen ? 0 : 1}
+            transform={mobileOpen ? 'translateX(-16px) scale(0.8)' : 'translateX(0) scale(1)'}
+            pointerEvents={mobileOpen ? 'none' : 'auto'}
+          >
+            <IconButton
+              icon={<FiMenu />}
+              variant="ghost"
+              onClick={() => setMobileOpen(true)}
+              aria-label="Abrir menú"
+              size="lg"
+              minW="44px"
+              minH="44px"
+            />
+          </Box>
+          <Text fontSize="sm" fontWeight={600} color="onSurface" isTruncated>
+            {sections.find((s) => isActive(s.path))?.label || 'Dashboard'}
+          </Text>
+        </HStack>
         <Avatar
           size="sm"
           name={`${user?.first_name} ${user?.last_name}`}
@@ -209,7 +234,7 @@ export default function DashboardLayout({ sections = [], role }) {
       <Drawer isOpen={mobileOpen} placement="left" onClose={() => setMobileOpen(false)}>
         <DrawerOverlay />
         <DrawerContent bg="#2D1B08" maxW="280px">
-          {sidebarContent}
+          {renderSidebarContent(true, true)}
         </DrawerContent>
       </Drawer>
 
@@ -233,7 +258,7 @@ export default function DashboardLayout({ sections = [], role }) {
       >
         {/* Inner wrapper keeps content clipped while collapse button overflows */}
         <Box display="flex" flexDirection="column" h="100%" overflow="hidden">
-          {sidebarContent}
+          {renderSidebarContent(!collapsed)}
         </Box>
 
         {!isMobile && (

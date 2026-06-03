@@ -1,5 +1,6 @@
-// Set test environment so rate limiter uses higher limits
+﻿// Set test environment so rate limiter uses higher limits
 process.env.NODE_ENV = 'test';
+process.env.JWT_SECRET = 'test-jwt-secret-for-testing-only';
 
 // Load .env for local database connection
 const path = require('path');
@@ -28,10 +29,10 @@ async function runTests() {
   // ─── Setup: create test server ───────────────────────────────
   let server;
   let baseUrl;
-  let adminToken;
-  let preceptorToken;
-  let docenteToken;
-  let padreToken;
+let adminCookie;
+let preceptorCookie;
+let docenteCookie;
+let padreCookie;
   let testStudentId;
   let testCourseId;
 
@@ -54,24 +55,32 @@ async function runTests() {
     });
   });
 
-  function fetchJson(method, urlPath, body, headers = {}) {
+  function fetchJson(method, urlPath, body, headers = {}, cookies = '') {
     return new Promise((resolve, reject) => {
       const url = `${baseUrl}${urlPath}`;
       const options = {
         method,
-        headers: { 'Content-Type': 'application/json', ...headers },
+        headers: { 'Content-Type': 'application/json', ...headers, ...(cookies ? { Cookie: cookies } : {}) },
       };
       const req = http.request(url, options, (res) => {
         let data = '';
         res.on('data', (chunk) => (data += chunk));
         res.on('end', () => {
+          const setCookies = res.headers['set-cookie'] || [];
+          let authTokenCookie = '';
+          for (const sc of setCookies) {
+            if (sc.startsWith('authToken=')) {
+              authTokenCookie = sc.split(';')[0];
+              break;
+            }
+          }
           let parsed;
           try {
             parsed = JSON.parse(data);
           } catch {
             parsed = { raw: data };
           }
-          resolve({ status: res.statusCode, body: parsed });
+          resolve({ status: res.statusCode, body: parsed, cookies: setCookies, authTokenCookie });
         });
       });
       req.on('error', reject);
@@ -83,7 +92,7 @@ async function runTests() {
   // ─── Login helpers ────────────────────────────────────────────
   async function loginAs(email) {
     const res = await fetchJson('POST', '/auth/login', { email, password: 'password123' });
-    return res.body?.token;
+    return res.authTokenCookie;
   }
 
   // ─── Seed data ────────────────────────────────────────────────
@@ -104,28 +113,23 @@ async function runTests() {
     testStudentId = student.id;
     testCourseId = student.course_id;
 
-    adminToken = await loginAs('admin@escuela.edu');
-    preceptorToken = await loginAs('preceptor@escuela.edu');
-    docenteToken = await loginAs('docente@escuela.edu');
-    padreToken = await loginAs('padre@escuela.edu');
+  adminCookie = await loginAs('admin@escuela.edu');
+  preceptorCookie = await loginAs('preceptor@escuela.edu');
+  docenteCookie = await loginAs('docente@escuela.edu');
+  padreCookie = await loginAs('padre@escuela.edu');
 
-    assert(!!adminToken, 'Admin login successful');
-    assert(!!preceptorToken, 'Preceptor login successful');
-    assert(!!docenteToken, 'Docente login successful');
-    assert(!!padreToken, 'Padre login successful');
-  } catch (err) {
-    assert(false, `Setup failed: ${err.message}`);
-    console.log(`📊 Results: ${passed} passed, ${failed} failed out of ${passed + failed} tests\n`);
-    await sequelize.close();
-    server.close();
-    process.exit(1);
-  }
+  assert(!!adminCookie, 'Admin login successful');
+  assert(!!preceptorCookie, 'Preceptor login successful');
+  assert(!!docenteCookie, 'Docente login successful');
+  assert(!!padreCookie, 'Padre login successful');
+} catch (err) {
+  assert(false, `Setup failed: ${err.message}`);
+  console.log(`📊 Results: ${passed} passed, ${failed} failed out of ${passed + failed} tests\n`);
+  await sequelize.close();
+  server.close();
+  process.exit(1);
+}
 
-  const authHeader = (token) => ({ Authorization: `Bearer ${token}` });
-  const adminHeaders = () => authHeader(adminToken);
-  const preceptorHeaders = () => authHeader(preceptorToken);
-  const docenteHeaders = () => authHeader(docenteToken);
-  const padreHeaders = () => authHeader(padreToken);
 
   // Generate unique date for this test run
   const testDate = new Date().toISOString().split('T')[0];
@@ -143,7 +147,7 @@ async function runTests() {
       student_id: testStudentId,
       date: uniqueDate,
       status: 'presente',
-    }, preceptorHeaders());
+    }, {}, preceptorCookie);
     createdAttendanceId = res.body.data?.id;
     assert(res.status === 201, 'Register attendance returns 201');
     assert(res.body.status === 'success', 'Response has success status');
@@ -160,7 +164,7 @@ async function runTests() {
       student_id: testStudentId,
       date: uniqueDate,
       status: 'ausente',
-    }, preceptorHeaders());
+    }, {}, preceptorCookie);
     assert(res.status === 409, 'Duplicate attendance returns 409');
     assert(res.body.message?.includes('Ya existe'), 'Error message mentions existing record');
   } catch (err) {
@@ -174,7 +178,7 @@ async function runTests() {
       student_id: testStudentId,
       date: otherDate,
       status: 'ausente',
-    }, preceptorHeaders());
+    }, {}, preceptorCookie);
     assert(res.status === 201, 'Preceptor can register attendance');
     // Cleanup
     if (res.body.data?.id) {
@@ -191,7 +195,7 @@ async function runTests() {
       student_id: testStudentId,
       date: otherDate,
       status: 'tarde',
-    }, adminHeaders());
+    }, {}, adminCookie);
     assert(res.status === 201, 'Admin can register attendance');
     if (res.body.data?.id) {
       await Attendance.destroy({ where: { id: res.body.data.id }, force: true });
@@ -207,7 +211,7 @@ async function runTests() {
       student_id: testStudentId,
       date: otherDate,
       status: 'presente',
-    }, docenteHeaders());
+    }, {}, docenteCookie);
     assert(res.status === 403, 'Docente cannot register attendance (returns 403)');
   } catch (err) {
     assert(false, `Docente register test failed: ${err.message}`);
@@ -220,7 +224,7 @@ async function runTests() {
       student_id: testStudentId,
       date: otherDate,
       status: 'presente',
-    }, padreHeaders());
+    }, {}, padreCookie);
     assert(res.status === 403, 'Padre cannot register attendance (returns 403)');
   } catch (err) {
     assert(false, `Padre register test failed: ${err.message}`);
@@ -244,7 +248,7 @@ async function runTests() {
       student_id: testStudentId,
       date: '2026-07-05',
       status: 'invalido',
-    }, preceptorHeaders());
+    }, {}, preceptorCookie);
     assert(res.status === 400, 'Invalid status returns 400');
     assert(res.body.errors, 'Response has errors array');
   } catch (err) {
@@ -262,7 +266,7 @@ async function runTests() {
       { student_id: testStudentId, date: '2026-07-10', status: 'presente' },
       { student_id: testStudentId, date: '2026-07-11', status: 'ausente' },
     ];
-    const res = await fetchJson('POST', '/attendances/batch', { records }, preceptorHeaders());
+    const res = await fetchJson('POST', '/attendances/batch', { records }, {}, preceptorCookie);
     assert(res.status === 201, 'Batch register returns 201');
     assert(Array.isArray(res.body.data), 'Response data is an array');
     assert(res.body.data.length === 2, 'Created 2 records');
@@ -276,7 +280,7 @@ async function runTests() {
 
   // 2.2 Empty batch
   try {
-    const res = await fetchJson('POST', '/attendances/batch', { records: [] }, preceptorHeaders());
+    const res = await fetchJson('POST', '/attendances/batch', { records: [] }, {}, preceptorCookie);
     assert(res.status === 400, 'Empty batch returns 400');
   } catch (err) {
     assert(false, `Empty batch test failed: ${err.message}`);
@@ -292,7 +296,7 @@ async function runTests() {
     try {
       const res = await fetchJson('PUT', `/attendances/${createdAttendanceId}`, {
         status: 'tarde',
-      }, preceptorHeaders());
+      }, {}, preceptorCookie);
       assert(res.status === 200, 'Update attendance returns 200');
       assert(res.body.data?.status === 'tarde', 'Status was updated');
     } catch (err) {
@@ -303,7 +307,7 @@ async function runTests() {
     try {
       const res = await fetchJson('PUT', '/attendances/999999', {
         status: 'presente',
-      }, preceptorHeaders());
+      }, {}, preceptorCookie);
       assert(res.status === 404, 'Update non-existent returns 404');
     } catch (err) {
       assert(false, `Update non-existent test failed: ${err.message}`);
@@ -322,7 +326,7 @@ async function runTests() {
       student_id: testStudentId,
       date: '2026-06-30',
       status: 'ausente',
-    }, preceptorHeaders());
+    }, {}, preceptorCookie);
     justifyAttendanceId = res.body.data?.id;
     assert(!!justifyAttendanceId, 'Created ausente record for justification test');
   } catch (err) {
@@ -334,7 +338,7 @@ async function runTests() {
     try {
       const res = await fetchJson('PUT', `/attendances/${justifyAttendanceId}/justify`, {
         justification_note: 'Certificado médico presentado',
-      }, preceptorHeaders());
+      }, {}, preceptorCookie);
       assert(res.status === 200, 'Justify attendance returns 200');
       assert(res.body.data?.is_justified === true, 'Attendance is justified');
     } catch (err) {
@@ -345,7 +349,7 @@ async function runTests() {
     try {
       const res = await fetchJson('PUT', `/attendances/${justifyAttendanceId}/justify`, {
         justification_note: 'Intento doble',
-      }, preceptorHeaders());
+      }, {}, preceptorCookie);
       assert(res.status === 409, 'Double justification returns 409');
       assert(res.body.message?.includes('ya fue justificada'), 'Error message mentions already justified');
     } catch (err) {
@@ -359,12 +363,12 @@ async function runTests() {
       student_id: testStudentId,
       date: '2026-07-02',
       status: 'presente',
-    }, preceptorHeaders());
+    }, {}, preceptorCookie);
     const presenteId = res.body.data?.id;
     if (presenteId) {
       const justifyRes = await fetchJson('PUT', `/attendances/${presenteId}/justify`, {
         justification_note: 'Test',
-      }, preceptorHeaders());
+      }, {}, preceptorCookie);
       assert(justifyRes.status === 400, 'Justify presente record returns 400');
       await Attendance.destroy({ where: { id: presenteId }, force: true });
     }
@@ -376,7 +380,7 @@ async function runTests() {
   try {
     const res = await fetchJson('PUT', '/attendances/999999/justify', {
       justification_note: 'Test',
-    }, preceptorHeaders());
+    }, {}, preceptorCookie);
     assert(res.status === 404, 'Justify non-existent returns 404');
   } catch (err) {
     assert(false, `Justify non-existent test failed: ${err.message}`);
@@ -389,7 +393,7 @@ async function runTests() {
 
   // 5.1 Preceptor can view history
   try {
-    const res = await fetchJson('GET', `/attendances/students/${testStudentId}`, null, preceptorHeaders());
+    const res = await fetchJson('GET', `/attendances/students/${testStudentId}`, null, {}, preceptorCookie);
     assert(res.status === 200, 'Preceptor can view history');
     assert(Array.isArray(res.body.data), 'Response data is an array');
     assert(res.body.summary, 'Response includes summary');
@@ -401,7 +405,7 @@ async function runTests() {
 
   // 5.2 Admin can view history
   try {
-    const res = await fetchJson('GET', `/attendances/students/${testStudentId}`, null, adminHeaders());
+    const res = await fetchJson('GET', `/attendances/students/${testStudentId}`, null, {}, adminCookie);
     assert(res.status === 200, 'Admin can view history');
   } catch (err) {
     assert(false, `Admin history test failed: ${err.message}`);
@@ -409,7 +413,7 @@ async function runTests() {
 
   // 5.3 Non-existent student
   try {
-    const res = await fetchJson('GET', '/attendances/students/999999', null, preceptorHeaders());
+    const res = await fetchJson('GET', '/attendances/students/999999', null, {}, preceptorCookie);
     assert(res.status === 404, 'Non-existent student returns 404');
   } catch (err) {
     assert(false, `Non-existent student test failed: ${err.message}`);

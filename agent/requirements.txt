@@ -1,5 +1,5 @@
 APScheduler==3.10.4
-psycopg2-binary==2.9.9
+psycopg2==2.9.9
 resend==4.2.0
 pandas==2.2.3
 python-dotenv==1.0.1

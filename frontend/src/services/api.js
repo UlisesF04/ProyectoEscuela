@@ -1,21 +1,21 @@
 import axios from 'axios';
 
-let authToken = null;
-
-export const setAuthToken = (token) => {
-  authToken = token;
-};
-
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1',
+  baseURL: import.meta.env.VITE_API_URL || '/api/v1',
   headers: { 'Content-Type': 'application/json' },
+  withCredentials: true,
 });
 
-api.interceptors.request.use((config) => {
-  if (authToken) {
-    config.headers.Authorization = `Bearer ${authToken}`;
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 429) {
+      console.warn(
+        'Rate limit (429) alcanzado. Esperá un momento antes de reintentar.'
+      );
+    }
+    return Promise.reject(error);
   }
-  return config;
-});
+);
 
 export default api;

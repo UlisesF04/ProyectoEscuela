@@ -12,14 +12,14 @@ const createGradeValidations = [
   body('subject_id').isInt({ min: 1 }).withMessage('ID de materia inválido'),
   body('grade').isFloat({ min: 0, max: 10 }).withMessage('La nota debe ser entre 0 y 10'),
   body('type').optional().isIn(['examen', 'trabajo', 'tarea', 'oral', 'otro']).withMessage('Tipo de nota inválido'),
-  body('description').optional().isString(),
+  body('description').optional().isString().trim().escape(),
   body('date').optional({ values: 'null' }).isDate().withMessage('Fecha inválida'),
 ];
 
 const updateGradeValidations = [
   body('grade').optional().isFloat({ min: 0, max: 10 }).withMessage('La nota debe ser entre 0 y 10'),
   body('type').optional().isIn(['examen', 'trabajo', 'tarea', 'oral', 'otro']).withMessage('Tipo de nota inválido'),
-  body('description').optional().isString(),
+  body('description').optional().isString().trim().escape(),
 ];
 
 // Create grade (teacher for their subject, or admin)

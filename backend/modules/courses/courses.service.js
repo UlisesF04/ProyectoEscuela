@@ -62,7 +62,10 @@ const coursesService = {
       throw new AppError('Curso no encontrado', 404);
     }
 
-    const updatedCourse = await courseRepository.update(id, data);
+    const allowedFields = ['name', 'year', 'division', 'level'];
+    const filtered = {};
+    allowedFields.forEach(f => { if (data[f] !== undefined) filtered[f] = data[f]; });
+    const updatedCourse = await courseRepository.update(id, filtered);
     return updatedCourse;
   },
 

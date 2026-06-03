@@ -39,10 +39,30 @@ const User = sequelize.define('User', {
     type: DataTypes.BOOLEAN,
     defaultValue: true,
   },
+  failed_attempts: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0,
+  },
+  locked_until: {
+    type: DataTypes.DATE,
+    allowNull: true,
+  },
+  refresh_token_hash: {
+    type: DataTypes.STRING(255),
+    allowNull: true,
+  },
 }, {
   tableName: 'users',
   timestamps: true,
   underscored: true,
+  defaultScope: {
+    attributes: { exclude: ['password_hash', 'refresh_token_hash', 'failed_attempts', 'locked_until'] }
+  },
+  scopes: {
+    withPassword: {
+      attributes: { include: ['password_hash'] }
+    },
+  },
   indexes: [
     { unique: true, fields: ['email'] },
     { fields: ['role'] },

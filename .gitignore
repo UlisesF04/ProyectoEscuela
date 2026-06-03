@@ -1,14 +1,60 @@
-# OS files
+# ─── OS ───────────────────────────────────────────────────────────
 .DS_Store
 Thumbs.db
 *.swp
 *.swo
+*.~
 
-# IDE
+# ─── IDE / Editor ────────────────────────────────────────────────
 .idea/
 .vscode/
 *.sublime-*
+.history/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
 
-# Environment
+# ─── Environment ─────────────────────────────────────────────────
 .env
-.env.local
+.env.*
+!.env.example
+
+# ─── Dependencies ────────────────────────────────────────────────
+node_modules/
+.pnp
+.pnp.js
+
+# ─── Build output ────────────────────────────────────────────────
+dist/
+build/
+# ─── Logs ────────────────────────────────────────────────────────
+*.log
+logs/
+npm-debug.log*
+
+# ─── Uploads (archivos subidos localmente) ───────────────────────
+uploads/
+
+# ─── Python (agente) ─────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+venv/
+.venv/
+
+# ─── Testing ─────────────────────────────────────────────────────
+coverage/
+.coverage
+*.lcov
+
+# ─── Secrets ─────────────────────────────────────────────────────
+*.pem
+*.key
+*.crt
+
+# ─── Misc ────────────────────────────────────────────────────────
+*.tsbuildinfo
+.next/
+out/

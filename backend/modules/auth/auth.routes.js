@@ -21,7 +21,8 @@ const loginLimiter = rateLimit({
 const loginValidations = [
   body('email')
     .notEmpty().withMessage('El email es obligatorio')
-    .isEmail().withMessage('El email no es válido'),
+    .isEmail().withMessage('El email no es válido')
+    .normalizeEmail().trim().escape(),
   body('password')
     .notEmpty().withMessage('La contraseña es obligatoria')
     .isLength({ min: 6 }).withMessage('La contraseña debe tener al menos 6 caracteres'),
@@ -30,5 +31,35 @@ const loginValidations = [
 router.post('/login', loginLimiter, validationMiddleware(loginValidations), authController.login);
 router.post('/logout', authMiddleware, authController.logout);
 router.get('/me', authMiddleware, authController.me);
+
+router.put(
+  '/password',
+  authMiddleware,
+  validationMiddleware([
+    body('current_password').notEmpty().withMessage('Contraseña actual requerida'),
+    body('new_password').isLength({ min: 8 }).withMessage('Nueva contraseña debe tener al menos 8 caracteres'),
+  ]),
+  authController.changePassword
+);
+
+const refreshLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    status: 'error',
+    message: 'Demasiadas solicitudes de refresh. Intente nuevamente en 15 minutos.',
+  },
+});
+
+router.post(
+  '/refresh',
+  refreshLimiter,
+  validationMiddleware([
+    body('refreshToken').notEmpty().withMessage('Refresh token requerido'),
+  ]),
+  authController.refresh
+);
 
 module.exports = router;

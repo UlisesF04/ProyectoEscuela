@@ -3,7 +3,7 @@ import {
   Box, Heading, Button, Text, VStack, HStack, Icon, useToast,
   Progress, Input, FormControl, FormLabel,
 } from '@chakra-ui/react';
-import { FiUpload, FiFile, FiCheckCircle } from 'react-icons/fi';
+import { FiUpload, FiDownload, FiCheckCircle } from 'react-icons/fi';
 import FileUpload from '../../components/FileUpload';
 import ChildSelector from '../../components/ChildSelector';
 import { parentService } from '../../services/parentService';
@@ -25,6 +25,30 @@ export default function JustificativosPage() {
   const [licences, setLicences] = useState([]);
   const [loadingLicences, setLoadingLicences] = useState(true);
   const toast = useToast();
+
+  async function handleDownload(id, fileName) {
+    try {
+      const response = await licencesService.download(id);
+      const contentType = response.headers['content-type'];
+      if (!contentType || (!contentType.startsWith('application/') && !contentType.startsWith('image/'))) {
+        throw new Error('Tipo de archivo inesperado');
+      }
+      const url = window.URL.createObjectURL(new Blob([response.data], { type: contentType }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName || 'justificativo';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch {
+      toast({
+        title: 'Error al descargar',
+        description: 'No se pudo descargar el archivo',
+        status: 'error', duration: 3000, isClosable: true, position: 'top-right',
+      });
+    }
+  }
 
   useEffect(() => {
     setLoading(true);
@@ -133,7 +157,7 @@ export default function JustificativosPage() {
                       <Text fontSize="xs" color="onSurfaceVariant">{new Date(l.createdAt).toLocaleDateString('es-AR')}</Text>
                     </VStack>
                     {l.has_file && (
-                      <Button as="a" href={`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1'}/licences/${l.id}/download`} target="_blank" size="sm" variant="ghost" leftIcon={<FiFile />} borderRadius="pill">
+                      <Button size="sm" variant="ghost" leftIcon={<FiDownload />} borderRadius="pill" onClick={() => handleDownload(l.id, l.file_name || 'justificativo')}>
                         Ver
                       </Button>
                     )}

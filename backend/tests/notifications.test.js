@@ -1,5 +1,6 @@
-// Set test environment so rate limiter uses higher limits
+﻿// Set test environment so rate limiter uses higher limits
 process.env.NODE_ENV = 'test';
+process.env.JWT_SECRET = 'test-jwt-secret-for-testing-only';
 process.env.SERVICE_API_KEY = 'test-service-key-123';
 
 // Load .env for local database connection
@@ -31,7 +32,7 @@ async function runTests() {
   // --- Setup: create test server ---
   let server;
   let baseUrl;
-  let adminToken;
+  let adminCookie;
 
   try {
     await sequelize.authenticate();
@@ -60,21 +61,29 @@ async function runTests() {
     });
   });
 
-  function fetchJson(method, urlPath, body, headers = {}) {
+  function fetchJson(method, urlPath, body, headers = {}, cookies = '') {
     return new Promise((resolve, reject) => {
       const url = `${baseUrl}${urlPath}`;
       const options = {
         method,
-        headers: { 'Content-Type': 'application/json', ...headers },
+        headers: { 'Content-Type': 'application/json', ...headers, ...(cookies ? { Cookie: cookies } : {}) },
       };
       const req = http.request(url, options, (res) => {
         let data = '';
         res.on('data', (chunk) => (data += chunk));
         res.on('end', () => {
+          const setCookies = res.headers['set-cookie'] || [];
+          let authTokenCookie = '';
+          for (const sc of setCookies) {
+            if (sc.startsWith('authToken=')) {
+              authTokenCookie = sc.split(';')[0];
+              break;
+            }
+          }
           try {
-            resolve({ status: res.statusCode, body: JSON.parse(data) });
+            resolve({ status: res.statusCode, body: JSON.parse(data), cookies: setCookies, authTokenCookie });
           } catch {
-            resolve({ status: res.statusCode, body: data });
+            resolve({ status: res.statusCode, body: data, cookies: setCookies, authTokenCookie });
           }
         });
       });
@@ -87,19 +96,15 @@ async function runTests() {
   // --- Login helpers ---
   async function loginAs(email, password = 'password123') {
     const res = await fetchJson('POST', '/auth/login', { email, password });
-    if (res.status === 200 && res.body.token) {
-      return res.body.token;
+    if (res.status === 200 && res.authTokenCookie) {
+      return res.authTokenCookie;
     }
     return null;
   }
 
   // --- Authenticate ---
-  adminToken = await loginAs('admin@escuela.edu');
-  assert(!!adminToken, 'Admin login successful');
-
-  function adminHeaders() {
-    return { Authorization: `Bearer ${adminToken}` };
-  }
+  adminCookie = await loginAs('admin@escuela.edu');
+  assert(!!adminCookie, 'Admin login successful');
 
   // ===================================================================
   // SECTION 7.1 — POST /api/v1/notifications/trigger
@@ -152,7 +157,7 @@ async function runTests() {
 
   // 5. GET notifications with admin role → 200
   try {
-    const res = await fetchJson('GET', '/notifications', null, adminHeaders());
+    const res = await fetchJson('GET', '/notifications', null, {}, adminCookie);
     assert(res.status === 200, 'GET notifications with admin returns 200');
     assert(Array.isArray(res.body), 'Response body is an array');
   } catch (err) {

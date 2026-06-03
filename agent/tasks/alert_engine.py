@@ -82,7 +82,8 @@ class AlertEngine:
         try:
             self.db_reader = DbReader(self.database_url)
         except Exception as e:
-            logger.error("No se pudo conectar a la BD: %s", e, exc_info=True)
+            logger.error("No se pudo conectar a la BD (error de conexion oculto por seguridad)")
+            logger.debug("Detalles: %s", type(e).__name__)
             return
 
         self.notifier = Notifier(self.resend_api_key, self.from_email)
@@ -110,7 +111,7 @@ class AlertEngine:
             umbral = self._get_umbral_from_db()
             alerts = self.db_reader.get_ausencias_criticas(umbral)
         except Exception as e:
-            logger.error("Error evaluando AUSENCIAS_CRITICAS: %s", e, exc_info=True)
+            logger.error("Error evaluando AUSENCIAS_CRITICAS: %s", e)
             return stats
 
         for a in alerts:
@@ -138,7 +139,7 @@ class AlertEngine:
         try:
             alerts = self.db_reader.get_riesgo_regularidad()
         except Exception as e:
-            logger.error("Error evaluando RIESGO_REGULARIDAD: %s", e, exc_info=True)
+            logger.error("Error evaluando RIESGO_REGULARIDAD: %s", e)
             return stats
 
         for a in alerts:
@@ -166,7 +167,7 @@ class AlertEngine:
         try:
             alerts = self.db_reader.get_calificaciones_bajas()
         except Exception as e:
-            logger.error("Error evaluando CALIFICACION_BAJA: %s", e, exc_info=True)
+            logger.error("Error evaluando CALIFICACION_BAJA: %s", e)
             return stats
 
         for a in alerts:
@@ -194,7 +195,7 @@ class AlertEngine:
         try:
             alerts = self.db_reader.get_tareas_pendientes()
         except Exception as e:
-            logger.error("Error evaluando TAREA_PENDIENTE: %s", e, exc_info=True)
+            logger.error("Error evaluando TAREA_PENDIENTE: %s", e)
             return stats
 
         for a in alerts:
@@ -222,7 +223,7 @@ class AlertEngine:
         try:
             alerts = self.db_reader.get_licencias_vencimiento()
         except Exception as e:
-            logger.error("Error evaluando LICENCIA_VENCIMIENTO: %s", e, exc_info=True)
+            logger.error("Error evaluando LICENCIA_VENCIMIENTO: %s", e)
             return stats
 
         for a in alerts:

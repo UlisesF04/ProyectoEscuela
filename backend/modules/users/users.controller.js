@@ -7,7 +7,7 @@ const usersController = {
    */
   async createUser(req, res, next) {
     try {
-      const user = await usersService.createUser(req.body);
+      const user = await usersService.createUser(req.body, req.user);
       res.status(201).json({
         status: 'success',
         message: 'Usuario creado exitosamente',

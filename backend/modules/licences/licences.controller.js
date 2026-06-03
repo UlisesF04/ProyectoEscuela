@@ -39,7 +39,7 @@ class LicenceController {
 
   async download(req, res, next) {
     try {
-      const licence = await licenceService.getFileData(req.params.id);
+      const licence = await licenceService.getFileData(req.params.id, req.user.id, req.user.role);
       if (!licence || !licence.file_data) {
         return res.status(404).json({
           status: 'error',

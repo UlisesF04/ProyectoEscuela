@@ -68,7 +68,10 @@ const studentsService = {
       }
     }
 
-    const updatedStudent = await studentRepository.update(id, data);
+    const allowedFields = ['first_name', 'last_name', 'birth_date', 'dni', 'is_active'];
+    const filtered = {};
+    allowedFields.forEach(f => { if (data[f] !== undefined) filtered[f] = data[f]; });
+    const updatedStudent = await studentRepository.update(id, filtered);
     return updatedStudent;
   },
 
@@ -170,7 +173,7 @@ const studentsService = {
         email: link.User.email,
         first_name: link.User.first_name,
         last_name: link.User.last_name,
-        phone_whatsapp: link.User.phone_whatsapp,
+
         role: link.User.role,
       },
     }));

@@ -1,5 +1,5 @@
 const attendanceRepository = require('../../repositories/attendanceRepository');
-const { Student } = require('../../models');
+const { Student, Course, Subject, TeacherSubject } = require('../../models');
 const AppError = require('../../utils/AppError');
 const path = require('path');
 const fs = require('fs');
@@ -46,6 +46,16 @@ const attendancesService = {
         throw new AppError(`El alumno con ID ${student_id} no existe`, 404);
       }
 
+      // Verify the student belongs to a valid course
+      if (!student.course_id) {
+        throw new AppError(`El alumno con ID ${student_id} no tiene un curso asignado`, 400);
+      }
+
+      const course = await Course.findByPk(student.course_id);
+      if (!course) {
+        throw new AppError(`El curso del alumno con ID ${student_id} no existe`, 404);
+      }
+
       const existing = await attendanceRepository.findByStudentAndDate(student_id, date);
       if (existing) {
         const updated = await attendanceRepository.update(existing.id, { status, registered_by: userId });
@@ -70,7 +80,10 @@ const attendancesService = {
       throw new AppError('Registro de asistencia no encontrado', 404);
     }
 
-    const updated = await attendanceRepository.update(id, data);
+    const allowedFields = ['status'];
+    const filtered = {};
+    allowedFields.forEach(f => { if (data[f] !== undefined) filtered[f] = data[f]; });
+    const updated = await attendanceRepository.update(id, filtered);
     return updated;
   },
 
@@ -108,7 +121,18 @@ const attendancesService = {
     return { records, summary };
   },
 
-  async getCourseAttendance(courseId, date) {
+  async getCourseAttendance(courseId, date, userId, role) {
+    // Verificar que el docente está asignado a materias de este curso
+    if (role === 'docente') {
+      const teacherSubjects = await TeacherSubject.findAll({
+        where: { user_id: userId },
+        include: [{ model: Subject, where: { course_id: courseId }, attributes: [] }]
+      });
+      if (teacherSubjects.length === 0) {
+        throw new AppError('No estás asignado a este curso', 403);
+      }
+    }
+
     const students = await Student.findAll({
       where: { course_id: courseId, is_active: true },
       attributes: ['id', 'first_name', 'last_name'],
@@ -138,10 +162,18 @@ const attendancesService = {
     return { records, summary: { ...counts, total: students.length } };
   },
 
-  async uploadCertificate(attendanceId, file, userId) {
+  async uploadCertificate(attendanceId, file, userId, role) {
     const attendance = await attendanceRepository.findById(attendanceId);
     if (!attendance) {
       throw new AppError('Registro de asistencia no encontrado', 404);
+    }
+
+    if (role === 'padre') {
+      const { ParentStudent } = require('../../models');
+      const link = await ParentStudent.findOne({
+        where: { user_id: userId, student_id: attendance.student_id }
+      });
+      if (!link) throw new AppError('No tienes permiso para justificar esta asistencia', 403);
     }
 
     if (!file) {

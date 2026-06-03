@@ -23,6 +23,8 @@ const Subject = sequelize.define('Subject', {
   tableName: 'subjects',
   timestamps: true,
   underscored: true,
+  paranoid: true,
+  deletedAt: 'deleted_at',
   indexes: [
     { fields: ['course_id'] },
   ],

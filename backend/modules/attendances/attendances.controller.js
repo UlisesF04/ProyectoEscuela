@@ -82,7 +82,7 @@ const attendancesController = {
       if (!date) {
         return res.status(400).json({ status: 'error', message: 'El parámetro date es obligatorio' });
       }
-      const result = await attendancesService.getCourseAttendance(courseId, date);
+      const result = await attendancesService.getCourseAttendance(courseId, date, req.user.id, req.user.role);
       res.status(200).json({ status: 'success', data: result.records, summary: result.summary });
     } catch (error) {
       next(error);
@@ -101,7 +101,7 @@ const attendancesController = {
         });
       }
 
-      const certificateUrl = await attendancesService.uploadCertificate(attendance_id, file, req.user.id);
+      const certificateUrl = await attendancesService.uploadCertificate(attendance_id, file, req.user.id, req.user.role);
       res.status(200).json({
         status: 'success',
         message: 'Certificado subido exitosamente',

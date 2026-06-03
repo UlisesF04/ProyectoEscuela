@@ -5,6 +5,9 @@ require('dotenv').config({ path: path.resolve(__dirname, '..', '.env') });
 const { sequelize, User, Student, Course, Subject, TeacherSubject, ParentStudent } = require('../models');
 
 async function runTests() {
+  // Sync database to ensure all columns exist (e.g. failed_attempts, locked_until, refresh_token_hash)
+  await sequelize.sync({ alter: true });
+
   let passed = 0;
   let failed = 0;
 

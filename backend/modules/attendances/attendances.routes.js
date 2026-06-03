@@ -51,7 +51,8 @@ const updateAttendanceValidations = [
 const justifyAttendanceValidations = [
   body('justification_note')
     .optional()
-    .isString().withMessage('La nota de justificación debe ser un texto'),
+    .isString().withMessage('La nota de justificación debe ser un texto')
+    .trim().escape(),
 ];
 
 const idParamValidation = [
@@ -100,6 +101,7 @@ router.get(
   '/courses/:courseId',
   authMiddleware,
   roleMiddleware('preceptor', 'admin', 'docente'),
+  validationMiddleware([param('courseId').isInt({ min: 1 }).withMessage('El ID del curso debe ser un número entero positivo')]),
   attendancesController.getCourseAttendance
 );
 
@@ -112,10 +114,17 @@ router.get(
   attendancesController.getHistory
 );
 
+const uploadCertificateValidations = [
+  body('attendance_id')
+    .notEmpty().withMessage('El ID de asistencia es obligatorio')
+    .isInt().withMessage('El ID de asistencia debe ser un número entero'),
+];
+
 router.post(
   '/certificates/upload',
   authMiddleware,
   roleMiddleware('preceptor', 'admin', 'padre'),
+  validationMiddleware(uploadCertificateValidations),
   upload.single('certificate'),
   attendancesController.uploadCertificate
 );

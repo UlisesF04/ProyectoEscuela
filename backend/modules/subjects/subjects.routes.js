@@ -44,6 +44,7 @@ router.get(
   '/teachers/:userId',
   authMiddleware,
   roleMiddleware('admin', 'preceptor'),
+  validationMiddleware([param('userId').isInt({ min: 1 }).withMessage('El ID de usuario debe ser un número entero positivo')]),
   subjectsController.getTeacherSubjects
 );
 

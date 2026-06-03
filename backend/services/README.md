@@ -1,1 +1,0 @@
-Servicios generales del backend, por ejemplo, conexión a MongoDB.

@@ -20,7 +20,11 @@ function formatDate(dateStr) {
 async function handleDownload(id, fileName, toast) {
   try {
     const response = await licencesService.download(id);
-    const url = URL.createObjectURL(new Blob([response.data]));
+    const contentType = response.headers['content-type'];
+    if (!contentType || (!contentType.startsWith('application/') && !contentType.startsWith('image/'))) {
+      throw new Error('Tipo de archivo inesperado');
+    }
+    const url = window.URL.createObjectURL(new Blob([response.data], { type: contentType }));
     const link = document.createElement('a');
     link.href = url;
     link.download = fileName || 'licencia';

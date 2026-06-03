@@ -2,20 +2,42 @@ import {
   Box, Heading, Button, Text, VStack, HStack, Badge, useToast, Card, CardBody,
 } from '@chakra-ui/react';
 import { useState, useEffect } from 'react';
-import { FiExternalLink, FiDownload } from 'react-icons/fi';
+import { FiDownload } from 'react-icons/fi';
 import DataTable from '../../components/DataTable';
 import LoadingSkeleton from '../../components/LoadingSkeleton';
 import ErrorAlert from '../../components/ErrorAlert';
 import EmptyState from '../../components/EmptyState';
 import { licencesService } from '../../services/licencesService';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
-
 export default function JustificacionesPage() {
   const [licences, setLicences] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const toast = useToast();
+
+  async function handleDownload(id, fileName) {
+    try {
+      const response = await licencesService.download(id);
+      const contentType = response.headers['content-type'];
+      if (!contentType || (!contentType.startsWith('application/') && !contentType.startsWith('image/'))) {
+        throw new Error('Tipo de archivo inesperado');
+      }
+      const url = window.URL.createObjectURL(new Blob([response.data], { type: contentType }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName || 'justificacion';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch {
+      toast({
+        title: 'Error al descargar',
+        description: 'No se pudo descargar el archivo',
+        status: 'error', duration: 3000, isClosable: true, position: 'top-right',
+      });
+    }
+  }
 
   const fetchLicences = () => {
     setLoading(true);
@@ -48,13 +70,11 @@ export default function JustificacionesPage() {
       key: 'file', label: 'Archivo',
       render: (r) => r.has_file ? (
         <Button
-          as="a"
-          href={`${API_URL}/licences/${r.id}/download`}
-          target="_blank"
           size="sm"
           variant="ghost"
-          leftIcon={<FiExternalLink />}
+          leftIcon={<FiDownload />}
           borderRadius="pill"
+          onClick={() => handleDownload(r.id, r.file_name || 'justificacion')}
           _active={{ transform: 'scale(0.97)' }}
           transition="transform 160ms ease-out"
         >

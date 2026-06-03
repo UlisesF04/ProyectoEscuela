@@ -1,4 +1,5 @@
 import DashboardLayout from '../../components/DashboardLayout';
+import ErrorBoundary from '../../components/ErrorBoundary';
 import {
   FiHome,
   FiUsers,
@@ -24,5 +25,9 @@ const sections = [
 ];
 
 export default function AdminLayout() {
-  return <DashboardLayout sections={sections} role="admin" />;
+  return (
+    <ErrorBoundary homePath="/admin">
+      <DashboardLayout sections={sections} role="admin" />
+    </ErrorBoundary>
+  );
 }

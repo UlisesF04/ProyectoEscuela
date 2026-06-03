@@ -1,5 +1,6 @@
 // Set test environment so rate limiter uses higher limits
 process.env.NODE_ENV = 'test';
+process.env.JWT_SECRET = 'test-jwt-secret-for-testing-only';
 
 // Load .env for local database connection
 const path = require('path');
@@ -30,8 +31,8 @@ async function runTests() {
   // ─── Setup: create test server ───────────────────────────────
   let server;
   let baseUrl;
-  let adminToken;
-  let preceptorToken;
+let adminCookie;
+let preceptorCookie;
 
   try {
     await sequelize.authenticate();
@@ -52,21 +53,33 @@ async function runTests() {
     });
   });
 
-  function fetchJson(method, urlPath, body, headers = {}) {
+  function fetchJson(method, urlPath, body, headers = {}, cookies = '') {
     return new Promise((resolve, reject) => {
       const url = `${baseUrl}${urlPath}`;
       const options = {
         method,
-        headers: { 'Content-Type': 'application/json', ...headers },
+        headers: {
+          'Content-Type': 'application/json',
+          ...headers,
+          ...(cookies ? { Cookie: cookies } : {}),
+        },
       };
       const req = http.request(url, options, (res) => {
         let data = '';
         res.on('data', (chunk) => (data += chunk));
         res.on('end', () => {
+          const setCookies = res.headers['set-cookie'] || [];
+          let authTokenCookie = '';
+          for (const sc of setCookies) {
+            if (sc.startsWith('authToken=')) {
+              authTokenCookie = sc.split(';')[0];
+              break;
+            }
+          }
           try {
-            resolve({ status: res.statusCode, body: JSON.parse(data) });
+            resolve({ status: res.statusCode, body: JSON.parse(data), cookies: setCookies, authTokenCookie });
           } catch {
-            resolve({ status: res.statusCode, body: data });
+            resolve({ status: res.statusCode, body: data, cookies: setCookies, authTokenCookie });
           }
         });
       });
@@ -79,25 +92,25 @@ async function runTests() {
   // ─── Login helpers ───────────────────────────────────────────
   async function loginAs(email, password = 'password123') {
     const res = await fetchJson('POST', '/auth/login', { email, password });
-    if (res.status === 200 && res.body.token) {
-      return res.body.token;
+    if (res.status === 200 && res.authTokenCookie) {
+      return res.authTokenCookie;
     }
     return null;
   }
 
   // ─── Authenticate ────────────────────────────────────────────
-  adminToken = await loginAs('admin@escuela.edu');
-  assert(!!adminToken, 'Admin login successful');
+adminCookie = await loginAs('admin@escuela.edu');
+assert(!!adminCookie, 'Admin login successful');
 
-  preceptorToken = await loginAs('preceptor@escuela.edu');
-  assert(!!preceptorToken, 'Preceptor login successful');
+preceptorCookie = await loginAs('preceptor@escuela.edu');
+assert(!!preceptorCookie, 'Preceptor login successful');
 
   function adminHeaders() {
-    return { Authorization: `Bearer ${adminToken}` };
+    return {};
   }
 
   function preceptorHeaders() {
-    return { Authorization: `Bearer ${preceptorToken}` };
+    return {};
   }
 
   // Pre-cleanup any leftover test users from previous runs
@@ -122,7 +135,7 @@ async function runTests() {
       first_name: 'Test',
       last_name: 'Docente',
       role: 'docente',
-    }, adminHeaders());
+    }, adminHeaders(), adminCookie);
     assert(res.status === 201, 'Create user returns 201');
     assert(res.body.status === 'success', 'Response has success status');
     assert(res.body.data?.email === 'test-docente@test.com', 'Response includes created user email');
@@ -141,7 +154,7 @@ async function runTests() {
       first_name: 'Otro',
       last_name: 'Docente',
       role: 'docente',
-    }, adminHeaders());
+    }, adminHeaders(), adminCookie);
     assert(res.status === 409, 'Duplicate email returns 409');
     assert(res.body.message?.includes('registrado'), 'Error message mentions email registered');
   } catch (err) {
@@ -150,7 +163,7 @@ async function runTests() {
 
   // 3. Get all users
   try {
-    const res = await fetchJson('GET', '/users', null, adminHeaders());
+    const res = await fetchJson('GET', '/users', null, adminHeaders(), adminCookie);
     assert(res.status === 200, 'Get all users returns 200');
     assert(Array.isArray(res.body.data), 'Response data is an array');
     assert(res.body.data.length >= 4, `Returns at least 4 users (got ${res.body.data.length})`);
@@ -163,7 +176,7 @@ async function runTests() {
 
   // 4. Get user by role
   try {
-    const res = await fetchJson('GET', '/users/role/docente', null, adminHeaders());
+    const res = await fetchJson('GET', '/users/role/docente', null, adminHeaders(), adminCookie);
     assert(res.status === 200, 'Get users by role returns 200');
     assert(Array.isArray(res.body.data), 'Response data is an array');
     const allDocentes = res.body.data.every(u => u.role === 'docente');
@@ -174,7 +187,7 @@ async function runTests() {
 
   // 5. Get user by ID
   try {
-    const res = await fetchJson('GET', `/users/${createdUserId}`, null, adminHeaders());
+    const res = await fetchJson('GET', `/users/${createdUserId}`, null, adminHeaders(), adminCookie);
     assert(res.status === 200, 'Get user by ID returns 200');
     assert(res.body.data?.id === createdUserId, 'Returns correct user');
   } catch (err) {
@@ -183,7 +196,7 @@ async function runTests() {
 
   // 6. Get non-existent user returns 404
   try {
-    const res = await fetchJson('GET', '/users/999999', null, adminHeaders());
+    const res = await fetchJson('GET', '/users/999999', null, adminHeaders(), adminCookie);
     assert(res.status === 404, 'Get non-existent user returns 404');
   } catch (err) {
     assert(false, `Get non-existent user failed: ${err.message}`);
@@ -194,7 +207,7 @@ async function runTests() {
     const res = await fetchJson('PUT', `/users/${createdUserId}`, {
       first_name: 'Updated',
       last_name: 'Name',
-    }, adminHeaders());
+    }, adminHeaders(), adminCookie);
     assert(res.status === 200, 'Update user returns 200');
     assert(res.body.data?.first_name === 'Updated', 'First name was updated');
     assert(res.body.data?.last_name === 'Name', 'Last name was updated');
@@ -206,7 +219,7 @@ async function runTests() {
   try {
     const res = await fetchJson('PUT', `/users/${createdUserId}`, {
       role: 'preceptor',
-    }, adminHeaders());
+    }, adminHeaders(), adminCookie);
     assert(res.status === 400, 'Changing role returns 400');
   } catch (err) {
     assert(false, `Change role test failed: ${err.message}`);
@@ -216,7 +229,7 @@ async function runTests() {
   try {
     const res = await fetchJson('PUT', `/users/${createdUserId}`, {
       email: 'preceptor@escuela.edu',
-    }, adminHeaders());
+    }, adminHeaders(), adminCookie);
     assert(res.status === 409, 'Update to duplicate email returns 409');
   } catch (err) {
     assert(false, `Update duplicate email test failed: ${err.message}`);
@@ -224,7 +237,7 @@ async function runTests() {
 
   // 10. Deactivate user (soft delete)
   try {
-    const res = await fetchJson('DELETE', `/users/${createdUserId}`, null, adminHeaders());
+    const res = await fetchJson('DELETE', `/users/${createdUserId}`, null, adminHeaders(), adminCookie);
     assert(res.status === 200, 'Deactivate user returns 200');
     assert(res.body.message?.includes('desactivado'), 'Success message mentions desactivado');
   } catch (err) {
@@ -233,7 +246,7 @@ async function runTests() {
 
   // 11. Deactivated user shows as inactive in list
   try {
-    const res = await fetchJson('GET', '/users', null, adminHeaders());
+    const res = await fetchJson('GET', '/users', null, adminHeaders(), adminCookie);
     const deactivatedUser = res.body.data.find(u => u.id === createdUserId);
     assert(!!deactivatedUser, 'Deactivated user still appears in list');
     assert(deactivatedUser.is_active === false, 'Deactivated user has is_active = false');
@@ -243,7 +256,7 @@ async function runTests() {
 
   // 12. Cannot deactivate already deactivated user
   try {
-    const res = await fetchJson('DELETE', `/users/${createdUserId}`, null, adminHeaders());
+    const res = await fetchJson('DELETE', `/users/${createdUserId}`, null, adminHeaders(), adminCookie);
     assert(res.status === 409, 'Deactivating already deactivated user returns 409');
   } catch (err) {
     assert(false, `Double deactivate test failed: ${err.message}`);
@@ -251,7 +264,7 @@ async function runTests() {
 
   // 13. Cannot deactivate admin
   try {
-    const res = await fetchJson('DELETE', '/users/1', null, adminHeaders());
+    const res = await fetchJson('DELETE', '/users/1', null, adminHeaders(), adminCookie);
     assert(res.status === 400, 'Deactivating admin returns 400');
   } catch (err) {
     assert(false, `Deactivate admin test failed: ${err.message}`);
@@ -261,7 +274,7 @@ async function runTests() {
   try {
     const res = await fetchJson('PUT', `/users/${createdUserId}`, {
       is_active: true,
-    }, adminHeaders());
+    }, adminHeaders(), adminCookie);
     assert(res.status === 200, 'Reactivate user returns 200');
     assert(res.body.data?.is_active === true, 'User is active again');
   } catch (err) {
@@ -270,7 +283,7 @@ async function runTests() {
 
   // 15. Reactivated user appears in list with is_active = true
   try {
-    const res = await fetchJson('GET', '/users', null, adminHeaders());
+    const res = await fetchJson('GET', '/users', null, adminHeaders(), adminCookie);
     const userBack = res.body.data.find(u => u.id === createdUserId);
     assert(!!userBack, 'Reactivated user appears in list');
     assert(userBack.is_active === true, 'Reactivated user has is_active = true');
@@ -282,7 +295,7 @@ async function runTests() {
   try {
     const res = await fetchJson('POST', '/users/bulk/get', {
       ids: [1, 2, 3],
-    }, adminHeaders());
+    }, adminHeaders(), adminCookie);
     assert(res.status === 200, 'Bulk get returns 200');
     assert(Array.isArray(res.body.data), 'Response data is an array');
     assert(res.body.data.length === 3, 'Returns all requested users');
@@ -295,7 +308,7 @@ async function runTests() {
     const res = await fetchJson('POST', '/users', {
       email: 'incomplete@test.com',
       // missing password, first_name, last_name, role
-    }, adminHeaders());
+    }, adminHeaders(), adminCookie);
     assert(res.status === 400, 'Create user with missing fields returns 400');
     assert(Array.isArray(res.body.errors), 'Response has errors array');
   } catch (err) {
@@ -310,7 +323,7 @@ async function runTests() {
       first_name: 'Valid',
       last_name: 'User',
       role: 'docente',
-    }, adminHeaders());
+    }, adminHeaders(), adminCookie);
     assert(res.status === 400, 'Invalid email returns 400');
   } catch (err) {
     assert(false, `Invalid email validation test failed: ${err.message}`);
@@ -324,7 +337,7 @@ async function runTests() {
       first_name: 'Valid',
       last_name: 'User',
       role: 'superadmin',
-    }, adminHeaders());
+    }, adminHeaders(), adminCookie);
     assert(res.status === 400, 'Invalid role returns 400');
   } catch (err) {
     assert(false, `Invalid role validation test failed: ${err.message}`);
@@ -342,7 +355,7 @@ async function runTests() {
       first_name: 'Hard',
       last_name: 'Delete',
       role: 'docente',
-    }, adminHeaders());
+    }, adminHeaders(), adminCookie);
     hardDeleteUserId = res.body.data?.id;
     assert(!!hardDeleteUserId, 'Created user for hard delete test');
   } catch (err) {
@@ -352,7 +365,7 @@ async function runTests() {
   // Cannot permanently delete an active user
   if (hardDeleteUserId) {
     try {
-      const res = await fetchJson('DELETE', `/users/${hardDeleteUserId}/permanent`, null, adminHeaders());
+      const res = await fetchJson('DELETE', `/users/${hardDeleteUserId}/permanent`, null, adminHeaders(), adminCookie);
       assert(res.status === 400, 'Cannot permanent-delete active user (returns 400)');
       assert(res.body.message?.includes('desactivar'), 'Error message mentions desactivar');
     } catch (err) {
@@ -362,7 +375,7 @@ async function runTests() {
 
   // Cannot permanently delete admin
   try {
-    const res = await fetchJson('DELETE', '/users/1/permanent', null, adminHeaders());
+    const res = await fetchJson('DELETE', '/users/1/permanent', null, adminHeaders(), adminCookie);
     assert(res.status === 400, 'Cannot permanent-delete admin (returns 400)');
   } catch (err) {
     assert(false, `Permanent delete admin test failed: ${err.message}`);
@@ -371,8 +384,8 @@ async function runTests() {
   // First deactivate, then permanently delete
   if (hardDeleteUserId) {
     try {
-      await fetchJson('DELETE', `/users/${hardDeleteUserId}`, null, adminHeaders());
-      const res = await fetchJson('DELETE', `/users/${hardDeleteUserId}/permanent`, null, adminHeaders());
+      await fetchJson('DELETE', `/users/${hardDeleteUserId}`, null, adminHeaders(), adminCookie);
+      const res = await fetchJson('DELETE', `/users/${hardDeleteUserId}/permanent`, null, adminHeaders(), adminCookie);
       assert(res.status === 200, 'Permanent delete after deactivation returns 200');
     } catch (err) {
       assert(false, `Permanent delete after deactivation test failed: ${err.message}`);
@@ -382,7 +395,7 @@ async function runTests() {
   // Verify the user is truly gone (404)
   if (hardDeleteUserId) {
     try {
-      const res = await fetchJson('GET', `/users/${hardDeleteUserId}`, null, adminHeaders());
+      const res = await fetchJson('GET', `/users/${hardDeleteUserId}`, null, adminHeaders(), adminCookie);
       assert(res.status === 404, 'Permanently deleted user returns 404');
     } catch (err) {
       assert(false, `Verify deleted user test failed: ${err.message}`);
@@ -398,15 +411,15 @@ async function runTests() {
       first_name: 'Reactivate',
       last_name: 'Test',
       role: 'padre',
-    }, adminHeaders());
+    }, adminHeaders(), adminCookie);
     reactivateUserId = res.body.data?.id;
     assert(!!reactivateUserId, 'Created user for reactivation test');
 
     // Deactivate
-    await fetchJson('DELETE', `/users/${reactivateUserId}`, null, adminHeaders());
+    await fetchJson('DELETE', `/users/${reactivateUserId}`, null, adminHeaders(), adminCookie);
 
     // Reactivate via PUT
-    const reactRes = await fetchJson('PUT', `/users/${reactivateUserId}`, { is_active: true }, adminHeaders());
+    const reactRes = await fetchJson('PUT', `/users/${reactivateUserId}`, { is_active: true }, adminHeaders(), adminCookie);
     assert(reactRes.status === 200, 'Reactivate user returns 200');
     assert(reactRes.body.data?.is_active === true, 'User is_active is true after reactivation');
   } catch (err) {
@@ -436,7 +449,7 @@ async function runTests() {
       year: 2026,
       division: 'T',
       level: 'Secundaria',
-    }, adminHeaders());
+    }, adminHeaders(), adminCookie);
     assert(res.status === 201, 'Create course returns 201');
     assert(res.body.status === 'success', 'Response has success status');
     assert(res.body.data?.name === 'Test Course', 'Response includes created course name');
@@ -448,7 +461,7 @@ async function runTests() {
 
   // 2. Get all courses
   try {
-    const res = await fetchJson('GET', '/courses', null, adminHeaders());
+    const res = await fetchJson('GET', '/courses', null, adminHeaders(), adminCookie);
     assert(res.status === 200, 'Get all courses returns 200');
     assert(Array.isArray(res.body.data), 'Response data is an array');
     assert(res.body.data.length >= 2, `Returns at least 2 courses (got ${res.body.data.length})`);
@@ -458,7 +471,7 @@ async function runTests() {
 
   // 3. Get course by ID
   try {
-    const res = await fetchJson('GET', `/courses/${createdCourseId}`, null, adminHeaders());
+    const res = await fetchJson('GET', `/courses/${createdCourseId}`, null, adminHeaders(), adminCookie);
     assert(res.status === 200, 'Get course by ID returns 200');
     assert(res.body.data?.id === createdCourseId, 'Returns correct course');
   } catch (err) {
@@ -469,7 +482,7 @@ async function runTests() {
   try {
     const res = await fetchJson('PUT', `/courses/${createdCourseId}`, {
       name: 'Updated Course',
-    }, adminHeaders());
+    }, adminHeaders(), adminCookie);
     assert(res.status === 200, 'Update course returns 200');
     assert(res.body.data?.name === 'Updated Course', 'Course name was updated');
   } catch (err) {
@@ -480,7 +493,7 @@ async function runTests() {
   try {
     const res = await fetchJson('POST', `/courses/${createdCourseId}/subjects`, {
       name: 'Test Subject',
-    }, adminHeaders());
+    }, adminHeaders(), adminCookie);
     assert(res.status === 201, 'Create subject returns 201');
     assert(res.body.data?.name === 'Test Subject', 'Response includes created subject name');
     createdSubjectId = res.body.data?.id;
@@ -491,7 +504,7 @@ async function runTests() {
 
   // 6. Get subjects for course
   try {
-    const res = await fetchJson('GET', `/courses/${createdCourseId}/subjects`, null, adminHeaders());
+    const res = await fetchJson('GET', `/courses/${createdCourseId}/subjects`, null, adminHeaders(), adminCookie);
     assert(res.status === 200, 'Get subjects returns 200');
     assert(Array.isArray(res.body.data), 'Response data is an array');
     const hasTestSubject = res.body.data.some(s => s.id === createdSubjectId);
@@ -502,7 +515,7 @@ async function runTests() {
 
   // 7. Get subject by ID
   try {
-    const res = await fetchJson('GET', `/subjects/${createdSubjectId}`, null, adminHeaders());
+    const res = await fetchJson('GET', `/subjects/${createdSubjectId}`, null, adminHeaders(), adminCookie);
     assert(res.status === 200, 'Get subject by ID returns 200');
     assert(res.body.data?.id === createdSubjectId, 'Returns correct subject');
   } catch (err) {
@@ -511,7 +524,7 @@ async function runTests() {
 
   // 8. Create subject with missing name returns 400
   try {
-    const res = await fetchJson('POST', `/courses/${createdCourseId}/subjects`, {}, adminHeaders());
+    const res = await fetchJson('POST', `/courses/${createdCourseId}/subjects`, {}, adminHeaders(), adminCookie);
     assert(res.status === 400, 'Create subject with empty body returns 400');
   } catch (err) {
     assert(false, `Create subject validation test failed: ${err.message}`);
@@ -522,7 +535,7 @@ async function runTests() {
     const res = await fetchJson('POST', '/courses', {
       name: 'Incomplete',
       // missing year
-    }, adminHeaders());
+    }, adminHeaders(), adminCookie);
     assert(res.status === 400, 'Create course with missing year returns 400');
   } catch (err) {
     assert(false, `Course validation test failed: ${err.message}`);
@@ -530,7 +543,7 @@ async function runTests() {
 
   // 10. Delete course (soft delete)
   try {
-    const res = await fetchJson('DELETE', `/courses/${createdCourseId}`, null, adminHeaders());
+    const res = await fetchJson('DELETE', `/courses/${createdCourseId}`, null, adminHeaders(), adminCookie);
     assert(res.status === 200, 'Delete course returns 200');
   } catch (err) {
     assert(false, `Delete course failed: ${err.message}`);
@@ -538,7 +551,7 @@ async function runTests() {
 
   // 11. Deleted course not in list
   try {
-    const res = await fetchJson('GET', '/courses', null, adminHeaders());
+    const res = await fetchJson('GET', '/courses', null, adminHeaders(), adminCookie);
     const courseStillListed = res.body.data.some(c => c.id === createdCourseId);
     assert(!courseStillListed, 'Deleted course not in list (or marked inactive)');
   } catch (err) {
@@ -593,7 +606,7 @@ async function runTests() {
       dni: studentDni,
       birth_date: '2010-06-01',
       course_id: seedCourseId || 1,
-    }, adminHeaders());
+    }, adminHeaders(), adminCookie);
     assert(res.status === 201, 'Create student returns 201');
     assert(res.body.status === 'success', 'Response has success status');
     assert(res.body.data?.first_name === 'Test', 'Response includes created student name');
@@ -605,7 +618,7 @@ async function runTests() {
 
   // 2. Get all students
   try {
-    const res = await fetchJson('GET', '/students', null, adminHeaders());
+    const res = await fetchJson('GET', '/students', null, adminHeaders(), adminCookie);
     assert(res.status === 200, 'Get all students returns 200');
     assert(Array.isArray(res.body.data), 'Response data is an array');
     assert(res.body.data.length >= 2, `Returns at least 2 students (got ${res.body.data.length})`);
@@ -615,7 +628,7 @@ async function runTests() {
 
   // 3. Get student by ID
   try {
-    const res = await fetchJson('GET', `/students/${createdStudentId}`, null, adminHeaders());
+    const res = await fetchJson('GET', `/students/${createdStudentId}`, null, adminHeaders(), adminCookie);
     assert(res.status === 200, 'Get student by ID returns 200');
     assert(res.body.data?.id === createdStudentId, 'Returns correct student');
   } catch (err) {
@@ -627,7 +640,7 @@ async function runTests() {
     const res = await fetchJson('PUT', `/students/${createdStudentId}`, {
       first_name: 'Updated',
       last_name: 'StudentName',
-    }, adminHeaders());
+    }, adminHeaders(), adminCookie);
     assert(res.status === 200, 'Update student returns 200');
     assert(res.body.data?.first_name === 'Updated', 'Student first name was updated');
     assert(res.body.data?.last_name === 'StudentName', 'Student last name was updated');
@@ -637,7 +650,7 @@ async function runTests() {
 
   // 5. Deactivate student (soft delete — based on is_active field if exists, else delete)
   try {
-    const res = await fetchJson('DELETE', `/students/${createdStudentId}`, null, adminHeaders());
+    const res = await fetchJson('DELETE', `/students/${createdStudentId}`, null, adminHeaders(), adminCookie);
     assert(res.status === 200, 'Deactivate student returns 200');
   } catch (err) {
     assert(false, `Deactivate student failed: ${err.message}`);
@@ -648,7 +661,7 @@ async function runTests() {
     const res = await fetchJson('POST', `/students/${createdStudentId}/parents`, {
       user_id: 4, // padre user from seed
       relationship: 'padre',
-    }, adminHeaders());
+    }, adminHeaders(), adminCookie);
     assert(res.status === 201, 'Link parent returns 201');
     assert(res.body.data?.user_id === 4, 'Parent is linked to correct user');
   } catch (err) {
@@ -657,7 +670,7 @@ async function runTests() {
 
   // 7. Get parents for student
   try {
-    const res = await fetchJson('GET', `/students/${createdStudentId}/parents`, null, adminHeaders());
+    const res = await fetchJson('GET', `/students/${createdStudentId}/parents`, null, adminHeaders(), adminCookie);
     assert(res.status === 200, 'Get parents returns 200');
     assert(Array.isArray(res.body.data), 'Response data is an array');
     const hasPadre = res.body.data.some(p => p.User?.id === 4 || p.user_id === 4);
@@ -670,7 +683,7 @@ async function runTests() {
   try {
     const res = await fetchJson('POST', `/students/${createdStudentId}/parents`, {
       user_id: 'invalid',
-    }, adminHeaders());
+    }, adminHeaders(), adminCookie);
     assert(res.status === 400, 'Link parent with invalid user_id returns 400');
   } catch (err) {
     assert(false, `Link parent validation test failed: ${err.message}`);
@@ -678,7 +691,7 @@ async function runTests() {
 
   // 9. Get non-existent student returns 404
   try {
-    const res = await fetchJson('GET', '/students/999999', null, adminHeaders());
+    const res = await fetchJson('GET', '/students/999999', null, adminHeaders(), adminCookie);
     assert(res.status === 404, 'Get non-existent student returns 404');
   } catch (err) {
     assert(false, `Get non-existent student failed: ${err.message}`);
@@ -690,7 +703,7 @@ async function runTests() {
       first_name: 'NoCourse',
       last_name: 'Student',
       // missing course_id
-    }, adminHeaders());
+    }, adminHeaders(), adminCookie);
     assert(res.status === 400, 'Create student with missing course_id returns 400');
   } catch (err) {
     assert(false, `Student validation test failed: ${err.message}`);
@@ -707,7 +720,7 @@ async function runTests() {
       last_name: 'DeleteStudent',
       dni: hardDeleteDni,
       course_id: seedCourseId || 1,
-    }, adminHeaders());
+    }, adminHeaders(), adminCookie);
     hardDeleteStudentId = res.body.data?.id;
     assert(!!hardDeleteStudentId, 'Created student for hard delete test');
   } catch (err) {
@@ -717,7 +730,7 @@ async function runTests() {
   if (hardDeleteStudentId) {
     // Cannot permanent-delete active student
     try {
-      const res = await fetchJson('DELETE', `/students/${hardDeleteStudentId}/permanent`, null, adminHeaders());
+      const res = await fetchJson('DELETE', `/students/${hardDeleteStudentId}/permanent`, null, adminHeaders(), adminCookie);
       assert(res.status === 400, 'Cannot permanent-delete active student (returns 400)');
     } catch (err) {
       assert(false, `Student permanent delete active test failed: ${err.message}`);
@@ -725,8 +738,8 @@ async function runTests() {
 
     // Deactivate then permanent delete
     try {
-      await fetchJson('DELETE', `/students/${hardDeleteStudentId}`, null, adminHeaders());
-      const res = await fetchJson('DELETE', `/students/${hardDeleteStudentId}/permanent`, null, adminHeaders());
+      await fetchJson('DELETE', `/students/${hardDeleteStudentId}`, null, adminHeaders(), adminCookie);
+      const res = await fetchJson('DELETE', `/students/${hardDeleteStudentId}/permanent`, null, adminHeaders(), adminCookie);
       assert(res.status === 200, 'Student permanent delete after deactivation returns 200');
     } catch (err) {
       assert(false, `Student permanent delete after deactivation test failed: ${err.message}`);
@@ -734,7 +747,7 @@ async function runTests() {
 
     // Verify 404
     try {
-      const res = await fetchJson('GET', `/students/${hardDeleteStudentId}`, null, adminHeaders());
+      const res = await fetchJson('GET', `/students/${hardDeleteStudentId}`, null, adminHeaders(), adminCookie);
       assert(res.status === 404, 'Permanently deleted student returns 404');
     } catch (err) {
       assert(false, `Verify deleted student test failed: ${err.message}`);
@@ -749,15 +762,15 @@ async function runTests() {
       last_name: 'Student',
       dni: reactivateDni,
       course_id: seedCourseId || 1,
-    }, adminHeaders());
+    }, adminHeaders(), adminCookie);
     const reactivateStudentId = res.body.data?.id;
     assert(!!reactivateStudentId, 'Created student for reactivation test');
 
     if (reactivateStudentId) {
       // Deactivate
-      await fetchJson('DELETE', `/students/${reactivateStudentId}`, null, adminHeaders());
+      await fetchJson('DELETE', `/students/${reactivateStudentId}`, null, adminHeaders(), adminCookie);
       // Reactivate via PUT
-      const reactRes = await fetchJson('PUT', `/students/${reactivateStudentId}`, { is_active: true }, adminHeaders());
+      const reactRes = await fetchJson('PUT', `/students/${reactivateStudentId}`, { is_active: true }, adminHeaders(), adminCookie);
       assert(reactRes.status === 200, 'Reactivate student returns 200');
       assert(reactRes.body.data?.is_active === true, 'Student is_active is true after reactivation');
     }
@@ -803,22 +816,34 @@ async function runTests() {
     { method: 'PUT', path: '/courses/1', body: { name: 'Hack' } },
     { method: 'DELETE', path: '/courses/1' },
     { method: 'POST', path: '/courses/1/subjects', body: { name: 'Hack Subject' } },
-    { method: 'POST', path: '/students', body: { first_name: 'Hack', last_name: 'Student', course_id: 1 } },
-    { method: 'PUT', path: '/students/1', body: { first_name: 'Hack' } },
-    { method: 'DELETE', path: '/students/1' },
-    { method: 'DELETE', path: '/students/1/permanent' },
-    { method: 'POST', path: '/students/1/parents', body: { user_id: 2 } },
     { method: 'GET', path: '/subjects/1' },
-    { method: 'POST', path: '/subjects/1/teachers', body: { user_id: 2 } },
   ];
 
   for (const ep of protectedEndpoints) {
     try {
-      const res = await fetchJson(ep.method, ep.path, ep.body || null, preceptorHeaders());
+      const res = await fetchJson(ep.method, ep.path, ep.body || null, preceptorHeaders(), preceptorCookie);
       const isForbidden = res.status === 403;
       assert(isForbidden, `${ep.method} ${ep.path} returns 403 (got ${res.status})`);
     } catch (err) {
       assert(false, `${ep.method} ${ep.path} permission test failed: ${err.message}`);
+    }
+  }
+
+  // Preceptor-allowed student/subject endpoints (not 403)
+  const preceptorAllowedEndpoints = [
+    { method: 'POST', path: '/students', body: { first_name: 'Hack', last_name: 'Student', course_id: 1 }, expectNot: 403 },
+    { method: 'PUT', path: '/students/1', body: { first_name: 'Hack' }, expectNot: 403 },
+    { method: 'DELETE', path: '/students/1', expectNot: 403 },
+    { method: 'POST', path: '/students/1/parents', body: { user_id: 2 }, expectNot: 403 },
+    { method: 'POST', path: '/subjects/1/teachers', body: { user_id: 2 }, expectNot: 403 },
+  ];
+
+  for (const ep of preceptorAllowedEndpoints) {
+    try {
+      const res = await fetchJson(ep.method, ep.path, ep.body || null, preceptorHeaders(), preceptorCookie);
+      assert(res.status !== 403, `${ep.method} ${ep.path} does NOT return 403 (got ${res.status})`);
+    } catch (err) {
+      assert(false, `${ep.method} ${ep.path} preceptor-allowed test failed: ${err.message}`);
     }
   }
 

@@ -14,7 +14,7 @@ const gradesController = {
     try {
       const { studentId } = req.params;
       const { subjectId } = req.query;
-      const grades = await gradesService.getStudentGrades(studentId, subjectId || null);
+      const grades = await gradesService.getStudentGrades(studentId, subjectId || null, req.user.id, req.user.role);
       res.status(200).json({ status: 'success', data: grades });
     } catch (error) {
       next(error);
@@ -24,7 +24,7 @@ const gradesController = {
   async updateGrade(req, res, next) {
     try {
       const { id } = req.params;
-      const grade = await gradesService.updateGrade(id, req.body);
+      const grade = await gradesService.updateGrade(id, req.body, req.user.id, req.user.role);
       res.status(200).json({ status: 'success', message: 'Nota actualizada', data: grade });
     } catch (error) {
       next(error);
@@ -44,7 +44,7 @@ const gradesController = {
   async getSubjectGrades(req, res, next) {
     try {
       const { subjectId } = req.params;
-      const grades = await gradesService.getSubjectGrades(subjectId);
+      const grades = await gradesService.getSubjectGrades(subjectId, req.user.id, req.user.role);
       res.status(200).json({ status: 'success', data: grades });
     } catch (error) {
       next(error);

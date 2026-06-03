@@ -1,5 +1,6 @@
 // Set test environment so rate limiter uses higher limits
 process.env.NODE_ENV = 'test';
+process.env.JWT_SECRET = 'test-jwt-secret-for-testing-only';
 
 // Load .env for local database connection
 const path = require('path');
@@ -287,44 +288,50 @@ async function runTests() {
       });
     });
 
-    function fetchJson(method, urlPath, body, headers = {}) {
-      return new Promise((resolve, reject) => {
-        const url = `${baseUrl}${urlPath}`;
-        const options = {
-          method,
-          headers: { 'Content-Type': 'application/json', ...headers },
-        };
-        const req = http.request(url, options, (res) => {
-          let data = '';
-          res.on('data', (chunk) => (data += chunk));
-          res.on('end', () => {
-            try {
-              resolve({ status: res.statusCode, body: JSON.parse(data) });
-            } catch {
-              resolve({ status: res.statusCode, body: data });
+  function fetchJson(method, urlPath, body, headers = {}, cookies = '') {
+    return new Promise((resolve, reject) => {
+      const url = `${baseUrl}${urlPath}`;
+      const options = {
+        method,
+        headers: { 'Content-Type': 'application/json', ...headers, ...(cookies ? { Cookie: cookies } : {}) },
+      };
+      const req = http.request(url, options, (res) => {
+        let data = '';
+        res.on('data', (chunk) => (data += chunk));
+        res.on('end', () => {
+          const setCookies = res.headers['set-cookie'] || [];
+          let authTokenCookie = '';
+          for (const sc of setCookies) {
+            if (sc.startsWith('authToken=')) {
+              authTokenCookie = sc.split(';')[0];
+              break;
             }
-          });
+          }
+          try {
+            resolve({ status: res.statusCode, body: JSON.parse(data), cookies: setCookies, authTokenCookie });
+          } catch {
+            resolve({ status: res.statusCode, body: data, cookies: setCookies, authTokenCookie });
+          }
         });
-        req.on('error', reject);
-        if (body) req.write(JSON.stringify(body));
-        req.end();
       });
-    }
-
-    // Login como padre
-    const loginRes = await fetchJson('POST', '/auth/login', {
-      email: 'padre@escuela.edu',
-      password: 'password123',
+      req.on('error', reject);
+      if (body) req.write(JSON.stringify(body));
+      req.end();
     });
-    const padreToken = loginRes.body.token;
-    assert(!!padreToken, 'Padre login OK');
+  }
 
-    const student = await Student.findOne({ where: { dni: '40123456' } });
+  // Login como padre
+  const loginRes = await fetchJson('POST', '/auth/login', {
+    email: 'padre@escuela.edu',
+    password: 'password123',
+  });
+  const padreCookie = loginRes.authTokenCookie;
+  assert(!!padreCookie, 'Padre login OK');
 
-    // GET /students/:id/evolution como padre
-    const res = await fetchJson('GET', `/students/${student.id}/evolution`, null, {
-      Authorization: `Bearer ${padreToken}`,
-    });
+  const student = await Student.findOne({ where: { dni: '40123456' } });
+
+  // GET /students/:id/evolution como padre
+  const res = await fetchJson('GET', `/students/${student.id}/evolution`, null, {}, padreCookie);
 
     assert(res.status === 200, `GET evolution como padre devuelve 200 (obtenido: ${res.status})`);
     assert(!!res.body.data, 'Response tiene data');
@@ -338,40 +345,46 @@ async function runTests() {
   // ─── Test 10: HTTP — preceptor NO tiene acceso (403) ──────
   console.log('\n── HTTP: preceptor sin acceso (403) ──');
   try {
-    function fetchJson2(method, urlPath, body, headers = {}) {
-      return new Promise((resolve, reject) => {
-        const url = `${baseUrl}${urlPath}`;
-        const options = {
-          method,
-          headers: { 'Content-Type': 'application/json', ...headers },
-        };
-        const req = http.request(url, options, (res) => {
-          let data = '';
-          res.on('data', (chunk) => (data += chunk));
-          res.on('end', () => {
-            try {
-              resolve({ status: res.statusCode, body: JSON.parse(data) });
-            } catch {
-              resolve({ status: res.statusCode, body: data });
+  function fetchJson2(method, urlPath, body, headers = {}, cookies = '') {
+    return new Promise((resolve, reject) => {
+      const url = `${baseUrl}${urlPath}`;
+      const options = {
+        method,
+        headers: { 'Content-Type': 'application/json', ...headers, ...(cookies ? { Cookie: cookies } : {}) },
+      };
+      const req = http.request(url, options, (res) => {
+        let data = '';
+        res.on('data', (chunk) => (data += chunk));
+        res.on('end', () => {
+          const setCookies = res.headers['set-cookie'] || [];
+          let authTokenCookie = '';
+          for (const sc of setCookies) {
+            if (sc.startsWith('authToken=')) {
+              authTokenCookie = sc.split(';')[0];
+              break;
             }
-          });
+          }
+          try {
+            resolve({ status: res.statusCode, body: JSON.parse(data), cookies: setCookies, authTokenCookie });
+          } catch {
+            resolve({ status: res.statusCode, body: data, cookies: setCookies, authTokenCookie });
+          }
         });
-        req.on('error', reject);
-        if (body) req.write(JSON.stringify(body));
-        req.end();
       });
-    }
-
-    const loginRes = await fetchJson2('POST', '/auth/login', {
-      email: 'preceptor@escuela.edu',
-      password: 'password123',
+      req.on('error', reject);
+      if (body) req.write(JSON.stringify(body));
+      req.end();
     });
-    const preceptorToken = loginRes.body.token;
-    const student = await Student.findOne({ where: { dni: '40123456' } });
+  }
 
-    const res = await fetchJson2('GET', `/students/${student.id}/evolution`, null, {
-      Authorization: `Bearer ${preceptorToken}`,
-    });
+  const loginRes = await fetchJson2('POST', '/auth/login', {
+    email: 'preceptor@escuela.edu',
+    password: 'password123',
+  });
+  const preceptorCookie = loginRes.authTokenCookie;
+  const student = await Student.findOne({ where: { dni: '40123456' } });
+
+  const res = await fetchJson2('GET', `/students/${student.id}/evolution`, null, {}, preceptorCookie);
 
     assert(res.status === 403, `GET evolution como preceptor devuelve 403 (obtenido: ${res.status})`);
   } catch (err) {
@@ -381,37 +394,45 @@ async function runTests() {
   // ─── Test 11: HTTP — sin token (401) ──────
   console.log('\n── HTTP: sin token (401) ──');
   try {
-    function fetchJson3(method, urlPath, body, headers = {}) {
-      return new Promise((resolve, reject) => {
-        const url = `${baseUrl}${urlPath}`;
-        const options = {
-          method,
-          headers: { 'Content-Type': 'application/json', ...headers },
-        };
-        const req = http.request(url, options, (res) => {
-          let data = '';
-          res.on('data', (chunk) => (data += chunk));
-          res.on('end', () => {
-            try {
-              resolve({ status: res.statusCode, body: JSON.parse(data) });
-            } catch {
-              resolve({ status: res.statusCode, body: data });
+  function fetchJson3(method, urlPath, body, headers = {}, cookies = '') {
+    return new Promise((resolve, reject) => {
+      const url = `${baseUrl}${urlPath}`;
+      const options = {
+        method,
+        headers: { 'Content-Type': 'application/json', ...headers, ...(cookies ? { Cookie: cookies } : {}) },
+      };
+      const req = http.request(url, options, (res) => {
+        let data = '';
+        res.on('data', (chunk) => (data += chunk));
+        res.on('end', () => {
+          const setCookies = res.headers['set-cookie'] || [];
+          let authTokenCookie = '';
+          for (const sc of setCookies) {
+            if (sc.startsWith('authToken=')) {
+              authTokenCookie = sc.split(';')[0];
+              break;
             }
-          });
+          }
+          try {
+            resolve({ status: res.statusCode, body: JSON.parse(data), cookies: setCookies, authTokenCookie });
+          } catch {
+            resolve({ status: res.statusCode, body: data, cookies: setCookies, authTokenCookie });
+          }
         });
-        req.on('error', reject);
-        if (body) req.write(JSON.stringify(body));
-        req.end();
       });
-    }
-
-    const student = await Student.findOne({ where: { dni: '40123456' } });
-    const res = await fetchJson3('GET', `/students/${student.id}/evolution`);
-
-    assert(res.status === 401, `GET evolution sin token devuelve 401 (obtenido: ${res.status})`);
-  } catch (err) {
-    assert(false, `HTTP sin token failed: ${err.message}`);
+      req.on('error', reject);
+      if (body) req.write(JSON.stringify(body));
+      req.end();
+    });
   }
+
+  const student = await Student.findOne({ where: { dni: '40123456' } });
+  const res = await fetchJson3('GET', `/students/${student.id}/evolution`);
+
+  assert(res.status === 401, `GET evolution sin token devuelve 401 (obtenido: ${res.status})`);
+} catch (err) {
+  assert(false, `HTTP sin token failed: ${err.message}`);
+}
 
   // ─── Cleanup ─────────────────────────────────────────────
   if (server) server.close();

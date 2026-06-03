@@ -9,13 +9,16 @@ const router = Router();
 
 const createStudentValidations = [
   body('first_name')
+    .trim().escape()
     .notEmpty().withMessage('El nombre es obligatorio')
     .isLength({ min: 2 }).withMessage('El nombre debe tener al menos 2 caracteres'),
   body('last_name')
+    .trim().escape()
     .notEmpty().withMessage('El apellido es obligatorio')
     .isLength({ min: 2 }).withMessage('El apellido debe tener al menos 2 caracteres'),
   body('dni')
     .optional()
+    .trim().escape()
     .isString().withMessage('El DNI debe ser un texto'),
   body('birth_date')
     .optional()
@@ -28,12 +31,15 @@ const createStudentValidations = [
 const updateStudentValidations = [
   body('first_name')
     .optional()
+    .trim().escape()
     .isLength({ min: 2 }).withMessage('El nombre debe tener al menos 2 caracteres'),
   body('last_name')
     .optional()
+    .trim().escape()
     .isLength({ min: 2 }).withMessage('El apellido debe tener al menos 2 caracteres'),
   body('dni')
     .optional()
+    .trim().escape()
     .isString().withMessage('El DNI debe ser un texto'),
   body('birth_date')
     .optional()
@@ -49,6 +55,7 @@ const linkParentValidations = [
     .isInt({ min: 1 }).withMessage('El ID del usuario debe ser un número entero positivo'),
   body('relationship')
     .optional()
+    .trim().escape()
     .isString().withMessage('El parentesco debe ser un texto'),
 ];
 

@@ -1,15 +1,12 @@
 import { createContext, useContext, useReducer, useCallback, useEffect } from 'react';
 import { authService } from '../services/authService';
-import { setAuthToken } from '../services/api';
-
-const TOKEN_KEY = 'authToken';
 
 const AuthContext = createContext(null);
 
 const initialState = {
   user: null,
   token: null,
-  loading: true, // starts true — we don't know yet if there's a session stored
+  loading: true,
   error: null,
 };
 
@@ -62,11 +59,9 @@ export function AuthProvider({ children }) {
     dispatch({ type: 'SET_LOADING' });
     try {
       const data = await authService.login(email, password);
-      localStorage.setItem(TOKEN_KEY, data.token);
-      setAuthToken(data.token);
       dispatch({
         type: 'LOGIN_SUCCESS',
-        payload: { user: data.user, token: data.token },
+        payload: { user: data.user, token: null },
       });
       return data.user;
     } catch (err) {
@@ -83,8 +78,6 @@ export function AuthProvider({ children }) {
     } catch {
       // Ignore logout errors (token may already be invalid)
     }
-    localStorage.removeItem(TOKEN_KEY);
-    setAuthToken(null);
     dispatch({ type: 'LOGOUT' });
   }, []);
 
@@ -92,26 +85,16 @@ export function AuthProvider({ children }) {
     dispatch({ type: 'CLEAR_ERROR' });
   }, []);
 
-  // Restore session from localStorage on mount
+  // Restore session from httpOnly cookie on mount
   useEffect(() => {
     const restoreSession = async () => {
-      const savedToken = localStorage.getItem(TOKEN_KEY);
-      if (!savedToken) {
-        dispatch({ type: 'LOGOUT' }); // sets loading → false
-        return;
-      }
-
-      setAuthToken(savedToken);
       try {
         const user = await authService.getMe();
         dispatch({
           type: 'LOGIN_SUCCESS',
-          payload: { user, token: savedToken },
+          payload: { user, token: null },
         });
       } catch {
-        // Token was invalid or expired — clean up
-        localStorage.removeItem(TOKEN_KEY);
-        setAuthToken(null);
         dispatch({ type: 'LOGOUT' });
       }
     };

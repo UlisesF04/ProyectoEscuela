@@ -32,12 +32,13 @@ C-01 foundation-setup (done)
                 │    └── C-07 grades-evolution
                 ├── C-08 parental-dashboard (done)
                 ├── C-09 teacher-leaves-module
-                ├── C-10 notification-agent ─── C-11 admin-dashboard-and-polish
-                └── C-13 frontend-redesign (done)
-```
+                 ├── C-10 notification-agent ─── C-11 admin-dashboard-and-polish (done)
+                 ├── C-13 frontend-redesign (done)
+                 └── C-14 production-audit-remediation (done)
 
 C-12 devops-deployment es independiente y puede correr en paralelo desde GATE 2.
 C-13 frontend-redesign es paralelo a toda la Fase 2-6 y depende solo de C-04.
+C-14 production-audit-remediation COMPLETADO ✅. El proyecto está listo para producción.
 
 ### Paralelismo por fase
 
@@ -65,9 +66,12 @@ C-13 frontend-redesign es paralelo a toda la Fase 2-6 y depende solo de C-04.
 **GATE 5**: C-10 — Agente funcionando
   → C-11 admin-dashboard-and-polish        [Agente A]
 
-### Camino crítico (6 changes — mínimo irreducible)
+**GATE 6**: C-01..C-13 ✓ — Sistema completo
+  → C-14 production-audit-remediation ✅   [Agente A — Seguridad]
 
-`C-01 → C-02 → C-03 → C-04 → C-10 → C-11`
+### Camino crítico (7 changes — mínimo irreducible)
+
+`C-01 → C-02 → C-03 → C-04 → C-10 → C-11 → C-14`
 
 Incluye el agente de notificaciones automatizadas. Sin él, el sistema es un CRUD escolar más.
 
@@ -83,8 +87,9 @@ Incluye el agente de notificaciones automatizadas. Sin él, el sistema es un CRU
 | 4    | C-04 admin-panel ✓      | —                       | —                      | —                          |
 | 5    | C-05 attendance-module ✓| C-06 grades-module ✓    | C-08 parental-dashbrd ✓| C-13.0 theme ✓ + C-13.1 admin ✓|
 | 6    | C-10 notification-agent | C-09 teacher-leaves-mod | C-07 grades-evolution  | C-13.2 preceptor ✓          |
-| 7    | C-11 admin-dash-polish  | —                       | —                      | C-13.3 docente ✓ + C-13.4 padre ✓|
-| 8    | —                       | —                       | —                      | C-13.5 shared ✓ + C-13.6 responsive ✓ + C-13.7 missing ✓|
+| 7    | C-11 admin-dash-polish  | —                       | —                       | C-13.3 docente ✓ + C-13.4 padre ✓|
+| 8    | —                       | —                       | —                       | C-13.5 shared ✓ + C-13.6 responsive ✓ + C-13.7 missing ✓|
+| 9    | C-14.0 blockers ✅       | C-14.1 preventivos ✅    | C-14.2 perf-integridad ✅| —                        |
 
 ---
 
@@ -360,7 +365,7 @@ Incluye el agente de notificaciones automatizadas. Sin él, el sistema es un CRU
 > Dashboard admin, infraestructura DevOps y pulido final de la UI.
 
 ### [C-11] `admin-dashboard-and-polish`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` completado — 2026-06-02 (archivado en openspec)
 - **Scope**:
   - `AdminDashboard.jsx` — vista general con cards de resumen (usuarios activos, cursos, alertas)
   - Panel de logs de notificaciones: tabla con filtros por tipo, estado, fecha, destinatario
@@ -529,3 +534,114 @@ Incluye el agente de notificaciones automatizadas. Sin él, el sistema es un CRU
     - `AdminUnauthorizedPage.jsx` (componente extraído, no inline)
   - Verificar integración con endpoints reales
 - **Dependencias**: `C-13.0`, más C-09, C-10, C-11 según corresponda
+
+---
+
+## FASE 8 — Auditoría y Seguridad Pre-Producción
+
+> Auditoría integral, endurecimiento de seguridad y remediación de vulnerabilidades antes del deploy a producción.
+> Basado en auditoría automatizada del 2026-06-02 (71 hallazgos: 11 críticos, 20 altos, 26 medios, 14 bajos).
+> ✅ **C-14 COMPLETADO** — El proyecto está listo para producción.
+
+### [C-14] `production-audit-remediation`
+- **Estado**: `[x]` completado ✅ 2026-06-03
+- **Scope general**: Corregir las 71 vulnerabilidades encontradas en la auditoría pre-producción, organizadas en 3 sub-fases por criticidad.
+- **Dependencias**: C-01, C-02, C-03, C-04, C-05, C-06, C-07, C-08, C-09, C-10, C-11, C-12, C-13 (audita el sistema completo)
+- **Governance**: CRITICO (seguridad del sistema en producción)
+- **Leer antes**:
+  - `knowledge-base/05_reglas_de_negocio.md` §Autenticación y Acceso
+  - `knowledge-base/08_arquitectura_propuesta.md` §Seguridad
+  - `knowledge-base/11_despliegue_y_devops.md` completo
+  - `backend/middlewares/authMiddleware.js`
+  - `backend/modules/auth/auth.service.js`
+  - `backend/modules/grades/grades.service.js`
+  - Auditoría completa: hallazagos detallados en sesión de auditoría 2026-06-02
+
+---
+
+#### Sub-fase C-14.0 `blockers` — Críticos (bloquean producción)
+
+> 12 hallazgos CRÍTICOS que deben resolverse antes del deploy. Sin esto, NO hacer deploy.
+
+| # | Hallazgo | Archivo | Acción |
+|---|----------|---------|--------|
+| C14.0-1 | JWT fallback hardcodeado | `auth.service.js:6`, `authMiddleware.js:14` | Eliminar fallback `'secret-dev-key'`, agregar startup guard que crash si JWT_SECRET no está seteado |
+| C14.0-2 | Sin verificación teacher→subject al crear notas | `grades.service.js:7-27` | Agregar verificación de asignación docente via TeacherSubject antes de createGrade |
+| C14.0-3 | Sin ownership check al actualizar notas | `grades.service.js:59-64` | Verificar que el docente es el creador de la nota o está asignado a la materia |
+| C14.0-4 | IDOR: cualquier teacher/padre ve notas de cualquier alumno | `grades.service.js:30-44` | Agregar role-based authorization: docente→solo materias asignadas, padre→solo hijos vinculados |
+| C14.0-5 | IDOR: cualquier rol descarga cualquier licencia | `licences.service.js:63-67`, `licences.routes.js:36-39` | Verificar ownership (user_id === req.user.id) o role admin |
+| C14.0-6 | IDOR: cualquier teacher ve asistencias de cualquier curso | `attendances.service.js:111-138` | Verificar asignación docente al curso via TeacherSubject |
+| C14.0-7 | `sync({ alter: true })` en producción | `app.js:114` | Reemplazar con condicional `if (NODE_ENV !== 'production')` o migraciones |
+| C14.0-8 | Mass assignment en updates | `users.service.js:120`, `students.service.js:71`, `courses.service.js:65`, `grades.service.js:63`, `attendances.service.js:73` | Implementar whitelist de campos permitidos en todos los update service methods |
+| C14.0-9 | JWT en localStorage (XSS-vulnerable) | `AuthContext.jsx:65,86,98,113` | Migrar token a httpOnly cookie. Backend setea cookie en login. Frontend usa `withCredentials`. |
+| C14.0-10 | Sin helmet/CSP/security headers | `app.js` (todo el middleware) | Instalar `helmet`, configurar CSP + HSTS + X-Frame-Options + X-Content-Type-Options |
+| C14.0-11 | `VITE_API_URL` sin configurar en prod | `api.js:10`, `JustificacionesPage.jsx:12`, `JustificativosPage.jsx:136` | Setear en Vercel env, quitar fallbacks `http://localhost:5000`, validar en build |
+| C14.0-12 | Sin CI/CD pipeline | `no .github/workflows/` | Crear `.github/workflows/ci.yml` con tests backend + frontend lint+build |
+
+---
+
+#### Sub-fase C-14.1 `preventivos` — Altos (resolver antes de prod)
+
+> 20 hallazgos HIGH que deben corregirse antes de producción.
+
+| # | Hallazgo | Archivo | Acción |
+|---|----------|---------|--------|
+| C14.1-1 | Sin validación MIME en upload licencias | `multerLicences.js:1-9` | Agregar fileFilter con MIME types permitidos (image/jpeg, image/png, application/pdf) |
+| C14.1-2 | Sin auth por curso en batch attendance | `attendances.service.js:34-65` | Verificar que el preceptor/admin tiene permiso sobre los estudiantes del curso |
+| C14.1-3 | Error messages filtran schema interno | `errorMiddleware.js:41-46` | Sanitizar response: mensaje genérico en prod, log completo server-side |
+| C14.1-4 | Password change endpoint no existe | `users.service.js:116-118` | Implementar `PUT /api/v1/auth/password` con validación de old password |
+| C14.1-5 | `morgan('dev')` en producción | `app.js:37` | Usar `combined` en producción según NODE_ENV |
+| C14.1-6 | Sin sanitización input (XSS almacenado) | Múltiples servicios | Agregar `escape()`/`trim()` de express-validator, strip HTML server-side |
+| C14.1-7 | `target="_blank"` sin `rel="noopener noreferrer"` | `JustificacionesPage.jsx:52`, `JustificativosPage.jsx:136` | Agregar `rel="noopener noreferrer"` a ambos links |
+| C14.1-8 | Root `.gitignore` incompleto | `.gitignore` raíz | Agregar `node_modules/`, `dist/`, `*.env.*`, `uploads/`, `*.log`, `logs/` |
+| C14.1-9 | CORS fallback a localhost en prod | `app.js:27-30` | Validar origin contra whitelist, crash si FRONTEND_URL no está seteado en prod |
+| C14.1-10 | `vercel.json` minimalista | `vercel.json` | Agregar headers de seguridad, env, buildCommand, outputDirectory |
+| C14.1-11 | `pg`/`pg-hstore` en devDependencies | `backend/package.json` | Mover a dependencies (se requieren en runtime para Sequelize) |
+| C14.1-12 | `password_hash` sin defaultScope | `models/User.js` | Agregar `defaultScope: { attributes: { exclude: ['password_hash'] } }` |
+| C14.1-13 | Seeders misma password para todos | `seeders/20260526001-demo-users.js:7` | Agregar guard `if (NODE_ENV === 'production') return` + warning |
+| C14.1-14 | `express` 4.22.1 con DoS (moderado) | `backend/package.json` | Upgrade a express@4.22.2+ |
+| C14.1-15 | `bcrypt` 5.1.1 arrastra `tar` vulnerable (HIGH) | `backend/package.json` | Upgrade a bcrypt@6.0.0 (elimina dependencia @mapbox/node-pre-gyp) |
+| C14.1-16 | `uuid` 8.3.2 buffer overflow (CVSS 7.5) | `backend/package.json` | Forzar `uuid@>=11.1.1` via overrides en package.json |
+| C14.1-17 | Account-level lockout ausente | `auth.routes.js:10-19` | Agregar contador de intentos fallidos por usuario en DB/Redis |
+| C14.1-18 | Sin refresh token rotation | `auth.service.js:28` | Implementar refresh tokens + token blacklist en DB |
+| C14.1-19 | Preceptor puede crear docentes | `users.routes.js:67` | Restringir: preceptor solo crea `padre`, admin crea `docente` |
+| C14.1-20 | Sin SSL/TLS en conexión DB agente Python | `agent/tasks/db_reader.py:11` | Agregar `sslmode=require` en DATABASE_URL o warning si no está |
+
+---
+
+#### Sub-fase C-14.2 `performance-e-integridad` — Medios y Bajos
+
+> 39 hallazgos MEDIUM/LOW para resolver post-producción inmediato.
+
+| # | Hallazgo | Archivo | Acción |
+|---|----------|---------|--------|
+| C14.2-1 | Sin índices en `messages.chat_id` | `models/Message.js` | Agregar migración con índices en chat_id, created_at |
+| C14.2-2 | Sin índices en `courses` | `models/Course.js` | Agregar índices en columnas de filtrado (name, year, division) |
+| C14.2-3 | Sin unique constraint en courses | Migraciones | Agregar UNIQUE(name, year, division) |
+| C14.2-4 | Sin unique constraint en subjects | Migraciones | Agregar UNIQUE(name, course_id) |
+| C14.2-5 | ErrorBoundary logea errores en prod | `ErrorBoundary.jsx:16` | Condicionar console.error a NODE_ENV === 'development' |
+| C14.2-6 | Sin request body size limit | `app.js:33` | Agregar `express.json({ limit: '1mb' })` |
+| C14.2-7 | Agent logea PII (emails) en INFO | `notifier.py:103,111,114` | Masking de emails + debug level |
+| C14.2-8 | Agent: mutable global API key | `notifier.py:11` | Validar consistencia |
+| C14.2-9 | Agent: exception loggea connection string | `alert_engine.py:85` | Sanitizar mensaje de error |
+| C14.2-10 | Agent: crash si env var no numérica | `config.py:14` | try/except con ValueError + mensaje claro |
+| C14.2-11 | `.env.example` con valores reales | `.env.example` | Cambiar a placeholders obvios |
+| C14.2-12 | Sin CSP en index.html | `frontend/index.html` | Agregar meta tag CSP |
+| C14.2-13 | Sin railway.json | `(missing)` | Crear `backend/railway.json` con startCommand y healthcheckPath |
+| C14.2-14 | Sin `.node-version` pinning | `(missing)` | Crear `.node-version` con 20.18.0 |
+| C14.2-15 | Sin unique constraint en grades (evaluar) | `models/Grade.js` | Evaluar si aplica según reglas de negocio |
+| C14.2-16 | Error messages duplicados en agent | `alert_engine.py` + `db_reader.py` | Quitar exc_info donde ya se loguea internamente |
+| C14.2-17 | Hard delete sin audit trail | Repositorios User/Student/Attendance | Evaluar paranoid: true en modelos core |
+| C14.2-18 | Chat-Message CASCADE sin guard | `models/index.js:64` | Agregar comentario/model hook preventivo |
+| C14.2-19 | Course sin validación de año | `models/Course.js` | Agregar `min: 1900, max: 2100` |
+| C14.2-20 | Chat permite user1_id === user2_id | `models/Chat.js` | Agregar validate block |
+| C14.2-21 | Sin vite.config sourcemap explícito | `frontend/vite.config.js` | Agregar `build.sourcemap: false` explícito |
+| C14.2-22 | No HTTPS enforcement middleware | `app.js` | Agregar redirect condicional HTTP→HTTPS en prod |
+| C14.2-23 | Sin validación env vars al startup | `app.js` | Agregar check de JWT_SECRET, DATABASE_URL, FRONTEND_URL requeridas |
+| C14.2-24 | Morgan sin env-conditional | `app.js:37` | `morgan(NODE_ENV === 'production' ? 'combined' : 'dev')` |
+| C14.2-25 | Sin compresión gzip | `backend/package.json` | Instalar compression middleware |
+| C14.2-26 | Agent: PII en tracebacks | `notifier.py:114` | No loguear full exception en email failures |
+| C14.2-27 | Sin bloqueo de request body grande | `app.js:33` | Límite de 1mb en express.json + urlencoded |
+| C14.2-28 | Sin validación Content-Type en blob download | `LeavesPage.jsx:22`, `MyLeavesPage.jsx` files | Verificar response.headers['content-type'] antes de crear blob |
+| C14.2-29 | Categorizar correctamente seeders como dev-only | seeders | Documentar que seeders no corren en prod |
+| C14.2-30..39 | Hallazgos restantes LOW/INFO | Varios | Correcciones menores de higiene y configuración |

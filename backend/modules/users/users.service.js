@@ -12,7 +12,7 @@ const usersService = {
    * @param {Object} data - User data (email, password, first_name, last_name, role, phone_whatsapp)
    * @returns {Object} Created user (without password_hash)
    */
-  async createUser(data) {
+  async createUser(data, authUser) {
     const { email, password, first_name, last_name, role, phone_whatsapp } = data;
 
     // Validate role
@@ -21,6 +21,11 @@ const usersService = {
         `Rol inválido. Los roles permitidos son: ${VALID_ROLES.join(', ')}`,
         400
       );
+    }
+
+    // Preceptor can only create 'padre' accounts
+    if (authUser && authUser.role === 'preceptor' && role !== 'padre') {
+      throw new AppError('Preceptor solo puede crear cuentas de padre', 403);
     }
 
     // Check if email already exists
@@ -44,7 +49,7 @@ const usersService = {
     });
 
     // Return user without password hash
-    const { password_hash: _, ...userWithoutPassword } = user.toJSON();
+    const { password_hash: _, refresh_token_hash, failed_attempts, locked_until, ...userWithoutPassword } = user.toJSON();
     return userWithoutPassword;
   },
 
@@ -65,7 +70,7 @@ const usersService = {
 
     // Remove password_hash from all users
     return users.map((user) => {
-      const { password_hash: _, ...userWithoutPassword } = user.toJSON();
+      const { password_hash: _, refresh_token_hash, failed_attempts, locked_until, ...userWithoutPassword } = user.toJSON();
       return userWithoutPassword;
     });
   },
@@ -82,7 +87,7 @@ const usersService = {
       throw new AppError('Usuario no encontrado', 404);
     }
 
-    const { password_hash: _, ...userWithoutPassword } = user.toJSON();
+    const { password_hash: _, refresh_token_hash, failed_attempts, locked_until, ...userWithoutPassword } = user.toJSON();
     return userWithoutPassword;
   },
 
@@ -117,9 +122,12 @@ const usersService = {
       throw new AppError('Use el endpoint de cambio de contraseña para actualizar la contraseña', 400);
     }
 
-    const updatedUser = await userRepository.update(userId, data);
+    const allowedFields = ['email', 'first_name', 'last_name', 'phone_whatsapp', 'is_active'];
+    const filtered = {};
+    allowedFields.forEach(f => { if (data[f] !== undefined) filtered[f] = data[f]; });
+    const updatedUser = await userRepository.update(userId, filtered);
 
-    const { password_hash: _, ...userWithoutPassword } = updatedUser.toJSON();
+    const { password_hash: _, refresh_token_hash, failed_attempts, locked_until, ...userWithoutPassword } = updatedUser.toJSON();
     return userWithoutPassword;
   },
 
@@ -190,14 +198,25 @@ const usersService = {
       role: { [Op.ne]: 'admin' },
     };
 
+    const allowedFilters = ['is_active', 'role', 'email'];
+    Object.keys(filters).forEach(key => {
+      if (!allowedFilters.includes(key)) {
+        delete filters[key];
+      }
+    });
+
     if (filters.is_active !== undefined) {
       where.is_active = filters.is_active === 'true' || filters.is_active === true;
+    }
+
+    if (filters.email) {
+      where.email = { [Op.iLike]: `%${filters.email}%` };
     }
 
     const users = await userRepository.findAll(where);
 
     return users.map((user) => {
-      const { password_hash: _, ...userWithoutPassword } = user.toJSON();
+      const { password_hash: _, refresh_token_hash, failed_attempts, locked_until, ...userWithoutPassword } = user.toJSON();
       return userWithoutPassword;
     });
   },
@@ -212,7 +231,7 @@ const usersService = {
     const users = await userRepository.findAll({ id: { [Op.in]: userIds } });
 
     return users.map((user) => {
-      const { password_hash: _, ...userWithoutPassword } = user.toJSON();
+      const { password_hash: _, refresh_token_hash, failed_attempts, locked_until, ...userWithoutPassword } = user.toJSON();
       return userWithoutPassword;
     });
   },

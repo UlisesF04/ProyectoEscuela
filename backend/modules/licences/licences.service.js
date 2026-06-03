@@ -1,4 +1,5 @@
 const { Licence, User } = require('../../models');
+const AppError = require('../../utils/AppError');
 
 class LicenceService {
   async create(data, userId, file) {
@@ -60,10 +61,15 @@ class LicenceService {
     return this._stripFileData(licences);
   }
 
-  async getFileData(id) {
+  async getFileData(id, requesterId, requesterRole) {
     const licence = await Licence.findByPk(id, {
-      attributes: ['id', 'file_data', 'file_name', 'file_mime', 'file_size'],
+      attributes: ['id', 'user_id', 'file_data', 'file_name', 'file_mime', 'file_size'],
     });
+    if (!licence) throw new AppError('Licencia no encontrada', 404);
+    // Solo el dueño de la licencia o admin pueden descargar
+    if (requesterRole !== 'admin' && licence.user_id !== requesterId) {
+      throw new AppError('No tienes permiso para descargar esta licencia', 403);
+    }
     return licence;
   }
 
