@@ -9,6 +9,7 @@ const authController = {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
+        path: '/',
         maxAge: 8 * 60 * 60 * 1000, // 8 hours
       });
       res.status(200).json({ user: result.user });
@@ -59,6 +60,7 @@ const authController = {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
+        path: '/',
         maxAge: 8 * 60 * 60 * 1000,
       });
       res.json({ user: result.user });

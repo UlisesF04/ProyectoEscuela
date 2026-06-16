@@ -1,5 +1,5 @@
 const gradeRepository = require('../../repositories/gradeRepository');
-const { Student, Subject, TeacherSubject, Course, Grade } = require('../../models');
+const { Student, Subject, TeacherSubject, Course, Grade, ParentStudent } = require('../../models');
 const AppError = require('../../utils/AppError');
 const { Op } = require('sequelize');
 
@@ -50,7 +50,6 @@ const gradesService = {
       }
       where.subject_id = { [Op.in]: teacherSubjectIds };
     } else if (role === 'padre') {
-      const { ParentStudent } = require('../models');
       const link = await ParentStudent.findOne({ where: { user_id: userId, student_id: studentId } });
       if (!link) throw new AppError('No tienes permiso para ver notas de este alumno', 403);
     }

@@ -7,6 +7,10 @@ import {
   VStack,
   FormControl,
   FormLabel,
+  Alert,
+  AlertIcon,
+  AlertDescription,
+  CloseButton,
 } from '@chakra-ui/react';
 import GradeEvolutionView from '../../components/grade-evolution-view';
 import { teacherService } from '../../services/teacherService';
@@ -21,10 +25,21 @@ export default function StudentEvolutionPage() {
   const [loadingCourses, setLoadingCourses] = useState(true);
   const [loadingEvolution, setLoadingEvolution] = useState(false);
   const [error, setError] = useState(null);
+  const [coursesError, setCoursesError] = useState(null);
+
+  useEffect(() => {
+    console.log('DEBUG courses state:', courses);
+    console.log('DEBUG courses length:', courses?.length);
+    if (courses?.length > 0) {
+      console.log('DEBUG first course students:', courses[0].students?.length);
+      console.log('DEBUG first course students list:', courses[0].students);
+    }
+  }, [courses]);
 
   // Load courses on mount
   const fetchCourses = useCallback(() => {
     setLoadingCourses(true);
+    setCoursesError(null);
     teacherService
       .getMyCourses()
       .then((data) => {
@@ -34,7 +49,7 @@ export default function StudentEvolutionPage() {
           setSelectedCourseId(list[0].id.toString());
         }
       })
-      .catch((err) => setError(err))
+      .catch((err) => setCoursesError(err))
       .finally(() => setLoadingCourses(false));
   }, []);
 
@@ -121,6 +136,16 @@ export default function StudentEvolutionPage() {
         </Text>
       </Box>
 
+      {coursesError && (
+        <Alert status="error" mb={4} borderRadius="12px">
+          <AlertIcon />
+          <AlertDescription>
+            {coursesError?.response?.data?.message || coursesError?.message || 'Error al cargar los cursos. Verificá que el backend esté corriendo.'}
+          </AlertDescription>
+          <CloseButton position="absolute" right="8px" top="8px" onClick={() => setCoursesError(null)} />
+        </Alert>
+      )}
+
       <HStack
         spacing={4}
         mb={6}
@@ -140,16 +165,18 @@ export default function StudentEvolutionPage() {
           <CustomSelect
             value={selectedCourseId}
             onChange={setSelectedCourseId}
-            isDisabled={loadingCourses || courses.length === 0}
+            isDisabled={loadingCourses || !courses || courses.length === 0}
           >
-            {courses.length === 0 && !loadingCourses && (
+            {(!courses || courses.length === 0) && !loadingCourses ? (
               <option value="">No tenés cursos asignados</option>
-            )}
-            {courses.map((course) => (
-              <option key={course.id} value={course.id}>
-                {course.name} {course.year ? `(${course.year})` : ''} {course.division ? `· ${course.division}` : ''}
-              </option>
-            ))}
+            ) : null}
+            {courses && courses.length > 0
+              ? courses.map((course) => (
+                  <option key={course.id} value={course.id}>
+                    {course.name} {course.year ? `(${course.year})` : ''} {course.division ? `· ${course.division}` : ''}
+                  </option>
+                ))
+              : null}
           </CustomSelect>
         </FormControl>
 
@@ -160,16 +187,18 @@ export default function StudentEvolutionPage() {
           <CustomSelect
             value={selectedStudentId}
             onChange={setSelectedStudentId}
-            isDisabled={availableStudents.length === 0}
+            isDisabled={!availableStudents || availableStudents.length === 0}
           >
-            {availableStudents.length === 0 && (
+            {(!availableStudents || availableStudents.length === 0) ? (
               <option value="">Sin alumnos en este curso</option>
-            )}
-            {availableStudents.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.first_name} {s.last_name} {s.dni ? `· DNI ${s.dni}` : ''}
-              </option>
-            ))}
+            ) : null}
+            {availableStudents && availableStudents.length > 0
+              ? availableStudents.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.first_name} {s.last_name} {s.dni ? `· DNI ${s.dni}` : ''}
+                  </option>
+                ))
+              : null}
           </CustomSelect>
         </FormControl>
       </HStack>

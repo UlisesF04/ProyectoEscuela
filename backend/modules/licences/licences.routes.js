@@ -36,7 +36,7 @@ router.get(
 
 router.get(
   '/me',
-  roleMiddleware('docente', 'preceptor'),
+  roleMiddleware('docente', 'preceptor', 'padre'),
   controller.getMyLicences,
 );
 

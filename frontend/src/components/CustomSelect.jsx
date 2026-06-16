@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import {
   Menu, MenuButton, MenuList, MenuItem,
   Button, Icon, Box,
@@ -16,16 +16,22 @@ export default function CustomSelect({
   bg = 'white',
   ...rest
 }) {
-  const options = [];
-  const childrenArray = Array.isArray(children) ? children : [children];
-  childrenArray.forEach((child) => {
-    if (child && typeof child === 'object' && 'props' in child) {
-      options.push({
-        value: child.props.value,
-        label: child.props.children,
-      });
+  const options = useMemo(() => {
+    const result = [];
+    function extract(el) {
+      if (el == null) return;
+      if (Array.isArray(el)) {
+        el.forEach(extract);
+      } else if (typeof el === 'object' && 'props' in el) {
+        result.push({
+          value: el.props.value,
+          label: el.props.children,
+        });
+      }
     }
-  });
+    extract(children);
+    return result;
+  }, [children]);
 
   const selectedOption = options.find((opt) => String(opt.value) === String(value));
   const displayText = selectedOption ? selectedOption.label : placeholder;
