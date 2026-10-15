@@ -19,6 +19,7 @@ Thumbs.db
 .env
 .env.*
 !.env.example
+!.env.docker.example
 
 # ─── Dependencies ────────────────────────────────────────────────
 node_modules/

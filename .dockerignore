@@ -1,0 +1,22 @@
+.git
+.agents
+Documentation
+openspec
+docs
+knowledge-base
+Diseño Front
+frontend
+**/node_modules
+**/.env
+**/.env.*
+**/uploads
+**/logs
+**/*.log
+**/__pycache__
+**/.venv
+**/venv
+**/dist
+**/build
+**/coverage
+**/*.md
+**/*.MD

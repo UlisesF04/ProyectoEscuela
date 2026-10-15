@@ -1,5 +1,13 @@
 schema: spec-driven
 
+context: |
+  Runtime: Node.js 24 LTS, Express 4, Sequelize 6, PostgreSQL 15.
+  Frontend: React 18, Chakra UI 2, React Router 7, Vite 8.
+  Project documentation: Documentation/; knowledge base: Documentation/knowledge-base/.
+  Roadmap: Documentation/CHANGES.md. Root README.md provides Spanish/English setup.
+  AGENTS.md, .agents/skills/ and openspec/ retain their tool-discovery locations.
+  Local development: compose.yaml (backend + database), frontend via npm/Vite.
+
 # Project context (optional)
 # This is shown to AI when creating artifacts.
 # Add your tech stack, conventions, style guides, domain knowledge, etc.

@@ -5,11 +5,12 @@
 ## ADDED Requirements
 
 ### Requirement: Structure
-The monorepo SHALL have the following top-level directories: `frontend/`, `backend/`, `agent/`, `openspec/`, `docs/`, `knowledge-base/`.
+The monorepo SHALL have the following top-level directories: `frontend/`, `backend/`, `agent/`, `openspec/`, and `Documentation/`. The knowledge base SHALL live in `Documentation/knowledge-base/`.
 
 #### Scenario: Top-level directories exist
 - **WHEN** inspecting the project root
-- **THEN** it SHALL contain `frontend/`, `backend/`, `agent/`, `openspec/`, `docs/`, and `knowledge-base/` directories
+- **THEN** it SHALL contain `frontend/`, `backend/`, `agent/`, `openspec/`, and `Documentation/` directories
+- **AND** tool-discovered Markdown SHALL remain in `AGENTS.md`, `.agents/skills/`, and `openspec/`
 
 ### Requirement: Backend package.json
 The backend SHALL have a `package.json` with Express 4.x, Sequelize 6.x, jsonwebtoken, bcrypt, express-validator, express-rate-limit, cors, and morgan as dependencies.
@@ -19,7 +20,7 @@ The backend SHALL have a `package.json` with Express 4.x, Sequelize 6.x, jsonweb
 - **THEN** all dependencies SHALL install without errors
 
 ### Requirement: Frontend package.json
-The frontend SHALL have a `package.json` with React 18.x, Vite, Chakra UI 2.x, React Router v6, and axios as dependencies.
+The frontend SHALL have a `package.json` with React 18.x, Vite 8.x, Chakra UI 2.x, React Router v7, and axios as dependencies.
 
 #### Scenario: Frontend dependencies are installable
 - **WHEN** running `npm install` in `frontend/`

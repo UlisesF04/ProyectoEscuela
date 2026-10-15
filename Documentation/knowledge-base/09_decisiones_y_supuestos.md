@@ -6,7 +6,7 @@
 
 | Aspecto | Detalle |
 |---------|---------|
-| **Decisión** | Usar Node.js 20.x LTS + Express.js 4.x para el backend de la API REST |
+| **Decisión** | Usar Node.js 24.x LTS + Express.js 4.x para el backend de la API REST (runtime actualizado en C-12, 2026-10-06) |
 | **Contexto** | El equipo tiene experiencia en JavaScript. El frontend ya usa React. Se evaluó si homogeneizar con Python (mismo lenguaje que el agente) o usar un stack más enterprise. |
 | **Alternativas consideradas** | **A)** Python + FastAPI — unificaría el lenguaje con el agente, mejor performance para cómputo. **B)** Java + Spring Boot — más robusto para sistemas críticos, pero mayor overhead. **C)** Node.js + Express — mismo lenguaje que frontend, equipo lo conoce. |
 | **Justificación** | Express es la opción de menor fricción: el equipo ya trabaja con JS, la comunidad es amplia, y la arquitectura en capas compensa la falta de estructura impuesta por el framework. Para la escala de una escuela secundaria, Express es más que suficiente. |

@@ -1,7 +1,7 @@
 // ─── Cargar variables de entorno ANTES que cualquier require ──
 const path = require('path');
 const dotenv = require('dotenv');
-dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
+dotenv.config({ path: path.resolve(__dirname, '.env') });
 
 const express = require('express');
 const cors = require('cors');
@@ -9,6 +9,7 @@ const cookieParser = require('cookie-parser');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const { sequelize } = require('./models');
+const initializeDatabase = require('./config/initializeDatabase');
 const errorMiddleware = require('./middlewares/errorMiddleware');
 const authRoutes = require('./modules/auth/auth.routes');
 const usersRoutes = require('./modules/users/users.routes');
@@ -96,8 +97,13 @@ app.use(globalLimiter);
 // ─── Rutas ──────────────────────────────────────────────────────
 
 // Health check
-app.get('/api/v1/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+app.get('/api/v1/health', async (req, res) => {
+  try {
+    await sequelize.authenticate();
+    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  } catch {
+    res.status(503).json({ status: 'error', message: 'Base de datos no disponible' });
+  }
 });
 
 // Auth routes
@@ -152,14 +158,14 @@ app.use(errorMiddleware);
 if (require.main === module) {
   (async () => {
     try {
-      if (process.env.NODE_ENV === 'development') {
-        await sequelize.sync({ alter: true });
-      } else {
-        await sequelize.sync();
-      }
-      console.log('✓ Base de datos sincronizada');
+      await initializeDatabase();
     } catch (err) {
-      console.error('✗ Error al sincronizar la base de datos:', err.message);
+      console.error('✗ No se pudo iniciar el backend:', err.message);
+      if (err.original?.code === '28P01') {
+        console.error('Revisá DB_USER y DB_PASSWORD en backend/.env. Deben coincidir con las credenciales configuradas en PostgreSQL.');
+      }
+      await sequelize.close();
+      process.exit(1);
     }
     app.listen(PORT, () => {
       console.log(`Servidor iniciado en puerto ${PORT}`);

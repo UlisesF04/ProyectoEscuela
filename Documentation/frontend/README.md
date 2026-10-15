@@ -1,5 +1,7 @@
 # React + Vite
 
+> Referencia del template original. La configuración actual y el inicio rápido están en el [README principal](../../README.md). El código del frontend permanece en `frontend/` en la raíz del repositorio.
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:

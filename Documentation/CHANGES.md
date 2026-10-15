@@ -1,5 +1,7 @@
 # CHANGES — Secuencia de Implementación
 
+> Desde 2026-10-06, los paths documentales de este índice se resuelven desde `Documentation/` (`knowledge-base/`, `VISTAS.md`, `Diseño Front/*.md`). Los paths de código y `openspec/` siguen siendo relativos a la raíz del repositorio.
+
 > Índice canónico de todos los changes del proyecto **Optimización de la Gestión Académica y Comunicación Escolar**.
 > Cada change es atómico: un agente puede implementarlo en una sesión (~4-6 horas).
 > **Leer este archivo antes de ejecutar cualquier `/opsx:propose`.**
@@ -386,8 +388,12 @@ Incluye el agente de notificaciones automatizadas. Sin él, el sistema es un CRU
   - `knowledge-base/05_reglas_de_negocio.md` RN-18
 
 ### [C-12] `devops-deployment`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[ ]` en progreso — ampliación de alcance aprobada 2026-10-06
+- **Avance local**: Docker, dependencias y documentación implementados y verificados; ver [VERIFICACION-LOCAL.md](VERIFICACION-LOCAL.md). Continúan pendientes los entregables cloud/CI del alcance original.
 - **Scope**:
+  - Dockerfile y Docker Compose para backend + PostgreSQL local, con persistencia, health checks e inicialización
+  - Remediación de dependencias vulnerables y lockfiles de frontend y backend
+  - Documentación centralizada en `Documentation/` y README raíz bilingüe ES/EN
   - `.github/workflows/ci.yml` — tests backend + frontend lint+test en cada push y PR
   - `.github/workflows/agent-notifications.yml` — CRON schedule para agente Python (alternativa a Railway Worker)
   - Configuración Vercel: `vercel.json` con rewrites para SPA

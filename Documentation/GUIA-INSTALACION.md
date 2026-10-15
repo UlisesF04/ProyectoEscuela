@@ -1,5 +1,7 @@
 # Instrucciones para Ejecutar
 
+> Inicio rápido con Docker: [README principal, Español](../README.md#español) / [English](../README.md#english). Los comandos de esta guía se ejecutan desde la raíz del repositorio, salvo que se indique otra carpeta.
+
 > Guía completa para clonar, configurar, ejecutar y deployar el proyecto.
 > Proyecto: **Optimización de la Gestión Académica y Comunicación Escolar**
 
@@ -24,7 +26,7 @@
 
 | Herramienta | Versión | Propósito |
 |-------------|---------|-----------|
-| Node.js | 20.x LTS | Backend + Frontend |
+| Node.js | 24.x LTS | Backend + Frontend |
 | PostgreSQL | 15.x | Base de datos |
 | Python | 3.11.x | Agente de notificaciones |
 | Docker (opcional) | Última | Tests de integración |
@@ -68,12 +70,9 @@ cd ..
 # Abrí psql o pgAdmin y ejecutá:
 CREATE DATABASE proyecto_escuela;
 
-# 2. Migraciones
+# 2. Después de configurar backend/.env (sección 4), crear tablas y datos de prueba
 cd backend
-npx sequelize-cli db:migrate
-
-# 3. Datos de prueba (seeders)
-npx sequelize-cli db:seed:all
+npm run db:init -- --seed
 cd ..
 ```
 
@@ -93,10 +92,10 @@ docker run -d \
 
 ## 4. Variables de Entorno
 
-Copiá `.env.example` a `.env` en la **raíz del proyecto** y completá los valores:
+Copiá `backend/.env.example` a `backend/.env` y completá los valores. El servidor y los comandos de Sequelize leen este mismo archivo:
 
 ```bash
-cp .env.example .env
+cp backend/.env.example backend/.env
 ```
 
 ### Variables obligatorias
@@ -108,6 +107,10 @@ cp .env.example .env
 | `DB_PASSWORD` | Contraseña de PostgreSQL | `root` |
 | `JWT_SECRET` | Clave secreta para JWT (64+ caracteres) | `cambiar_por_una_clave_segura_64_chars...` |
 | `FRONTEND_URL` | URL del frontend (para CORS) | `http://localhost:5173` |
+
+Para PostgreSQL local, dejá `DATABASE_URL` vacío y configurá `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER` y `DB_PASSWORD`. Si `DATABASE_URL` tiene un valor, el backend usa esa URL en lugar de `DB_*`.
+
+La contraseña de `DB_PASSWORD` debe coincidir con la del usuario de PostgreSQL: editar `.env` no modifica la contraseña en el servidor de base de datos.
 
 ### Variables para funcionalidades completas
 
@@ -126,13 +129,16 @@ cp .env.example .env
 | `CLOUDINARY_URL` | Almacenamiento de archivos en la nube | No implementado aún |
 | `AUSENCIA_UMBRAL` | Faltas mínimas para alerta en bot | `10` |
 
-### `.env` mínimo para desarrollo local
+### `backend/.env` mínimo para desarrollo local
 
 ```env
 # Base de Datos
-DB_NAME=proyecto_escuela
-DB_USER=postgres
-DB_PASSWORD=root
+DATABASE_URL=
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=your_database_name
+DB_USER=your_database_user
+DB_PASSWORD=your_database_password
 
 # Server
 PORT=5000
@@ -143,6 +149,9 @@ FRONTEND_URL=http://localhost:5173
 
 # JWT
 JWT_SECRET=desarrollo_clave_local_no_usar_en_produccion
+
+# Requerida al ejecutar los seeders, también en desarrollo
+DEMO_PASSWORD=your_demo_login_password
 ```
 
 ---
@@ -166,7 +175,7 @@ npm run dev
 # → http://localhost:5173
 ```
 
-El frontend está configurado para usar `VITE_API_URL=http://localhost:5000` por defecto.
+El frontend usa `/api/v1` y Vite reenvía `/api` a `http://localhost:5000`. Para cambiar el destino del proxy, configurá `VITE_PROXY_TARGET` en `frontend/.env`.
 
 ---
 
@@ -181,36 +190,40 @@ Luego de ejecutar los seeders, podés iniciar sesión con:
 | **Docente** | `docente@escuela.edu` | `password123` |
 | **Padre** | `padre@escuela.edu` | `password123` |
 
-> ⚠️ En producción, las contraseñas se definen con la variable de entorno `DEMO_PASSWORD`.
-> Si no se setea, el seeder falla con un error claro.
+> La contraseña de las cuentas es el valor de `DEMO_PASSWORD` en `backend/.env`. La tabla anterior supone que elegiste `password123`. Esta variable es obligatoria también en desarrollo; sin ella no se crean los usuarios. En producción, el seeder de usuarios se omite.
 
 ---
 
 ## 7. Ejecutar Tests
 
-### Backend (272 tests — 6 suites)
+### Backend (PostgreSQL real en un contenedor de test)
+
+Desde la raíz del repositorio, ejecutá el entorno aislado de integración. Usa una base temporal separada de los datos de desarrollo:
 
 ```bash
-cd backend
-npm test
+docker compose -f compose.test.yaml up --build --abort-on-container-exit --exit-code-from backend-test
+docker compose -f compose.test.yaml down
 ```
 
 Las suites incluyen:
 | Suite | Tests | Descripción |
 |-------|-------|-------------|
-| Modelos | ~22 | Validación de modelos y asociaciones |
-| Auth | ~33 | Login, logout, password change, lockout |
-| Admin Dashboard | ~47 | Stats, config, page-visit, notificaciones |
-| Asistencias | ~43 | CRUD, batch, justificación, autorización |
-| Notificaciones | ~12 | Trigger, service auth, listado |
-| Grades Evolution | ~28 | Evolución de notas por rol |
+| Bootstrap | Integración inicial | Creación de tablas, cuentas, vínculos y preservación de datos al reiniciar |
+| Modelos | 22 | Validación de modelos y asociaciones |
+| Auth | 32 | Login, logout y sesión |
+| Administración | 122 | CRUD de usuarios, cursos, alumnos y permisos |
+| Admin Dashboard | 47 | Stats, config, page-visit, notificaciones |
+| Asistencias | 43 | CRUD, batch, justificación, autorización |
+| Notificaciones | 12 | Trigger, service auth, listado |
+| Grades Evolution | 28 | Evolución de notas por rol |
+| Auth preventivos | 20 | Cambio de contraseña, bloqueo de cuenta y permisos |
 
 ### Frontend (build check)
 
 ```bash
 cd frontend
 npm run build
-# Debe terminar sin errores (~1142 módulos)
+# Debe terminar sin errores
 ```
 
 ---
@@ -218,6 +231,8 @@ npm run build
 ## 8. Deploy a Producción
 
 El proyecto está diseñado para **Railway** (backend + BD) + **Vercel** (frontend SPA).
+
+> Esta sección describe el despliegue cloud previsto. Su finalización continúa en C-12; el historial heredado de migraciones aún no inicializa por sí solo una base vacía. Para desarrollo local, usá el procedimiento Docker del README o `npm run db:init -- --seed`.
 
 ### 8.1 Backend → Railway
 
@@ -327,6 +342,8 @@ Si `NODE_ENV=production`, el seeder aborta automáticamente.
 
 El bot corre en **Python 3.11+** y evalúa condiciones académicas cada **lunes a viernes a las 18:00 hs**.
 
+El agente lee `.env` en la **raíz del proyecto**. Configurá allí `DATABASE_URL`, `RESEND_API_KEY`, `FROM_EMAIL` y `AUSENCIA_UMBRAL` si vas a ejecutar el bot localmente. El backend usa `backend/.env`.
+
 ### Activación manual inmediata
 
 ```bash
@@ -412,11 +429,9 @@ El bot se ejecuta en el agente Worker de Railway. Para que funcione:
 ### Comandos útiles
 
 ```bash
-# Re-ejecutar migraciones desde cero
+# Inicializar una base local (crear tablas faltantes y cargar demo solo si está vacía)
 cd backend
-npx sequelize-cli db:migrate:undo:all
-npx sequelize-cli db:migrate
-npx sequelize-cli db:seed:all
+npm run db:init -- --seed
 
 # Ver estado de migraciones
 npx sequelize-cli db:migrate:status
@@ -440,11 +455,12 @@ python main.py --now
 
 ```
 ProyectoEscuela/
-├── .env                   ← Configuración (NO versionado)
+├── .env                   ← Configuración del agente Python (NO versionado)
 ├── .env.example           ← Template de configuración
 ├── AGENTS.md              ← Contrato del agente AI
 ├── CHANGES.md             ← Roadmap de implementación
 ├── backend/               → API REST (Express + Sequelize + PostgreSQL)
+│   ├── .env               → Configuración del backend y Sequelize (NO versionado)
 │   ├── app.js             → Punto de entrada
 │   ├── config/            → Conexión BD, multer
 │   ├── middlewares/       → Auth, roles, validación, errores

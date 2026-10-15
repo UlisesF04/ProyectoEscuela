@@ -2,6 +2,17 @@
 
 > Archivo extra — el proyecto tiene 3 componentes desplegables independientes con diferentes estrategias de deploy, lo que justifica un documento dedicado.
 
+## Desarrollo local con Docker (C-12)
+
+La guía vigente está en el [README raíz](../../README.md). `compose.yaml` ejecuta backend + PostgreSQL 15 con volúmenes persistentes, inicialización no destructiva y health checks. El frontend usa Vite en el host. La imagen se construye con `backend/Dockerfile`, Node.js 24 y Python 3.11 para el trigger manual de notificaciones.
+
+- Configuración Compose: `.env.docker`, con valores elegidos por quien instala. Nunca se incorpora al repositorio ni a la imagen.
+- Base de datos: accesible entre contenedores como `db:5432`; no publica el puerto de PostgreSQL en el host.
+- Primer arranque: `sequelize.sync()` crea tablas faltantes y el bootstrap transaccional crea datos de demostración solo en una base vacía. No altera tablas existentes por defecto.
+- Backend sin Docker: `backend/.env`; `npm run db:init -- --seed` inicializa una base local antes del primer login. `DB_SYNC_ALTER=true` permite explícitamente adaptar un esquema de desarrollo.
+- Tests: `compose.test.yaml` usa un proyecto separado y PostgreSQL real con almacenamiento temporal.
+- Los despliegues cloud descritos a continuación siguen perteneciendo al alcance pendiente de C-12. El historial de migraciones heredado no es todavía una ruta completa de instalación desde una base vacía.
+
 ## Estrategia de despliegue general
 
 El proyecto sigue una arquitectura de **3 artefactos desplegables de forma independiente**:
@@ -50,7 +61,7 @@ El proyecto sigue una arquitectura de **3 artefactos desplegables de forma indep
 | Aspecto | Detalle |
 |---------|---------|
 | **Plataforma** | Railway (Web Service) |
-| **Runtime** | Node.js 20.x LTS |
+| **Runtime** | Node.js 24.x LTS |
 | **Puerto** | EXPOSE 3000 (configurable vía `PORT`) |
 | **Start command** | `node app.js` |
 | **CI/CD** | Automático desde GitHub — cada push a `main` redeploya |
@@ -137,7 +148,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
       - run: npm install
         working-directory: ./backend
       - run: npx sequelize-cli db:migrate
@@ -151,7 +162,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
       - run: npm install
         working-directory: ./frontend
       - run: npm run lint

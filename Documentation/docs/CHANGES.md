@@ -1,5 +1,7 @@
 # Mapa de Changes — Optimización de la Gestión Académica y Comunicación Escolar
 
+> Mapa histórico. El roadmap vigente está en [Documentation/CHANGES.md](../CHANGES.md).
+
 > Generado a partir del análisis de `docs/Descripcion.txt`, `docs/Integrador.txt` y `docs/Historias_de_usuario.txt`.
 > Stack: React 19 + Chakra UI v3 / Node.js 20 + Express + Sequelize / PostgreSQL 15 / Python 3.11 + Resend
 

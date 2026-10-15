@@ -100,7 +100,8 @@ proyecto/
 │
 ├── docs/                         # Documentos fuente del proyecto
 │
-├── knowledge-base/               # ← Base de conocimiento (este directorio)
+├── Documentation/                # Guías, roadmap y documentación de componentes
+│   └── knowledge-base/           # ← Base de conocimiento (este directorio)
 │
 ├── .env.example
 ├── README.md

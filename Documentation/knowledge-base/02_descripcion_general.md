@@ -4,12 +4,12 @@
 
 | Capa | Tecnología | Versión | Justificación |
 |------|-----------|---------|---------------|
-| Frontend | React.js | 18.x / 19.x | Ecosistema maduro, componentes reutilizables, amplia comunidad |
-| UI Library | Chakra UI | 2.x / v3 | Sistema de diseño accesible, responsivo, reduce tiempo de desarrollo |
-| Routing | React Router | v6 | Enrutamiento declarativo con soporte nativo para rutas protegidas |
+| Frontend | React.js | 18.x | Ecosistema maduro, componentes reutilizables, amplia comunidad |
+| UI Library | Chakra UI | 2.x | Sistema de diseño accesible, responsivo, reduce tiempo de desarrollo |
+| Routing | React Router | v7 | Enrutamiento declarativo con soporte nativo para rutas protegidas |
 | Estado global | Context API + useReducer | — | Escala suficiente para MVP, evita complejidad de Redux |
-| Build tool | Vite | — | Arranque rápido, HMR eficiente, configuración mínima |
-| Backend runtime | Node.js | 20.x LTS | Mismo lenguaje que frontend, alto rendimiento I/O |
+| Build tool | Vite | 8.x | Arranque rápido, HMR eficiente, configuración mínima |
+| Backend runtime | Node.js | 24.x LTS | Mismo lenguaje que frontend, alto rendimiento I/O |
 | Backend framework | Express.js | 4.x | Minimalista, flexible, arquitectura en capas clara |
 | ORM | Sequelize | 6.x | Abstracción robusta sobre PostgreSQL, migraciones y validaciones |
 | Autenticación | JWT + bcrypt | — | Stateless, adecuado para REST. bcrypt rounds = 12 |
